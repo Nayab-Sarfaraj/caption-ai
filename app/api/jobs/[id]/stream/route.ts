@@ -24,10 +24,12 @@ export async function GET(
   }
 
   // If already terminal, return immediately
-  if (job.status === 'done' || job.status === 'failed') {
+  if (job.status === 'done' || job.status === 'failed' || job.status === 'transcript_ready') {
     const event: JobProgressEvent =
       job.status === 'done'
         ? { type: 'done', outputKey: job.outputKey ?? undefined }
+        : job.status === 'transcript_ready'
+        ? { type: 'done' }
         : { type: 'failed', errorMessage: job.errorMessage ?? 'Unknown error' }
     return new Response(`data: ${JSON.stringify(event)}\n\n`, {
       headers: {
@@ -80,6 +82,9 @@ export async function GET(
       if (!updated) return
       if (updated.status === 'done') {
         send({ type: 'done', outputKey: updated.outputKey ?? undefined })
+        close()
+      } else if (updated.status === 'transcript_ready') {
+        send({ type: 'done' })
         close()
       } else if (updated.status === 'failed') {
         send({ type: 'failed', errorMessage: updated.errorMessage ?? 'Unknown error' })

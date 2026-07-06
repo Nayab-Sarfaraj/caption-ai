@@ -18,7 +18,7 @@ export function JobProgress({ jobId, initialStatus, onDone, onFailed }: JobProgr
   const [percent, setPercent] = useState(0)
   const [statusLabel, setStatusLabel] = useState(formatStatus(initialStatus))
 
-  const isTerminal = initialStatus === 'done' || initialStatus === 'failed'
+  const isTerminal = initialStatus === 'done' || initialStatus === 'failed' || initialStatus === 'transcript_ready'
 
   useEffect(() => {
     if (isTerminal) return
@@ -79,6 +79,7 @@ function formatStatus(s: string): string {
     pending: 'Waiting in queue…',
     processing: 'Processing…',
     transcribing: 'Transcribing audio…',
+    transcript_ready: 'Transcript ready',
     rendering: 'Rendering…',
   }
   return map[s] ?? s

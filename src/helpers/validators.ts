@@ -15,6 +15,8 @@ export const captionUploadSchema = z.object({
 export const jobConfirmSchema = z.object({
   jobId: z.string().min(1),
   compositionId: z.enum(['WordByWord', 'Karaoke', 'Fade', 'Spring']).optional(),
+  width: z.number().positive().int().max(7680).optional(),
+  height: z.number().positive().int().max(7680).optional(),
 })
 
 export type UploadRequest = z.infer<typeof uploadRequestSchema>

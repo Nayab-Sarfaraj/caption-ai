@@ -43,6 +43,7 @@ export async function POST(
       compositionId: body.data.compositionId,
       fps: 30,
       outputFormat: 'mp4',
+      phase: 'transcribe',
     }
 
     const queue = getRenderQueue()

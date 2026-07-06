@@ -4,6 +4,7 @@ import { WordByWord } from './compositions/WordByWord'
 import { Karaoke } from './compositions/Karaoke'
 import { Fade } from './compositions/Fade'
 import { Spring } from './compositions/Spring'
+import { CaptionRoot } from './compositions/CaptionRoot'
 import { SAMPLE_TRANSCRIPT, SAMPLE_DURATION_FRAMES } from './sample-transcript'
 
 const FPS = 30
@@ -14,6 +15,8 @@ const RemotionRoot: React.FC = () => {
   const defaultProps = {
     transcript: SAMPLE_TRANSCRIPT,
     videoSrc: '',
+    activeColor: '#FACC15',
+    textColor: '#FFFFFF',
   }
 
   return (
@@ -53,6 +56,15 @@ const RemotionRoot: React.FC = () => {
         height={HEIGHT}
         durationInFrames={SAMPLE_DURATION_FRAMES}
         defaultProps={defaultProps}
+      />
+      <Composition
+        id="CaptionRoot"
+        component={CaptionRoot}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+        durationInFrames={SAMPLE_DURATION_FRAMES}
+        defaultProps={{ style: 'WordByWord' as const, ...defaultProps }}
       />
     </>
   )

@@ -6,12 +6,13 @@ import { UploadDropzone } from '@/components/upload-dropzone'
 import Link from 'next/link'
 
 const STATUS: Record<string, { dot: string; label: string }> = {
-  done:        { dot: 'bg-green-400',  label: 'Done' },
-  rendering:   { dot: 'bg-yellow-400', label: 'Rendering' },
-  transcribing:{ dot: 'bg-yellow-400', label: 'Transcribing' },
-  processing:  { dot: 'bg-yellow-400', label: 'Processing' },
-  pending:     { dot: 'bg-zinc-500',   label: 'Pending' },
-  failed:      { dot: 'bg-red-400',    label: 'Failed' },
+  done:             { dot: 'bg-green-400',  label: 'Done' },
+  rendering:        { dot: 'bg-yellow-400', label: 'Rendering' },
+  transcribing:     { dot: 'bg-yellow-400', label: 'Transcribing' },
+  transcript_ready: { dot: 'bg-blue-400',   label: 'Preview ready' },
+  processing:       { dot: 'bg-yellow-400', label: 'Processing' },
+  pending:          { dot: 'bg-zinc-500',   label: 'Pending' },
+  failed:           { dot: 'bg-red-400',    label: 'Failed' },
 }
 
 function timeAgo(date: Date): string {

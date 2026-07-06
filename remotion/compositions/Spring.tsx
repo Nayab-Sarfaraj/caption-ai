@@ -5,87 +5,114 @@ import type { Transcript } from '../types'
 export interface SpringProps {
   transcript: Transcript
   videoSrc: string
+  activeColor?: string
+  textColor?: string
 }
 
-export const Spring: React.FC<SpringProps> = ({ transcript, videoSrc }) => {
+export const Spring: React.FC<SpringProps> = ({
+  transcript,
+  videoSrc,
+  activeColor = '#FACC15',
+  textColor = '#FFFFFF',
+}) => {
   const frame = useCurrentFrame()
-  const { fps } = useVideoConfig()
+  const { fps, width, height } = useVideoConfig()
   const currentTime = frame / fps
+  const isPortrait = height > width
+  const fontSize = isPortrait ? Math.round(width / 18) : Math.round(width / 28)
+  const paddingBottom = Math.round(height * 0.08)
+  const paddingH = Math.round(width * 0.05)
+  const maxWidth = Math.round(width * 0.88)
 
-  const currentIndex = transcript.words.findIndex(
-    (w) => currentTime >= w.start && currentTime < w.end
+  const CHUNK_SIZE = 5
+
+  const currentSegment = transcript.segments.find(
+    (s) => currentTime >= s.start && currentTime < s.end
   )
-  const activeIndex = currentIndex === -1
-    ? transcript.words.filter((w) => currentTime >= w.end).length - 1
-    : currentIndex
 
-  const winStart = Math.max(0, activeIndex - 1)
-  const winEnd = Math.min(transcript.words.length, activeIndex + 5)
-  const visibleWords = transcript.words.slice(winStart, winEnd)
+  const currentWordIdx = currentSegment
+    ? currentSegment.words.findIndex((w) => currentTime >= w.start && currentTime < w.end)
+    : -1
+  const activeIdx =
+    currentWordIdx >= 0
+      ? currentWordIdx
+      : currentSegment
+      ? currentSegment.words.reduce((acc, w, i) => (currentTime >= w.start ? i : acc), 0)
+      : 0
+  const chunkStart = Math.floor(activeIdx / CHUNK_SIZE) * CHUNK_SIZE
+  const visibleWords = currentSegment
+    ? currentSegment.words.slice(chunkStart, chunkStart + CHUNK_SIZE)
+    : []
 
   return (
     <AbsoluteFill>
       {videoSrc && (
-        <Video src={videoSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <Video
+          src={videoSrc}
+          crossOrigin="anonymous"
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
       )}
-      <AbsoluteFill
-        style={{
-          display: 'flex',
-          alignItems: 'flex-end',
-          justifyContent: 'center',
-          paddingBottom: 100,
-          paddingLeft: 80,
-          paddingRight: 80,
-        }}
-      >
-        <div
+      {currentSegment && (
+        <AbsoluteFill
           style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '0.3em',
-            justifyContent: 'center',
-            maxWidth: 1400,
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            paddingBottom,
+            paddingLeft: paddingH,
+            paddingRight: paddingH,
           }}
         >
-          {visibleWords.map((word, i) => {
-            const wordIndex = winStart + i
-            const wordFrameStart = Math.floor(word.start * fps)
-            const elapsed = Math.max(0, frame - wordFrameStart)
-            const isCurrent = wordIndex === activeIndex
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.45em',
+              justifyContent: 'center',
+              maxWidth,
+            }}
+          >
+            {visibleWords.map((word, i) => {
+              const isCurrent = currentTime >= word.start && currentTime < word.end
+              // Stagger resets per chunk so new chunk words spring in
+              const chunkFrameStart = Math.floor(visibleWords[0].start * fps)
+              const staggeredStart = chunkFrameStart + i * 3
+              const elapsed = Math.max(0, frame - staggeredStart)
 
-            const ySpring = spring({
-              frame: elapsed,
-              fps,
-              config: { damping: 12, stiffness: 180, mass: 1 },
-              from: 60,
-              to: 0,
-            })
+              const ySpring = spring({
+                frame: elapsed,
+                fps,
+                config: { damping: 12, stiffness: 200, mass: 0.8 },
+                from: Math.round(fontSize * 0.8),
+                to: 0,
+              })
 
-            const opacityVal = interpolate(elapsed, [0, 8], [0, 1], {
-              extrapolateRight: 'clamp',
-            })
+              const opacityVal = interpolate(elapsed, [0, 6], [0, 1], {
+                extrapolateRight: 'clamp',
+              })
 
-            return (
-              <span
-                key={`${wordIndex}-${word.word}`}
-                style={{
-                  fontSize: 68,
-                  fontWeight: 900,
-                  fontFamily: 'system-ui, -apple-system, sans-serif',
-                  color: isCurrent ? '#FACC15' : 'white',
-                  textShadow: '0 3px 24px rgba(0,0,0,0.9)',
-                  display: 'inline-block',
-                  transform: `translateY(${ySpring}px)`,
-                  opacity: opacityVal,
-                  lineHeight: 1.15,
-                }}
-              >
-                {word.word}
-              </span>
-            )
-          })}
-        </div>
-      </AbsoluteFill>
+              return (
+                <span
+                  key={i}
+                  style={{
+                    fontSize,
+                    fontWeight: 900,
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                    color: isCurrent ? activeColor : textColor,
+                    textShadow: '0 3px 24px rgba(0,0,0,0.9)',
+                    display: 'inline-block',
+                    transform: `translateY(${ySpring}px)`,
+                    opacity: opacityVal,
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {word.word}
+                </span>
+              )
+            })}
+          </div>
+        </AbsoluteFill>
+      )}
     </AbsoluteFill>
   )
 }

@@ -5,23 +5,48 @@ import type { Transcript, TranscriptSegment } from '../types'
 export interface FadeProps {
   transcript: Transcript
   videoSrc: string
+  activeColor?: string
+  textColor?: string
 }
 
-export const Fade: React.FC<FadeProps> = ({ transcript, videoSrc }) => {
+export const Fade: React.FC<FadeProps> = ({ transcript, videoSrc, textColor = '#FFFFFF' }) => {
   const frame = useCurrentFrame()
-  const { fps } = useVideoConfig()
+  const { fps, width, height } = useVideoConfig()
   const currentTime = frame / fps
+  const isPortrait = height > width
+  const fontSize = isPortrait ? Math.round(width / 18) : Math.round(width / 30)
+  const paddingBottom = Math.round(height * 0.08)
+  const paddingH = Math.round(width * 0.05)
+  const maxWidth = Math.round(width * 0.85)
+
+  const CHUNK_SIZE = 5
 
   const currentSegment: TranscriptSegment | undefined = transcript.segments.find(
     (s) => currentTime >= s.start && currentTime < s.end
   )
 
-  const fadeDuration = 0.2 // seconds
+  const currentWordIdx = currentSegment
+    ? currentSegment.words.findIndex((w) => currentTime >= w.start && currentTime < w.end)
+    : -1
+  const activeIdx =
+    currentWordIdx >= 0
+      ? currentWordIdx
+      : currentSegment
+      ? currentSegment.words.reduce((acc, w, i) => (currentTime >= w.start ? i : acc), 0)
+      : 0
+  const chunkStart = Math.floor(activeIdx / CHUNK_SIZE) * CHUNK_SIZE
+  const visibleWords = currentSegment
+    ? currentSegment.words.slice(chunkStart, chunkStart + CHUNK_SIZE)
+    : []
+  const chunkText = visibleWords.map((w) => w.word).join(' ')
+  const chunkStartTime = visibleWords.length > 0 ? visibleWords[0].start : currentSegment?.start ?? 0
+
+  const fadeDuration = 0.2
 
   const opacity = currentSegment
     ? interpolate(
         currentTime,
-        [currentSegment.start, currentSegment.start + fadeDuration],
+        [chunkStartTime, chunkStartTime + fadeDuration],
         [0, 1],
         { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
       )
@@ -30,33 +55,32 @@ export const Fade: React.FC<FadeProps> = ({ transcript, videoSrc }) => {
   return (
     <AbsoluteFill>
       {videoSrc && (
-        <Video src={videoSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <Video src={videoSrc} crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       )}
       {currentSegment && (
         <AbsoluteFill
           style={{
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-            paddingBottom: 90,
-            paddingLeft: 80,
-            paddingRight: 80,
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            paddingBottom,
+            paddingLeft: paddingH,
+            paddingRight: paddingH,
           }}
         >
           <p
             style={{
-              fontSize: 64,
+              fontSize,
               fontWeight: 700,
               fontFamily: 'system-ui, -apple-system, sans-serif',
-              color: 'white',
+              color: textColor,
               textShadow: '0 3px 20px rgba(0,0,0,0.9)',
               textAlign: 'center',
               opacity,
-              maxWidth: 1200,
+              maxWidth,
               lineHeight: 1.3,
             }}
           >
-            {currentSegment.text}
+            {chunkText}
           </p>
         </AbsoluteFill>
       )}

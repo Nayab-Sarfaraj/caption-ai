@@ -2,7 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { uploadRequestSchema, captionUploadSchema, jobConfirmSchema } from '@/src/helpers/validators'
 import { createUploadJob } from '@/src/services/upload.service'
-import { findJobById, updateJobStatus, updateJobTranscript } from '@/src/repositories/job.repository'
+import { findJobById, updateJobStatus, updateJobTranscript, updateJobDimensions } from '@/src/repositories/job.repository'
 import { parseCaptionFile } from '@/src/helpers/srt-parser'
 import { connectDB } from '@/src/lib/mongo'
 import { getRenderQueue } from '@/src/lib/queue'
@@ -80,14 +80,19 @@ export async function handleConfirmUpload(req: NextRequest): Promise<NextRespons
 
   const jobId = job._id.toString()
 
+  if (parsed.data.width && parsed.data.height) {
+    await updateJobDimensions(jobId, parsed.data.width, parsed.data.height)
+  }
+
   const payload: RenderJobPayload = {
     jobId,
     userId,
     videoKey: job.videoKey,
     transcriptKey: job.transcriptKey ?? undefined,
-    compositionId: parsed.data.compositionId ?? 'WordByWord',
+    compositionId: 'WordByWord', // overridden at render time
     fps: 30,
     outputFormat: 'mp4',
+    phase: 'transcribe',
   }
 
   try {

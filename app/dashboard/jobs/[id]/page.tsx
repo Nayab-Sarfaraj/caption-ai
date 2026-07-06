@@ -5,17 +5,22 @@ import { findJobById } from '@/src/repositories/job.repository'
 import { generatePresignedGet } from '@/src/helpers/presigned-url'
 import { JobProgress } from '@/components/job-progress'
 import { DownloadButton } from '@/components/download-button'
+import { PreviewPlayer } from '@/components/preview-player-wrapper'
+import type { Transcript } from '@/src/types/transcript.types'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 
 const STATUS: Record<string, { dot: string; label: string; text: string }> = {
-  done:        { dot: 'bg-green-400',  label: 'Done',          text: 'text-green-400' },
-  rendering:   { dot: 'bg-yellow-400', label: 'Rendering…',   text: 'text-yellow-400' },
-  transcribing:{ dot: 'bg-yellow-400', label: 'Transcribing…',text: 'text-yellow-400' },
-  processing:  { dot: 'bg-yellow-400', label: 'Processing…',  text: 'text-yellow-400' },
-  pending:     { dot: 'bg-zinc-500',   label: 'Pending',       text: 'text-zinc-400' },
-  failed:      { dot: 'bg-red-400',    label: 'Failed',        text: 'text-red-400' },
+  done:             { dot: 'bg-green-400',  label: 'Done',           text: 'text-green-400' },
+  rendering:        { dot: 'bg-yellow-400', label: 'Rendering…',    text: 'text-yellow-400' },
+  transcribing:     { dot: 'bg-yellow-400', label: 'Transcribing…', text: 'text-yellow-400' },
+  transcript_ready: { dot: 'bg-blue-400',   label: 'Ready',          text: 'text-blue-400' },
+  processing:       { dot: 'bg-yellow-400', label: 'Processing…',   text: 'text-yellow-400' },
+  pending:          { dot: 'bg-zinc-500',   label: 'Pending',        text: 'text-zinc-400' },
+  failed:           { dot: 'bg-red-400',    label: 'Failed',         text: 'text-red-400' },
 }
+
+const FPS = 30
 
 export default async function JobPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -26,16 +31,36 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   const job = await findJobById(id)
   if (!job || job.userId !== userId) redirect('/dashboard')
 
-  const isActive = ['pending', 'processing', 'transcribing', 'rendering'].includes(job.status)
   const s = STATUS[job.status] ?? STATUS.pending
+  const isProcessing = ['pending', 'processing', 'transcribing'].includes(job.status)
+  const isRendering  = job.status === 'rendering'
+  const isReady      = job.status === 'transcript_ready'
+  const isDone       = job.status === 'done'
+  const isFailed     = job.status === 'failed'
 
-  let videoUrl: string | null = null
-  if (job.status === 'done' && job.outputKey) {
-    videoUrl = await generatePresignedGet(job.outputKey, 3600)
+  // Presigned URL for original video (preview) — only needed when transcript_ready
+  let videoSrc: string | null = null
+  if (isReady && job.videoKey) {
+    videoSrc = await generatePresignedGet(job.videoKey, 3600)
   }
 
+  // Presigned URL for rendered output (playback + download)
+  let outputUrl: string | null = null
+  if (isDone && job.outputKey) {
+    outputUrl = await generatePresignedGet(job.outputKey, 3600)
+  }
+
+  // Compute duration from transcript for the Player
+  const transcript = job.transcript as Transcript | null
+  const durationInFrames = transcript?.words?.length
+    ? Math.ceil(transcript.words[transcript.words.length - 1].end * FPS) + FPS * 3
+    : FPS * 60 // 60s fallback
+
+  const videoWidth = job.width ?? 1920
+  const videoHeight = job.height ?? 1080
+
   return (
-    <div className="px-4 sm:px-6 py-6 sm:py-8 space-y-5 sm:space-y-6 min-h-full">
+    <div className="px-4 sm:px-6 py-6 sm:py-8 space-y-5 min-h-full">
       <Link
         href="/dashboard"
         className="inline-flex items-center gap-1 text-sm text-zinc-400 hover:text-white transition-colors"
@@ -44,37 +69,50 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
         Back
       </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5 items-start">
-        {/* Left: video or status */}
-        <div className="rounded-xl border border-white/10 bg-[#111] overflow-hidden">
-          {videoUrl ? (
-            <video
-              src={videoUrl}
-              controls
-              className="w-full aspect-video object-contain bg-black"
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5 items-start">
+        {/* Left: preview / video / status */}
+        <div>
+          {isReady && videoSrc && transcript ? (
+            <PreviewPlayer
+              jobId={id}
+              videoSrc={videoSrc}
+              transcript={transcript}
+              durationInFrames={durationInFrames}
+              width={videoWidth}
+              height={videoHeight}
             />
+          ) : isDone && outputUrl ? (
+            <div className="rounded-xl border border-white/10 bg-[#111] overflow-hidden">
+              <video
+                src={outputUrl}
+                controls
+                className="w-full aspect-video object-contain bg-black"
+              />
+            </div>
           ) : (
-            <div className="aspect-video bg-zinc-900 flex flex-col items-center justify-center gap-3">
-              {isActive && (
-                <div className="flex gap-1.5">
-                  {[0, 0.15, 0.3].map((d) => (
-                    <span
-                      key={d}
-                      className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-bounce"
-                      style={{ animationDelay: `${d}s` }}
-                    />
-                  ))}
-                </div>
-              )}
-              <p className={`text-sm font-medium ${s.text}`}>{s.label}</p>
-              {job.status === 'failed' && job.errorMessage && (
-                <p className="text-xs text-zinc-500 max-w-xs text-center px-4">{job.errorMessage}</p>
-              )}
+            <div className="rounded-xl border border-white/10 bg-[#111] overflow-hidden">
+              <div className="aspect-video bg-zinc-900 flex flex-col items-center justify-center gap-3">
+                {(isProcessing || isRendering) && (
+                  <div className="flex gap-1.5">
+                    {[0, 0.15, 0.3].map((d) => (
+                      <span
+                        key={d}
+                        className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-bounce"
+                        style={{ animationDelay: `${d}s` }}
+                      />
+                    ))}
+                  </div>
+                )}
+                <p className={`text-sm font-medium ${s.text}`}>{s.label}</p>
+                {isFailed && job.errorMessage && (
+                  <p className="text-xs text-zinc-500 max-w-xs text-center px-4">{job.errorMessage}</p>
+                )}
+              </div>
             </div>
           )}
         </div>
 
-        {/* Right: info */}
+        {/* Right: info panel */}
         <div className="rounded-xl border border-white/10 bg-[#111] p-5 space-y-5">
           <div className="space-y-2">
             <h1 className="text-sm font-semibold text-white truncate">{job.originalFilename}</h1>
@@ -105,13 +143,21 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
             )}
           </div>
 
-          {isActive && <JobProgress jobId={id} initialStatus={job.status} />}
+          {/* Active progress */}
+          {(isProcessing || isRendering) && (
+            <JobProgress jobId={id} initialStatus={job.status} />
+          )}
 
-          {job.status === 'done' && (
-            <DownloadButton
-              jobId={id}
-              filename={`captioned-${job.originalFilename}`}
-            />
+          {/* Transcript ready hint */}
+          {isReady && (
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Preview ready. Pick a caption style and click Export to render the final video.
+            </p>
+          )}
+
+          {/* Download (done state) */}
+          {isDone && (
+            <DownloadButton jobId={id} filename={`captioned-${job.originalFilename}`} />
           )}
         </div>
       </div>

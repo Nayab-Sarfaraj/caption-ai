@@ -4,7 +4,6 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { Upload } from '@aws-sdk/lib-storage'
 import { createReadStream } from 'fs'
-
 import type { Job } from 'bullmq'
 import type { RenderJobPayload } from '../src/types/job.types'
 import type { Transcript } from '../src/types/transcript.types'
@@ -29,20 +28,17 @@ function getS3(): S3Client {
   })
 }
 
-async function getVideoUrl(videoKey: string): Promise<string> {
-  const s3 = getS3()
-  // 30-min presigned URL — Chromium fetches via HTTPS (no file:// restriction)
+async function getPresignedUrl(key: string, expiresIn: number): Promise<string> {
   return getSignedUrl(
-    s3,
-    new GetObjectCommand({ Bucket: process.env.R2_BUCKET_NAME!, Key: videoKey }),
-    { expiresIn: 1800 }
+    getS3(),
+    new GetObjectCommand({ Bucket: process.env.R2_BUCKET_NAME!, Key: key }),
+    { expiresIn }
   )
 }
 
 async function uploadToR2(localPath: string, key: string): Promise<void> {
-  const s3 = getS3()
   const upload = new Upload({
-    client: s3,
+    client: getS3(),
     params: {
       Bucket: process.env.R2_BUCKET_NAME!,
       Key: key,
@@ -55,64 +51,74 @@ async function uploadToR2(localPath: string, key: string): Promise<void> {
   await upload.done()
 }
 
-async function getTranscript(jobId: string, videoKey: string): Promise<Transcript> {
-  const jobDoc = await findJobById(jobId)
-  if (!jobDoc) throw new Error(`Job ${jobId} not found`)
+// ─── Transcribe phase ────────────────────────────────────────────────────────
 
-  // Already have transcript (user uploaded SRT/VTT)
-  if (jobDoc.transcript) {
-    return jobDoc.transcript as Transcript
+async function processTranscribePhase(bullJob: Job<RenderJobPayload>): Promise<void> {
+  const { jobId, videoKey } = bullJob.data
+
+  try {
+    const jobDoc = await findJobById(jobId)
+    if (!jobDoc) throw new Error(`Job ${jobId} not found`)
+
+    if (jobDoc.transcript) {
+      // User uploaded SRT/VTT — skip Deepgram
+      await updateJobStatus(jobId, 'transcript_ready')
+      console.log(`[worker] job ${jobId} transcript already exists → transcript_ready`)
+      return
+    }
+
+    console.log(`[worker] transcribing job ${jobId} via Deepgram`)
+    await updateJobStatus(jobId, 'transcribing')
+
+    const audioUrl = await getPresignedUrl(videoKey, 900)
+    const transcript = await getTranscriptionProvider().transcribe(audioUrl)
+
+    await updateJobTranscript(jobId, transcript)
+    await updateJobStatus(jobId, 'transcript_ready')
+    console.log(`[worker] job ${jobId} → transcript_ready (${transcript.words.length} words)`)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error(`[worker] transcription failed for job ${jobId}:`, message)
+    await updateJobFailed(jobId, message)
+    throw err
   }
-
-  // Need to transcribe via Deepgram
-  console.log(`[worker] transcribing job ${jobId} via Deepgram`)
-  await updateJobStatus(jobId, 'transcribing')
-
-  // Generate short-lived presigned GET URL for Deepgram to fetch
-  const s3 = getS3()
-  const audioUrl = await getSignedUrl(
-    s3,
-    new GetObjectCommand({ Bucket: process.env.R2_BUCKET_NAME!, Key: videoKey }),
-    { expiresIn: 900 } // 15 min
-  )
-
-  const provider = getTranscriptionProvider()
-  const transcript = await provider.transcribe(audioUrl)
-
-  await updateJobTranscript(jobId, transcript)
-  console.log(`[worker] transcription done: ${transcript.words.length} words`)
-
-  return transcript
 }
 
-export async function processRenderJob(bullJob: Job<RenderJobPayload>): Promise<void> {
-  const { jobId, userId, videoKey, compositionId, fps } = bullJob.data
+// ─── Render phase ────────────────────────────────────────────────────────────
+
+async function processRenderPhase(bullJob: Job<RenderJobPayload>): Promise<void> {
+  const { jobId, userId, videoKey, compositionId, fps, activeColor = '#FACC15', textColor = '#FFFFFF' } = bullJob.data
   const tmpDir = `/tmp/${jobId}`
 
   try {
     await mkdir(tmpDir, { recursive: true })
 
-    // 1. Transcribe (if no transcript yet)
-    const transcript = await getTranscript(jobId, videoKey)
+    const jobDoc = await findJobById(jobId)
+    if (!jobDoc) throw new Error(`Job ${jobId} not found`)
+    if (!jobDoc.transcript) throw new Error(`Job ${jobId} has no transcript — cannot render`)
 
-    // 2. Get presigned URL — Chromium fetches over HTTPS (file:// blocked by security policy)
+    const transcript = jobDoc.transcript as Transcript
+    const videoSrc = await getPresignedUrl(videoKey, 1800)
+    const compWidth = jobDoc.width ?? 1920
+    const compHeight = jobDoc.height ?? 1080
+
     await updateJobStatus(jobId, 'rendering')
-    const videoSrc = await getVideoUrl(videoKey)
-    console.log(`[worker] got presigned video URL for job ${jobId}`)
+    console.log(`[worker] rendering job ${jobId} (${compositionId}) ${compWidth}×${compHeight}`)
 
-    // 3. Bundle Remotion (cached after first call)
     const serveUrl = await getBundle()
-
     const { selectComposition, renderMedia } = await import('@remotion/renderer')
+
+    const inputProps = { transcript, videoSrc, activeColor, textColor }
 
     const composition = await selectComposition({
       serveUrl,
       id: compositionId,
-      inputProps: {
-        transcript,
-        videoSrc,
-      },
+      inputProps,
     })
+
+    // Override dimensions to match actual video aspect ratio
+    composition.width = compWidth
+    composition.height = compHeight
 
     const outputPath = path.join(tmpDir, 'output.mp4')
 
@@ -121,10 +127,7 @@ export async function processRenderJob(bullJob: Job<RenderJobPayload>): Promise<
       serveUrl,
       codec: 'h264',
       outputLocation: outputPath,
-      inputProps: {
-        transcript,
-        videoSrc,
-      },
+      inputProps,
       fps,
       onProgress: ({ renderedFrames, totalFrames }) => {
         const pct = totalFrames > 0 ? Math.round((renderedFrames / totalFrames) * 100) : 0
@@ -135,17 +138,25 @@ export async function processRenderJob(bullJob: Job<RenderJobPayload>): Promise<
       },
     })
 
-    // 4. Upload rendered output to R2
     const outputKey = `outputs/${userId}/${jobId}/output.mp4`
     await uploadToR2(outputPath, outputKey)
     await updateJobDone(jobId, outputKey)
     console.log(`[worker] job ${jobId} done → ${outputKey}`)
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    console.error(`[worker] job ${jobId} failed:`, message)
+    console.error(`[worker] render failed for job ${jobId}:`, message)
     await updateJobFailed(jobId, message)
-    throw err // rethrow so BullMQ triggers retry
+    throw err
   } finally {
     await rm(tmpDir, { recursive: true, force: true })
   }
+}
+
+// ─── Entry point ─────────────────────────────────────────────────────────────
+
+export async function processRenderJob(bullJob: Job<RenderJobPayload>): Promise<void> {
+  if (bullJob.data.phase === 'render') {
+    return processRenderPhase(bullJob)
+  }
+  return processTranscribePhase(bullJob)
 }

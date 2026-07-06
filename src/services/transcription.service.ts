@@ -17,13 +17,15 @@ class DeepgramProvider implements TranscriptionProvider {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = (await client.listen.v1.media.transcribeUrl({
       url: audioUrl,
-      model: 'nova-3',
+      model: 'nova-2',
       smart_format: true,
       punctuate: true,
       diarize: false,
     })) as any
 
-    const alternative = response?.results?.channels?.[0]?.alternatives?.[0]
+    // v5 SDK wraps response as { data, rawResponse }
+    const result = response?.data ?? response
+    const alternative = result?.results?.channels?.[0]?.alternatives?.[0]
     if (!alternative?.words?.length) {
       throw new Error('No transcription results — audio may be silent or invalid')
     }
@@ -36,8 +38,8 @@ class DeepgramProvider implements TranscriptionProvider {
     }))
 
     const language: string | undefined =
-      typeof response?.results?.channels?.[0]?.detected_language === 'string'
-        ? response.results.channels[0].detected_language
+      typeof result?.results?.channels?.[0]?.detected_language === 'string'
+        ? result.results.channels[0].detected_language
         : undefined
 
     return { source: 'deepgram', language, segments: buildSegments(words), words }
@@ -51,17 +53,35 @@ class WhisperProvider implements TranscriptionProvider {
 }
 
 function buildSegments(words: TranscriptWord[]): TranscriptSegment[] {
-  const CHUNK = 10
+  const MAX_WORDS = 4
+  const PAUSE_THRESHOLD = 0.35 // seconds — natural speech pause
   const segments: TranscriptSegment[] = []
-  for (let i = 0; i < words.length; i += CHUNK) {
-    const chunk = words.slice(i, i + CHUNK)
-    segments.push({
-      text: chunk.map((w) => w.word).join(' '),
-      start: chunk[0].start,
-      end: chunk[chunk.length - 1].end,
-      words: chunk,
-    })
+  let current: TranscriptWord[] = []
+
+  for (let i = 0; i < words.length; i++) {
+    current.push(words[i])
+    const next = words[i + 1]
+    const pauseAfter = next ? next.start - words[i].end : Infinity
+    const atMax = current.length >= MAX_WORDS
+    const shouldFlush = atMax || pauseAfter >= PAUSE_THRESHOLD || !next
+
+    if (shouldFlush) {
+      // On max-word split (no natural pause) extend end to next segment start — no blank flash
+      const end =
+        atMax && next && pauseAfter < PAUSE_THRESHOLD
+          ? next.start
+          : current[current.length - 1].end
+
+      segments.push({
+        text: current.map((w) => w.word).join(' '),
+        start: current[0].start,
+        end,
+        words: [...current],
+      })
+      current = []
+    }
   }
+
   return segments
 }
 

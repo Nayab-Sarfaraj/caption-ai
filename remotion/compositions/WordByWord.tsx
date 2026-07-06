@@ -5,87 +5,106 @@ import type { Transcript } from '../types'
 export interface WordByWordProps {
   transcript: Transcript
   videoSrc: string
+  activeColor?: string
+  textColor?: string
 }
 
-const WINDOW_BEFORE = 2
-const WINDOW_AFTER = 3
-
-export const WordByWord: React.FC<WordByWordProps> = ({ transcript, videoSrc }) => {
+export const WordByWord: React.FC<WordByWordProps> = ({
+  transcript,
+  videoSrc,
+  activeColor = '#FACC15',
+  textColor = '#FFFFFF',
+}) => {
   const frame = useCurrentFrame()
-  const { fps } = useVideoConfig()
+  const { fps, width, height } = useVideoConfig()
   const currentTime = frame / fps
+  const isPortrait = height > width
+  const fontSize = isPortrait ? Math.round(width / 18) : Math.round(width / 28)
+  const paddingBottom = Math.round(height * 0.08)
+  const paddingH = Math.round(width * 0.05)
+  const maxWidth = Math.round(width * 0.88)
 
-  const currentIndex = transcript.words.findIndex(
-    (w) => currentTime >= w.start && currentTime < w.end
+  const CHUNK_SIZE = 5
+
+  const currentSegment = transcript.segments.find(
+    (s) => currentTime >= s.start && currentTime < s.end
   )
-  const activeIndex = currentIndex === -1
-    ? transcript.words.filter((w) => currentTime >= w.end).length - 1
-    : currentIndex
 
-  const winStart = Math.max(0, activeIndex - WINDOW_BEFORE)
-  const winEnd = Math.min(transcript.words.length, activeIndex + WINDOW_AFTER + 1)
-  const visibleWords = transcript.words.slice(winStart, winEnd)
+  const currentWordIdx = currentSegment
+    ? currentSegment.words.findIndex((w) => currentTime >= w.start && currentTime < w.end)
+    : -1
+  const activeIdx =
+    currentWordIdx >= 0
+      ? currentWordIdx
+      : currentSegment
+      ? currentSegment.words.reduce((acc, w, i) => (currentTime >= w.start ? i : acc), 0)
+      : 0
+  const chunkStart = Math.floor(activeIdx / CHUNK_SIZE) * CHUNK_SIZE
+  const visibleWords = currentSegment
+    ? currentSegment.words.slice(chunkStart, chunkStart + CHUNK_SIZE)
+    : []
 
   return (
     <AbsoluteFill style={{ backgroundColor: 'transparent' }}>
       {videoSrc && (
         <Video
           src={videoSrc}
+          crossOrigin="anonymous"
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
       )}
-      <AbsoluteFill
-        style={{
-          display: 'flex',
-          alignItems: 'flex-end',
-          justifyContent: 'center',
-          paddingBottom: 100,
-          paddingLeft: 80,
-          paddingRight: 80,
-        }}
-      >
-        <div
+      {currentSegment && (
+        <AbsoluteFill
           style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '0.25em',
-            justifyContent: 'center',
-            maxWidth: 1400,
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            paddingBottom,
+            paddingLeft: paddingH,
+            paddingRight: paddingH,
           }}
         >
-          {visibleWords.map((word, i) => {
-            const wordIndex = winStart + i
-            const isCurrent = wordIndex === activeIndex
-            const wordFrameStart = Math.max(0, Math.floor(word.start * fps))
-            const elapsed = Math.max(0, frame - wordFrameStart)
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.45em',
+              justifyContent: 'center',
+              maxWidth,
+            }}
+          >
+            {visibleWords.map((word, i) => {
+              const isCurrent = currentTime >= word.start && currentTime < word.end
+              const wordFrameStart = Math.max(0, Math.floor(word.start * fps))
+              const elapsed = Math.max(0, frame - wordFrameStart)
 
-            const scale = isCurrent
-              ? spring({ frame: elapsed, fps, config: { damping: 14, stiffness: 220, mass: 0.8 } })
-              : 1
+              const scale = isCurrent
+                ? spring({ frame: elapsed, fps, config: { damping: 14, stiffness: 220, mass: 0.8 } })
+                : 1
 
-            return (
-              <span
-                key={`${wordIndex}-${word.word}`}
-                style={{
-                  fontSize: 68,
-                  fontWeight: 900,
-                  fontFamily: 'system-ui, -apple-system, sans-serif',
-                  color: isCurrent ? '#FACC15' : 'rgba(255,255,255,0.9)',
-                  textShadow: isCurrent
-                    ? '0 0 40px rgba(250,204,21,0.5), 0 3px 24px rgba(0,0,0,0.9)'
-                    : '0 3px 24px rgba(0,0,0,0.9)',
-                  display: 'inline-block',
-                  transform: `scale(${0.85 + scale * 0.15})`,
-                  transformOrigin: 'center bottom',
-                  lineHeight: 1.15,
-                }}
-              >
-                {word.word}
-              </span>
-            )
-          })}
-        </div>
-      </AbsoluteFill>
+              return (
+                <span
+                  key={i}
+                  style={{
+                    fontSize,
+                    fontWeight: 900,
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                    color: isCurrent ? activeColor : `${textColor}e6`,
+                    textShadow: isCurrent
+                      ? `0 0 40px ${activeColor}80, 0 3px 24px rgba(0,0,0,0.9)`
+                      : '0 3px 24px rgba(0,0,0,0.9)',
+                    display: 'inline-block',
+                    transform: `scale(${0.85 + scale * 0.15})`,
+                    transformOrigin: 'center bottom',
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {word.word}
+                </span>
+              )
+            })}
+          </div>
+        </AbsoluteFill>
+      )}
     </AbsoluteFill>
   )
 }

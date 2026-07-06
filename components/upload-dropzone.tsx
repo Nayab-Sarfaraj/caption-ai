@@ -79,10 +79,11 @@ export function UploadDropzone() {
       }
 
       setStep('confirming')
+      const dims = await getVideoDimensions(videoFile).catch(() => ({ width: 1920, height: 1080 }))
       const confirmRes = await fetch('/api/jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId, compositionId: style }),
+        body: JSON.stringify({ jobId, compositionId: style, ...dims }),
       })
       if (!confirmRes.ok) throw new Error('Failed to confirm upload')
 
@@ -209,6 +210,16 @@ export function UploadDropzone() {
       </button>
     </div>
   )
+}
+
+function getVideoDimensions(file: File): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video')
+    const url = URL.createObjectURL(file)
+    video.onloadedmetadata = () => { URL.revokeObjectURL(url); resolve({ width: video.videoWidth, height: video.videoHeight }) }
+    video.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Cannot read dimensions')) }
+    video.src = url
+  })
 }
 
 async function uploadToR2(url: string, file: File, onProgress: (n: number) => void): Promise<void> {

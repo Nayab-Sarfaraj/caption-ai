@@ -5,51 +5,73 @@ import type { Transcript, TranscriptSegment } from '../types'
 export interface KaraokeProps {
   transcript: Transcript
   videoSrc: string
+  activeColor?: string
+  textColor?: string
 }
 
-export const Karaoke: React.FC<KaraokeProps> = ({ transcript, videoSrc }) => {
+export const Karaoke: React.FC<KaraokeProps> = ({ transcript, videoSrc, activeColor = '#FACC15', textColor = '#FFFFFF' }) => {
   const frame = useCurrentFrame()
-  const { fps } = useVideoConfig()
+  const { fps, width, height } = useVideoConfig()
   const currentTime = frame / fps
+  const isPortrait = height > width
+  const fontSize = isPortrait ? Math.round(width / 18) : Math.round(width / 30)
+  const paddingBottom = Math.round(height * 0.075)
+  const paddingH = Math.round(width * 0.05)
+  const maxWidth = Math.round(width * 0.88)
+
+  const CHUNK_SIZE = 5
 
   const currentSegment: TranscriptSegment | undefined = transcript.segments.find(
     (s) => currentTime >= s.start && currentTime < s.end
   )
 
+  const currentWordIdx = currentSegment
+    ? currentSegment.words.findIndex((w) => currentTime >= w.start && currentTime < w.end)
+    : -1
+  const activeIdx =
+    currentWordIdx >= 0
+      ? currentWordIdx
+      : currentSegment
+      ? currentSegment.words.reduce((acc, w, i) => (currentTime >= w.start ? i : acc), 0)
+      : 0
+  const chunkStart = Math.floor(activeIdx / CHUNK_SIZE) * CHUNK_SIZE
+  const visibleWords = currentSegment
+    ? currentSegment.words.slice(chunkStart, chunkStart + CHUNK_SIZE)
+    : []
+
   if (!currentSegment) return (
     <AbsoluteFill>
-      {videoSrc && <Video src={videoSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+      {videoSrc && <Video src={videoSrc} crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
     </AbsoluteFill>
   )
 
   return (
     <AbsoluteFill>
       {videoSrc && (
-        <Video src={videoSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <Video src={videoSrc} crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       )}
       <AbsoluteFill
         style={{
-          display: 'flex',
-          alignItems: 'flex-end',
-          justifyContent: 'center',
-          paddingBottom: 80,
-          paddingLeft: 60,
-          paddingRight: 60,
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          paddingBottom,
+          paddingLeft: paddingH,
+          paddingRight: paddingH,
         }}
       >
         <div
           style={{
             backgroundColor: 'rgba(0,0,0,0.65)',
             borderRadius: 16,
-            padding: '20px 40px',
+            padding: `${Math.round(fontSize * 0.3)}px ${Math.round(fontSize * 0.6)}px`,
             display: 'flex',
             flexWrap: 'wrap',
-            gap: '0.3em',
+            gap: '0.45em',
             justifyContent: 'center',
-            maxWidth: 1400,
+            maxWidth,
           }}
         >
-          {currentSegment.words.map((word, i) => {
+          {visibleWords.map((word, i) => {
             const isCurrent =
               currentTime >= word.start && currentTime < word.end
             const isPast = currentTime >= word.end
@@ -58,14 +80,14 @@ export const Karaoke: React.FC<KaraokeProps> = ({ transcript, videoSrc }) => {
               <span
                 key={i}
                 style={{
-                  fontSize: 64,
+                  fontSize,
                   fontWeight: 800,
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   color: isCurrent
-                    ? '#FACC15'
+                    ? activeColor
                     : isPast
-                    ? 'rgba(255,255,255,0.5)'
-                    : 'white',
+                    ? `${textColor}80`
+                    : textColor,
                   textShadow: '0 2px 8px rgba(0,0,0,0.8)',
                   display: 'inline-block',
                   transition: 'color 0.05s',
