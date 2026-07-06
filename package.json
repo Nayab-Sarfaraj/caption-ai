@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "remotion:studio": "remotion studio remotion/Root.tsx",
+    "worker:dev": "ts-node --project worker/tsconfig.json -r tsconfig-paths/register worker/index.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1079.0",
@@ -15,11 +17,14 @@
     "@base-ui/react": "^1.6.0",
     "@clerk/nextjs": "^7.5.13",
     "@deepgram/sdk": "^5.5.0",
+    "@remotion/bundler": "^4.0.485",
     "@remotion/player": "^4.0.485",
     "@remotion/renderer": "^4.0.485",
     "@tanstack/react-query": "^5.101.2",
+    "bullmq": "^5.79.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "ioredis": "^5.11.1",
     "lucide-react": "^1.23.0",
     "mongoose": "^9.7.3",
     "next": "16.2.10",

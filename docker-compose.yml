@@ -1,0 +1,25 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: captions-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: captions
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: captions-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
+  redis-data:
