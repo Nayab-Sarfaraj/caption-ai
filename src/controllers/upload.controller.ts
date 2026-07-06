@@ -5,6 +5,10 @@ import { createUploadJob } from '@/src/services/upload.service'
 import { findJobById, updateJobStatus, updateJobTranscript } from '@/src/repositories/job.repository'
 import { parseCaptionFile } from '@/src/helpers/srt-parser'
 import { connectDB } from '@/src/lib/mongo'
+import { getRenderQueue } from '@/src/lib/queue'
+import type { RenderJobPayload } from '@/src/types/job.types'
+
+const ENQUEUE_TIMEOUT_MS = 10_000
 
 export async function handleCreateUpload(req: NextRequest): Promise<NextResponse> {
   const { userId } = await auth()
@@ -68,10 +72,42 @@ export async function handleConfirmUpload(req: NextRequest): Promise<NextRespons
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
+  await connectDB()
   const job = await findJobById(parsed.data.jobId)
   if (!job || job.userId !== userId) {
     return NextResponse.json({ error: 'Job not found' }, { status: 404 })
   }
 
-  return NextResponse.json({ jobId: job._id.toString(), status: job.status })
+  const jobId = job._id.toString()
+
+  const payload: RenderJobPayload = {
+    jobId,
+    userId,
+    videoKey: job.videoKey,
+    transcriptKey: job.transcriptKey ?? undefined,
+    compositionId: parsed.data.compositionId ?? 'WordByWord',
+    fps: 30,
+    outputFormat: 'mp4',
+  }
+
+  try {
+    await Promise.race([
+      getRenderQueue().add('render', payload, {
+        attempts: 2,
+        backoff: { type: 'exponential', delay: 5000 },
+        removeOnComplete: 100,
+        removeOnFail: 100,
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Redis enqueue timeout')), ENQUEUE_TIMEOUT_MS)
+      ),
+    ])
+    await updateJobStatus(jobId, 'processing')
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Enqueue failed'
+    console.error('Enqueue error:', message)
+    return NextResponse.json({ error: message }, { status: 503 })
+  }
+
+  return NextResponse.json({ jobId, status: 'processing' })
 }

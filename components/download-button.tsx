@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
 
 interface DownloadButtonProps {
   jobId: string
@@ -19,9 +18,8 @@ export function DownloadButton({ jobId, filename = 'captioned-video.mp4' }: Down
       const res = await fetch(`/api/jobs/${jobId}`)
       if (!res.ok) throw new Error('Failed to get download URL')
       const data = (await res.json()) as { downloadUrl?: string }
-      if (!data.downloadUrl) throw new Error('No download URL in response')
+      if (!data.downloadUrl) throw new Error('No download URL')
 
-      // Trigger browser download via temporary anchor
       const a = document.createElement('a')
       a.href = data.downloadUrl
       a.download = filename
@@ -37,10 +35,14 @@ export function DownloadButton({ jobId, filename = 'captioned-video.mp4' }: Down
 
   return (
     <div className="space-y-2">
-      <Button onClick={handleDownload} disabled={loading} className="w-full">
-        {loading ? 'Getting download link…' : 'Download Captioned Video'}
-      </Button>
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      <button
+        onClick={handleDownload}
+        disabled={loading}
+        className="w-full rounded-lg bg-white text-black text-sm font-medium py-2.5 hover:bg-zinc-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {loading ? 'Getting link…' : 'Download Captioned Video'}
+      </button>
+      {error && <p className="text-xs text-red-400">{error}</p>}
     </div>
   )
 }
