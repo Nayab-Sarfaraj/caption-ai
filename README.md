@@ -32,72 +32,69 @@ Upload a `.mp4` or `.mov`, choose a caption style, and get back a rendered video
 
 ```mermaid
 graph TB
-    subgraph Browser["🌐 Browser"]
-        direction TB
+    subgraph Browser["Browser"]
         UI["Upload Dropzone\n+ Style Picker"]
-        Player["@remotion/player\nLive Preview"]
+        Player["remotion/player\nLive Preview"]
         SSE_Client["EventSource\nProgress Stream"]
     end
 
-    subgraph NextJS["⚡ Next.js App  (Vercel / GCP VM)"]
-        direction TB
+    subgraph NextJS["Next.js App"]
         API_Upload["POST /api/upload\nPresigned PUT URL"]
         API_Captions["POST /api/upload/captions\nSRT / VTT Parser"]
         API_Jobs["POST /api/jobs\nConfirm Upload"]
         API_Enqueue["POST /api/jobs/:id/enqueue\nAdd to Queue"]
-        API_Render["POST /api/jobs/:id/render\nTrigger Render Phase"]
+        API_Render["POST /api/jobs/:id/render\nTrigger Render"]
         API_Stream["GET /api/jobs/:id/stream\nSSE Endpoint"]
         API_Job["GET /api/jobs/:id\nStatus + Download URL"]
     end
 
-    subgraph Worker["🖥️ Node Worker  (GCP VM · pm2)"]
-        direction TB
+    subgraph Worker["Node Worker - GCP VM"]
         BullWorker["BullMQ Consumer\nconcurrency = 1"]
         Transcribe["Transcribe Phase\nDeepgram Nova-2"]
         Render["Render Phase\nRemotion + Chromium"]
-        Upload_Out["Upload Output\nto R2 via Multipart"]
+        Upload_Out["Upload Output\nMultipart to R2"]
     end
 
-    subgraph Storage["☁️ Cloudflare R2"]
-        Bucket_In["uploads/\n{userId}/{jobId}/video"]
-        Bucket_Out["outputs/\n{userId}/{jobId}/output.mp4"]
-        Bucket_Tr["transcripts/\n{jobId}/transcript.json"]
+    subgraph Storage["Cloudflare R2"]
+        Bucket_In["uploads/userId/jobId/video"]
+        Bucket_Out["outputs/userId/jobId/output.mp4"]
+        Bucket_Tr["transcripts/jobId/transcript.json"]
     end
 
-    subgraph Data["🗄️ Data Layer"]
+    subgraph Data["Data Layer"]
         Mongo[("MongoDB Atlas\nJob + User docs")]
-        Redis[("Upstash Redis\nBullMQ Queue\n+ Pub/Sub")]
+        Redis[("Upstash Redis\nQueue + Pub/Sub")]
     end
 
-    UI -->|"1 · presign request"| API_Upload
-    API_Upload -->|"2 · presigned PUT URL"| UI
-    UI -->|"3 · PUT bytes direct"| Bucket_In
-    UI -->|"4 · optional SRT/VTT"| API_Captions
-    UI -->|"5 · confirm upload"| API_Jobs
-    API_Jobs -->|enqueue transcribe"| API_Enqueue
-    API_Enqueue -->|"add job"| Redis
-    BullWorker -->|"pick up job"| Redis
+    UI -->|1 presign request| API_Upload
+    API_Upload -->|2 presigned PUT URL| UI
+    UI -->|3 PUT bytes direct| Bucket_In
+    UI -->|4 optional SRT/VTT| API_Captions
+    UI -->|5 confirm upload| API_Jobs
+    API_Jobs -->|6 enqueue job| API_Enqueue
+    API_Enqueue -->|add to queue| Redis
+    BullWorker -->|dequeue| Redis
     BullWorker --> Transcribe
-    Transcribe -->|"presigned GET"| Bucket_In
-    Transcribe -->|"store transcript"| Mongo
-    Transcribe -->|"large transcripts"| Bucket_Tr
-    Transcribe -->|"status → transcript_ready"| Mongo
-    Player -->|"load transcript + video"| Mongo
-    Player -->|"presigned GET"| Bucket_In
-    API_Render -->|"re-enqueue render phase"| Redis
+    Transcribe -->|presigned GET| Bucket_In
+    Transcribe -->|store transcript| Mongo
+    Transcribe -->|large transcripts| Bucket_Tr
+    Transcribe -->|status transcript_ready| Mongo
+    Player -->|load transcript| Mongo
+    Player -->|presigned GET video| Bucket_In
+    API_Render -->|re-enqueue render| Redis
     BullWorker --> Render
-    Render -->|"read transcript"| Mongo
-    Render -->|"presigned GET video"| Bucket_In
-    Render -->|"publish frame progress"| Redis
+    Render -->|read transcript| Mongo
+    Render -->|presigned GET video| Bucket_In
+    Render -->|publish frame progress| Redis
     Render --> Upload_Out
-    Upload_Out -->|"multipart upload"| Bucket_Out
-    Upload_Out -->|"status → done"| Mongo
-    SSE_Client -->|"connect"| API_Stream
-    API_Stream -->|"subscribe pub/sub"| Redis
-    API_Stream -->|"poll terminal status"| Mongo
-    API_Stream -->|"frame events"| SSE_Client
-    UI -->|"download click"| API_Job
-    API_Job -->|"presigned GET"| Bucket_Out
+    Upload_Out -->|multipart upload| Bucket_Out
+    Upload_Out -->|status done| Mongo
+    SSE_Client -->|connect| API_Stream
+    API_Stream -->|subscribe pub/sub| Redis
+    API_Stream -->|poll terminal status| Mongo
+    API_Stream -->|frame events| SSE_Client
+    UI -->|9 download click| API_Job
+    API_Job -->|presigned GET URL| Bucket_Out
 
     style Browser fill:#1a1a2e,stroke:#6366f1,color:#e2e8f0
     style NextJS fill:#0f172a,stroke:#3b82f6,color:#e2e8f0
@@ -113,19 +110,15 @@ graph TB
 ```mermaid
 stateDiagram-v2
     [*] --> pending : Upload confirmed
-
     pending --> processing : Job enqueued to BullMQ
     processing --> transcribing : Worker picks up job
-
-    transcribing --> transcript_ready : Deepgram returns words\nOR SRT/VTT provided
+    transcribing --> transcript_ready : Deepgram returns words or SRT/VTT provided
     transcript_ready --> rendering : User clicks Export
-
     rendering --> done : MP4 uploaded to R2
     done --> [*]
-
-    transcribing --> failed : Deepgram error\nor empty audio
-    rendering --> failed : Remotion / Chromium error
-    failed --> processing : BullMQ auto-retry (×1)
+    transcribing --> failed : Deepgram error or empty audio
+    rendering --> failed : Remotion or Chromium error
+    failed --> processing : BullMQ auto-retry x1
     failed --> [*] : Max retries exceeded
 ```
 
@@ -140,48 +133,49 @@ sequenceDiagram
     participant Browser
     participant Next as Next.js API
     participant R2 as Cloudflare R2
-    participant Queue as BullMQ / Redis
+    participant Queue as BullMQ Redis
     participant Worker
     participant Deepgram
 
-    User->>Browser: Drop video + pick style
-    Browser->>Next: POST /api/upload {filename, size, type}
-    Next-->>Browser: {uploadUrl (presigned PUT), jobId}
-    Browser->>R2: PUT video bytes (direct, never through Next)
-    Browser->>Next: POST /api/upload/captions (optional SRT/VTT)
-    Browser->>Next: POST /api/jobs {jobId} — confirm upload
-    Next->>Queue: queue.add("render", payload, phase:"transcribe")
-    Note over Next: status → processing
-
-    Queue->>Worker: job dequeued
-    Worker->>Deepgram: transcribeUrl(presigned GET, nova-2)
-    Deepgram-->>Worker: word-level timestamps
-    Worker->>Next: updateJobTranscript + status → transcript_ready
-
-    Note over Browser: User loads preview page
-    Browser->>Next: GET /api/jobs/:id (transcript + presigned video URL)
-    Browser->>Browser: @remotion/player renders live preview
-    User->>Browser: Pick caption style → click Export
-
-    Browser->>Next: POST /api/jobs/:id/render {compositionId}
-    Next->>Queue: queue.add("render", payload, phase:"render")
-    Note over Next: status → rendering
-
-    Browser->>Next: GET /api/jobs/:id/stream (SSE)
-    Queue->>Worker: job dequeued
-    Worker->>R2: GET original video
-    Worker->>Worker: bundle() Remotion compositions (cached)
-    Worker->>Worker: renderMedia() — headless Chromium
+    User->>Browser: Drop video and pick caption style
+    Browser->>Next: POST /api/upload filename size type
+    Next-->>Browser: uploadUrl presigned PUT and jobId
+    Note over Browser,R2: Video bytes go direct to R2 - Next.js never proxies the file
+    Browser->>R2: PUT video bytes direct via XHR with progress events
+    Browser->>Next: POST /api/upload/captions optional SRT or VTT
+    Browser->>Next: POST /api/jobs jobId to confirm upload
+    Next->>Queue: queue.add render payload phase transcribe
+    Note over Next: Job status changes to processing
+    Queue->>Worker: Job dequeued concurrency 1
+    Worker->>Deepgram: transcribeUrl presignedGET nova-2 word timestamps
+    Deepgram-->>Worker: Word-level timestamps JSON
+    Worker->>Next: updateJobTranscript status transcript_ready
+    Note over Browser: User opens job detail page
+    Browser->>Next: GET /api/jobs/:id
+    Next-->>Browser: transcript and video presigned URL
+    Browser->>Browser: remotion player renders live preview
+    User->>Browser: Pick caption style and click Export
+    Browser->>Next: POST /api/jobs/:id/render compositionId
+    Next->>Queue: queue.add render payload phase render
+    Note over Next: Job status changes to rendering
+    Browser->>Next: GET /api/jobs/:id/stream SSE connect
+    Queue->>Worker: Render job dequeued
+    Worker->>R2: GET original video via presigned URL
+    Worker->>Worker: getBundle Remotion compositions cached after first run
+    Worker->>Worker: renderMedia headless Chromium frame by frame
     loop Every 30 frames
-        Worker->>Queue: redis.publish(job:id:progress)
-        Queue->>Next: SSE subscriber receives event
-        Next-->>Browser: data: {renderedFrames, totalFrames}
+        Worker->>Queue: redis.publish job progress renderedFrames totalFrames
+        Queue-->>Next: SSE subscriber receives event
+        Next-->>Browser: data type progress renderedFrames totalFrames
+        Browser->>Browser: Update progress bar
     end
     Worker->>R2: Multipart upload output.mp4
-    Worker->>Next: status → done
-    Next-->>Browser: SSE data: {type:"done"}
-    Browser->>Next: GET /api/jobs/:id (fresh presigned GET URL)
-    Browser->>R2: Download captioned video
+    Worker->>Next: status done outputKey saved
+    Note over Worker: rm -rf /tmp/jobId runs in finally block always
+    Next-->>Browser: SSE data type done stream closes
+    Browser->>Next: GET /api/jobs/:id fresh presigned GET URL
+    User->>Browser: Click Download
+    Browser->>R2: GET output.mp4 triggers browser save dialog
 ```
 
 ---
