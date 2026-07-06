@@ -69,98 +69,97 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
         Back
       </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5 items-start">
-        {/* Left: preview / video / status */}
-        <div>
-          {isReady && videoSrc && transcript ? (
-            <PreviewPlayer
-              jobId={id}
-              videoSrc={videoSrc}
-              transcript={transcript}
-              durationInFrames={durationInFrames}
-              width={videoWidth}
-              height={videoHeight}
-            />
-          ) : isDone && outputUrl ? (
-            <div className="rounded-xl border border-white/10 bg-[#111] overflow-hidden">
-              <video
-                src={outputUrl}
-                controls
-                className="w-full aspect-video object-contain bg-black"
-              />
-            </div>
-          ) : (
-            <div className="rounded-xl border border-white/10 bg-[#111] overflow-hidden">
-              <div className="aspect-video bg-zinc-900 flex flex-col items-center justify-center gap-3">
-                {(isProcessing || isRendering) && (
-                  <div className="flex gap-1.5">
-                    {[0, 0.15, 0.3].map((d) => (
-                      <span
-                        key={d}
-                        className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-bounce"
-                        style={{ animationDelay: `${d}s` }}
-                      />
-                    ))}
-                  </div>
-                )}
-                <p className={`text-sm font-medium ${s.text}`}>{s.label}</p>
-                {isFailed && job.errorMessage && (
-                  <p className="text-xs text-zinc-500 max-w-xs text-center px-4">{job.errorMessage}</p>
-                )}
+      {isReady && videoSrc && transcript ? (
+        <PreviewPlayer
+          jobId={id}
+          videoSrc={videoSrc}
+          transcript={transcript}
+          durationInFrames={durationInFrames}
+          width={videoWidth}
+          height={videoHeight}
+          filename={job.originalFilename}
+          statusLabel={s.label}
+          statusDot={s.dot}
+          statusText={s.text}
+          transcriptSource={job.transcriptSource}
+          createdAt={job.createdAt ? new Date(job.createdAt).toLocaleString() : undefined}
+        />
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5 items-start">
+          {/* Left: video or status placeholder */}
+          <div>
+            {isDone && outputUrl ? (
+              <div className="rounded-xl border border-white/10 bg-[#111] overflow-hidden">
+                <video
+                  src={outputUrl}
+                  controls
+                  className="w-full aspect-video object-contain bg-black"
+                />
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right: info panel */}
-        <div className="rounded-xl border border-white/10 bg-[#111] p-5 space-y-5">
-          <div className="space-y-2">
-            <h1 className="text-sm font-semibold text-white truncate">{job.originalFilename}</h1>
-            <div className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} />
-              <span className={`text-sm ${s.text}`}>{s.label}</span>
-            </div>
-          </div>
-
-          <div className="border-t border-white/10" />
-
-          <div className="space-y-3 text-sm">
-            {job.transcriptSource && (
-              <div className="flex items-center justify-between">
-                <span className="text-zinc-500">Transcript</span>
-                <span className="text-zinc-300 text-xs">
-                  {job.transcriptSource === 'user' ? 'Uploaded SRT/VTT' : 'AI · Deepgram'}
-                </span>
-              </div>
-            )}
-            {job.createdAt && (
-              <div className="flex items-center justify-between">
-                <span className="text-zinc-500">Created</span>
-                <span className="text-zinc-300 text-xs">
-                  {new Date(job.createdAt).toLocaleString()}
-                </span>
+            ) : (
+              <div className="rounded-xl border border-white/10 bg-[#111] overflow-hidden">
+                <div className="aspect-video bg-zinc-900 flex flex-col items-center justify-center gap-3">
+                  {(isProcessing || isRendering) && (
+                    <div className="flex gap-1.5">
+                      {[0, 0.15, 0.3].map((d) => (
+                        <span
+                          key={d}
+                          className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-bounce"
+                          style={{ animationDelay: `${d}s` }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  <p className={`text-sm font-medium ${s.text}`}>{s.label}</p>
+                  {isFailed && job.errorMessage && (
+                    <p className="text-xs text-zinc-500 max-w-xs text-center px-4">{job.errorMessage}</p>
+                  )}
+                </div>
               </div>
             )}
           </div>
 
-          {/* Active progress */}
-          {(isProcessing || isRendering) && (
-            <JobProgress jobId={id} initialStatus={job.status} />
-          )}
+          {/* Right: info panel */}
+          <div className="rounded-xl border border-white/10 bg-[#111] p-5 space-y-5">
+            <div className="space-y-2">
+              <h1 className="text-sm font-semibold text-white truncate">{job.originalFilename}</h1>
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} />
+                <span className={`text-sm ${s.text}`}>{s.label}</span>
+              </div>
+            </div>
 
-          {/* Transcript ready hint */}
-          {isReady && (
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Preview ready. Pick a caption style and click Export to render the final video.
-            </p>
-          )}
+            <div className="border-t border-white/10" />
 
-          {/* Download (done state) */}
-          {isDone && (
-            <DownloadButton jobId={id} filename={`captioned-${job.originalFilename}`} />
-          )}
+            <div className="space-y-3 text-sm">
+              {job.transcriptSource && (
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-500">Transcript</span>
+                  <span className="text-zinc-300 text-xs">
+                    {job.transcriptSource === 'user' ? 'Uploaded SRT/VTT' : 'AI · Deepgram'}
+                  </span>
+                </div>
+              )}
+              {job.createdAt && (
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-500">Created</span>
+                  <span className="text-zinc-300 text-xs">
+                    {new Date(job.createdAt).toLocaleString()}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {(isProcessing || isRendering) && (
+              <JobProgress jobId={id} initialStatus={job.status} />
+            )}
+
+            {isDone && (
+              <DownloadButton jobId={id} filename={`captioned-${job.originalFilename}`} />
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

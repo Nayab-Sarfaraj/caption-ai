@@ -7,14 +7,23 @@ export interface KaraokeProps {
   videoSrc: string
   activeColor?: string
   textColor?: string
+  fontFamily?: string
+  fontSizeMultiplier?: number
 }
 
-export const Karaoke: React.FC<KaraokeProps> = ({ transcript, videoSrc, activeColor = '#FACC15', textColor = '#FFFFFF' }) => {
+export const Karaoke: React.FC<KaraokeProps> = ({
+  transcript,
+  videoSrc,
+  activeColor = '#FACC15',
+  textColor = '#FFFFFF',
+  fontFamily = 'system-ui, -apple-system, sans-serif',
+  fontSizeMultiplier = 1,
+}) => {
   const frame = useCurrentFrame()
   const { fps, width, height } = useVideoConfig()
   const currentTime = frame / fps
   const isPortrait = height > width
-  const fontSize = isPortrait ? Math.round(width / 18) : Math.round(width / 30)
+  const fontSize = Math.round((isPortrait ? width / 18 : width / 30) * fontSizeMultiplier)
   const paddingBottom = Math.round(height * 0.075)
   const paddingH = Math.round(width * 0.05)
   const maxWidth = Math.round(width * 0.88)
@@ -82,7 +91,7 @@ export const Karaoke: React.FC<KaraokeProps> = ({ transcript, videoSrc, activeCo
                 style={{
                   fontSize,
                   fontWeight: 800,
-                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  fontFamily,
                   color: isCurrent
                     ? activeColor
                     : isPast

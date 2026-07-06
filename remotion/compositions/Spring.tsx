@@ -7,6 +7,8 @@ export interface SpringProps {
   videoSrc: string
   activeColor?: string
   textColor?: string
+  fontFamily?: string
+  fontSizeMultiplier?: number
 }
 
 export const Spring: React.FC<SpringProps> = ({
@@ -14,12 +16,14 @@ export const Spring: React.FC<SpringProps> = ({
   videoSrc,
   activeColor = '#FACC15',
   textColor = '#FFFFFF',
+  fontFamily = 'system-ui, -apple-system, sans-serif',
+  fontSizeMultiplier = 1,
 }) => {
   const frame = useCurrentFrame()
   const { fps, width, height } = useVideoConfig()
   const currentTime = frame / fps
   const isPortrait = height > width
-  const fontSize = isPortrait ? Math.round(width / 18) : Math.round(width / 28)
+  const fontSize = Math.round((isPortrait ? width / 18 : width / 28) * fontSizeMultiplier)
   const paddingBottom = Math.round(height * 0.08)
   const paddingH = Math.round(width * 0.05)
   const maxWidth = Math.round(width * 0.88)
@@ -97,7 +101,7 @@ export const Spring: React.FC<SpringProps> = ({
                   style={{
                     fontSize,
                     fontWeight: 900,
-                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                    fontFamily,
                     color: isCurrent ? activeColor : textColor,
                     textShadow: '0 3px 24px rgba(0,0,0,0.9)',
                     display: 'inline-block',

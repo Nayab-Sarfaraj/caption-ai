@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Captions — Architecture</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0a; --surface: #111; --surface2: #1a1a1a;
+      --border: rgba(255,255,255,0.08); --border-hover: rgba(255,255,255,0.18);
+      --text: #e2e8f0; --muted: #71717a;
+    }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; font-size: 14px; }
+    .shell { display: flex; height: 100vh; overflow: hidden; }
+
+    /* sidebar */
+    .sidebar { width: 220px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; }
+    .sidebar-logo { height: 52px; display: flex; align-items: center; padding: 0 18px; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 13px; gap: 6px; }
+    .sidebar-logo span { color: var(--muted); font-weight: 400; }
+    nav { padding: 10px 8px; flex: 1; }
+    .nav-section { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 12px 10px 6px; }
+    .nav-item { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--muted); transition: background .15s, color .15s; border: none; background: none; width: 100%; text-align: left; }
+    .nav-item:hover { background: rgba(255,255,255,.05); color: var(--text); }
+    .nav-item.active { background: rgba(255,255,255,.08); color: var(--text); }
+    .nav-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .hint-block { padding: 6px 10px; font-size: 11px; color: var(--muted); line-height: 1.8; }
+
+    /* main */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .topbar { height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 1px solid var(--border); flex-shrink: 0; gap: 12px; }
+    .topbar-title { font-size: 13px; font-weight: 500; }
+    .topbar-hint { font-size: 11px; color: var(--muted); }
+    .zoom-controls { display: flex; align-items: center; gap: 6px; }
+    .zoom-btn { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: border-color .15s, background .15s; }
+    .zoom-btn:hover { border-color: var(--border-hover); background: rgba(255,255,255,.07); }
+    .zoom-btn.wide { width: auto; padding: 0 10px; font-size: 11px; }
+    .zoom-level { font-size: 11px; color: var(--muted); min-width: 36px; text-align: center; font-variant-numeric: tabular-nums; }
+
+    /* diagram area */
+    .diagram-pane { flex: 1; overflow: hidden; position: relative; background: var(--bg); }
+    .diagram-viewport { width: 100%; height: 100%; overflow: hidden; cursor: grab; user-select: none; }
+    .diagram-viewport:active { cursor: grabbing; }
+    .diagram-canvas { display: inline-block; transform-origin: top left; padding: 40px; min-width: 100%; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .mermaid { background: transparent !important; }
+
+    /* legend */
+    .legend { position: absolute; bottom: 16px; right: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; font-size: 11px; color: var(--muted); display: flex; flex-direction: column; gap: 6px; }
+    .legend-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text); margin-bottom: 2px; }
+    .legend-row { display: flex; align-items: center; gap: 8px; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* toast */
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(60px); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 16px; font-size: 12px; color: var(--muted); opacity: 0; transition: transform .25s ease, opacity .25s ease; pointer-events: none; white-space: nowrap; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 3px; }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">Captions <span>/ docs</span></div>
+    <nav>
+      <div class="nav-section">Diagrams</div>
+      <button class="nav-item active" onclick="switchPanel('arch',this)">
+        <span class="nav-dot" style="background:#6366f1"></span>System Architecture
+      </button>
+      <button class="nav-item" onclick="switchPanel('flow',this)">
+        <span class="nav-dot" style="background:#22c55e"></span>Job Status Flow
+      </button>
+      <button class="nav-item" onclick="switchPanel('seq',this)">
+        <span class="nav-dot" style="background:#f97316"></span>Sequence Diagram
+      </button>
+      <div class="nav-section" style="margin-top:8px">Controls</div>
+      <div class="hint-block">
+        <div>🖱 Drag to pan</div>
+        <div>🖱 Scroll to zoom</div>
+        <div>⌨ + / − keys</div>
+        <div>⌨ 0 to reset</div>
+        <div>Double-click to reset</div>
+      </div>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="topbar-title" id="panel-title">System Architecture</span>
+        <span class="topbar-hint">Drag to pan · Scroll to zoom · Double-click to reset</span>
+      </div>
+      <div class="zoom-controls">
+        <button class="zoom-btn" onclick="zoomOut()">−</button>
+        <span class="zoom-level" id="zoom-label">85%</span>
+        <button class="zoom-btn" onclick="zoomIn()">+</button>
+        <button class="zoom-btn wide" onclick="resetView()">Reset</button>
+      </div>
+    </div>
+
+    <div class="diagram-pane">
+      <div class="diagram-viewport" id="viewport">
+        <div class="diagram-canvas" id="canvas">
+
+          <!-- ── Panel 1: System Architecture ── -->
+          <div class="panel active" id="panel-arch">
+            <div class="mermaid">
+%%{init:{"theme":"dark","themeVariables":{"darkMode":true,"background":"#0a0a0a","primaryColor":"#1e1b4b","primaryTextColor":"#e2e8f0","primaryBorderColor":"#6366f1","lineColor":"#555","edgeLabelBackground":"#1a1a1a","clusterBkg":"#111","clusterBorder":"#374151","fontFamily":"system-ui,sans-serif"}}}%%
+graph TB
+    subgraph Browser["🌐 Browser"]
+        UI["📁 Upload Dropzone\n+ Style Picker"]
+        Player["▶ remotion/player\nLive Preview"]
+        SSE_C["📡 EventSource\nProgress Stream"]
+    end
+    subgraph Next["⚡ Next.js App"]
+        A_UP["POST /api/upload\nPresigned PUT URL"]
+        A_CAP["POST /api/upload/captions\nSRT / VTT Parser"]
+        A_JOBS["POST /api/jobs\nConfirm Upload"]
+        A_ENQ["POST /api/jobs/:id/enqueue\nAdd to Queue"]
+        A_REN["POST /api/jobs/:id/render\nTrigger Render"]
+        A_SSE["GET /api/jobs/:id/stream\nSSE Endpoint"]
+        A_GET["GET /api/jobs/:id\nStatus + Download URL"]
+    end
+    subgraph Worker["🖥️ Node Worker — GCP VM"]
+        WQ["BullMQ Consumer\nconcurrency = 1"]
+        WT["Transcribe Phase\nDeepgram Nova-2"]
+        WR["Render Phase\nRemotion + Chromium"]
+        WU["Upload Output\nMultipart to R2"]
+    end
+    subgraph R2["☁️ Cloudflare R2"]
+        R2_IN["uploads/userId/jobId/video"]
+        R2_OUT["outputs/userId/jobId/output.mp4"]
+        R2_TR["transcripts/jobId/transcript.json"]
+    end
+    subgraph DB["🗄️ Data Layer"]
+        MDB[("MongoDB Atlas\nJob + User docs")]
+        RDB[("Upstash Redis\nQueue + Pub/Sub")]
+    end
+
+    UI -->|1 presign request| A_UP
+    A_UP -->|2 presigned PUT URL| UI
+    UI -->|3 PUT bytes direct| R2_IN
+    UI -->|4 optional SRT/VTT| A_CAP
+    UI -->|5 confirm upload| A_JOBS
+    A_JOBS -->|6 enqueue job| A_ENQ
+    A_ENQ -->|add to queue| RDB
+    WQ -->|dequeue| RDB
+    WQ --> WT
+    WT -->|presigned GET| R2_IN
+    WT -->|store transcript| MDB
+    WT -->|large transcripts| R2_TR
+    WT -->|status transcript_ready| MDB
+    Player -->|load transcript| MDB
+    Player -->|presigned GET video| R2_IN
+    A_REN -->|re-enqueue render phase| RDB
+    WQ --> WR
+    WR -->|read transcript| MDB
+    WR -->|presigned GET video| R2_IN
+    WR -->|publish frame progress| RDB
+    WR --> WU
+    WU -->|multipart upload| R2_OUT
+    WU -->|status done| MDB
+    SSE_C -->|connect| A_SSE
+    A_SSE -->|subscribe pub/sub| RDB
+    A_SSE -->|poll terminal status| MDB
+    A_SSE -->|frame events| SSE_C
+    UI -->|9 download click| A_GET
+    A_GET -->|presigned GET URL| R2_OUT
+
+    style Browser fill:#1e1b4b,stroke:#6366f1,color:#e2e8f0
+    style Next    fill:#0f172a,stroke:#3b82f6,color:#e2e8f0
+    style Worker  fill:#1c0f00,stroke:#f97316,color:#e2e8f0
+    style R2      fill:#0c1826,stroke:#f38020,color:#e2e8f0
+    style DB      fill:#0a1a0a,stroke:#22c55e,color:#e2e8f0
+            </div>
+          </div>
+
+
+          <!-- ── Panel 2: Job Status Flow ── -->
+          <div class="panel" id="panel-flow">
+            <div class="mermaid">
+%%{init:{"theme":"dark","themeVariables":{"darkMode":true,"background":"#0a0a0a","primaryColor":"#1e1b4b","primaryTextColor":"#e2e8f0","primaryBorderColor":"#6366f1","lineColor":"#555","edgeLabelBackground":"#1a1a1a","fontFamily":"system-ui,sans-serif"}}}%%
+stateDiagram-v2
+    direction LR
+    [*] --> pending : Upload confirmed
+    pending --> processing : Enqueued to BullMQ
+    processing --> transcribing : Worker picks up job
+    transcribing --> transcript_ready : Deepgram returns words
+    transcript_ready --> rendering : User clicks Export
+    rendering --> done : MP4 uploaded to R2
+    done --> [*]
+    transcribing --> failed : Deepgram error or silent audio
+    rendering --> failed : Remotion or Chromium error
+    failed --> processing : BullMQ auto-retry x1
+    failed --> [*] : Max retries exceeded
+            </div>
+          </div>
+
+          <!-- ── Panel 3: Sequence Diagram ── -->
+          <div class="panel" id="panel-seq">
+            <div class="mermaid">
+%%{init:{"theme":"dark","themeVariables":{"darkMode":true,"background":"#0a0a0a","primaryColor":"#1e1b4b","primaryTextColor":"#e2e8f0","primaryBorderColor":"#6366f1","lineColor":"#555","edgeLabelBackground":"#1a1a1a","activationBorderColor":"#6366f1","activationBkgColor":"#1e1b4b","sequenceNumberColor":"#a5b4fc","fontFamily":"system-ui,sans-serif"}}}%%
+sequenceDiagram
+    autonumber
+    actor User
+    participant B as Browser
+    participant N as Next.js API
+    participant R2 as Cloudflare R2
+    participant Q as BullMQ Redis
+    participant W as Worker GCP VM
+    participant DG as Deepgram
+
+    User->>B: Drop video and pick caption style
+    B->>N: POST /api/upload filename size type
+    N-->>B: uploadUrl presigned PUT and jobId
+    Note over B,R2: Video bytes go direct to R2. Next.js never proxies the file.
+    B->>R2: PUT video bytes via XHR with progress events
+    opt User has srt or vtt file
+        B->>N: POST /api/upload/captions jobId and content
+        N-->>B: 200 OK transcript stored Deepgram skipped
+    end
+    B->>N: POST /api/jobs jobId confirm upload
+    N->>Q: queue.add render payload phase transcribe
+    Note over N: Job status changes to processing
+    Q->>W: Job dequeued concurrency 1
+    W->>DG: transcribeUrl presignedGET nova-2 word timestamps
+    DG-->>W: Word-level timestamps JSON
+    W->>N: updateJobTranscript status transcript_ready
+    Note over B: User opens job detail page
+    B->>N: GET /api/jobs/:id
+    N-->>B: transcript and video presigned URL
+    B->>B: remotion player renders live preview
+    User->>B: Pick style and click Export
+    B->>N: POST /api/jobs/:id/render compositionId
+    N->>Q: queue.add render payload phase render
+    Note over N: Job status changes to rendering
+    B->>N: GET /api/jobs/:id/stream SSE connect
+    Q->>W: Render job dequeued
+    W->>R2: GET original video presigned URL
+    W->>W: getBundle Remotion compositions cached after first run
+    W->>W: renderMedia headless Chromium frame by frame
+    loop Every 30 frames
+        W->>Q: redis.publish job progress renderedFrames totalFrames
+        Q-->>N: SSE subscriber receives event
+        N-->>B: data type progress renderedFrames totalFrames
+        B->>B: Update progress bar
+    end
+    W->>R2: Multipart upload output.mp4
+    W->>N: status done outputKey saved
+    Note over W: rm -rf /tmp/jobId runs in finally block always
+    N-->>B: data type done SSE closes
+    B->>B: router.refresh reloads job page
+    B->>N: GET /api/jobs/:id fresh presigned GET URL
+    User->>B: Click Download
+    B->>R2: GET output.mp4 browser save dialog
+            </div>
+          </div>
+
+        </div><!-- canvas -->
+      </div><!-- viewport -->
+
+      <div class="legend" id="legend">
+        <div class="legend-title">Services</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#6366f1"></div>Browser / UI</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#3b82f6"></div>Next.js App</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#f97316"></div>Worker — GCP VM</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#f38020"></div>Cloudflare R2</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#22c55e"></div>Data Layer</div>
+      </div>
+    </div><!-- diagram-pane -->
+  </div><!-- main -->
+</div><!-- shell -->
+
+<div class="toast" id="toast"></div>
+
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    securityLevel: 'loose',
+    flowchart: { useMaxWidth: false, htmlLabels: false, curve: 'basis' },
+    sequence:  { useMaxWidth: false, showSequenceNumbers: true },
+    state:     { useMaxWidth: false },
+  });
+
+  // ── Pan + zoom ────────────────────────────────────────────────────────────
+  const viewport  = document.getElementById('viewport');
+  const canvas    = document.getElementById('canvas');
+  const zoomLabel = document.getElementById('zoom-label');
+
+  let scale = 0.85, ox = 20, oy = 20;
+  let dragging = false, startX = 0, startY = 0, originX = 0, originY = 0;
+  const MIN = 0.1, MAX = 5, STEP = 0.12;
+
+  function apply() {
+    canvas.style.transform = `translate(${ox}px,${oy}px) scale(${scale})`;
+    zoomLabel.textContent = Math.round(scale * 100) + '%';
+  }
+
+  function clamp(s) { return Math.min(MAX, Math.max(MIN, s)); }
+
+  function zoomAt(px, py, delta) {
+    const next = clamp(scale * (1 + delta));
+    const r = next / scale;
+    ox = px - r * (px - ox);
+    oy = py - r * (py - oy);
+    scale = next;
+    apply();
+  }
+
+  function zoomIn()  { const r = viewport.getBoundingClientRect(); zoomAt(r.width/2,  r.height/2,  STEP); }
+  function zoomOut() { const r = viewport.getBoundingClientRect(); zoomAt(r.width/2,  r.height/2, -STEP); }
+
+  function resetView() {
+    scale = 0.85; ox = 20; oy = 20;
+    apply();
+    toast('View reset');
+  }
+
+  // scroll zoom
+  viewport.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect = viewport.getBoundingClientRect();
+    zoomAt(e.clientX - rect.left, e.clientY - rect.top, e.deltaY < 0 ? STEP : -STEP);
+  }, { passive: false });
+
+  // mouse drag
+  viewport.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    dragging = true; startX = e.clientX; startY = e.clientY; originX = ox; originY = oy;
+    viewport.style.cursor = 'grabbing';
+  });
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    ox = originX + e.clientX - startX;
+    oy = originY + e.clientY - startY;
+    apply();
+  });
+  window.addEventListener('mouseup', () => { dragging = false; viewport.style.cursor = 'grab'; });
+
+  // touch pan + pinch
+  let lastT = null;
+  viewport.addEventListener('touchstart', e => { lastT = e.touches; }, { passive: true });
+  viewport.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (e.touches.length === 1 && lastT?.length === 1) {
+      ox += e.touches[0].clientX - lastT[0].clientX;
+      oy += e.touches[0].clientY - lastT[0].clientY;
+      apply();
+    } else if (e.touches.length === 2 && lastT?.length === 2) {
+      const prev = Math.hypot(lastT[0].clientX - lastT[1].clientX, lastT[0].clientY - lastT[1].clientY);
+      const curr = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      const rect = viewport.getBoundingClientRect();
+      const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+      const my = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+      zoomAt(mx, my, curr / prev - 1);
+    }
+    lastT = e.touches;
+  }, { passive: false });
+
+  viewport.addEventListener('dblclick', resetView);
+
+  window.addEventListener('keydown', e => {
+    if (['=','+'].includes(e.key)) { e.preventDefault(); zoomIn(); }
+    if (['-','_'].includes(e.key)) { e.preventDefault(); zoomOut(); }
+    if (e.key === '0') { e.preventDefault(); resetView(); }
+  });
+
+  // ── Panel switching ───────────────────────────────────────────────────────
+  const titles = { arch: 'System Architecture', flow: 'Job Status Flow', seq: 'Sequence Diagram' };
+
+  function switchPanel(id, btn) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + id).classList.add('active');
+    btn.classList.add('active');
+    document.getElementById('panel-title').textContent = titles[id];
+    document.getElementById('legend').style.display = id === 'arch' ? 'flex' : 'none';
+    resetView();
+    toast('Switched to ' + titles[id]);
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────────────────
+  let toastTimer;
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg; el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+  }
+
+  // ── Boot ──────────────────────────────────────────────────────────────────
+  window.addEventListener('load', () => setTimeout(resetView, 300));
+</script>
+</body>
+</html>

@@ -13,14 +13,14 @@ export interface CaptionRootProps {
   videoSrc: string
   activeColor?: string
   textColor?: string
+  fontFamily?: string
+  fontSizeMultiplier?: number
 }
 
-// Single wrapper composition — swap `style` via inputProps without remounting.
-// The Player component reference stays stable; only inputProps change.
-export const CaptionRoot: React.FC<CaptionRootProps> = ({ style, transcript, videoSrc, activeColor, textColor }) => {
-  const colors = { activeColor, textColor }
-  if (style === 'Karaoke') return <Karaoke transcript={transcript} videoSrc={videoSrc} {...colors} />
-  if (style === 'Fade')    return <Fade    transcript={transcript} videoSrc={videoSrc} {...colors} />
-  if (style === 'Spring')  return <Spring  transcript={transcript} videoSrc={videoSrc} {...colors} />
-  return <WordByWord transcript={transcript} videoSrc={videoSrc} {...colors} />
+export const CaptionRoot: React.FC<CaptionRootProps> = ({ style, transcript, videoSrc, activeColor, textColor, fontFamily, fontSizeMultiplier }) => {
+  const shared = { activeColor, textColor, fontFamily, fontSizeMultiplier }
+  if (style === 'Karaoke') return <Karaoke transcript={transcript} videoSrc={videoSrc} {...shared} />
+  if (style === 'Fade')    return <Fade    transcript={transcript} videoSrc={videoSrc} {...shared} />
+  if (style === 'Spring')  return <Spring  transcript={transcript} videoSrc={videoSrc} {...shared} />
+  return <WordByWord transcript={transcript} videoSrc={videoSrc} {...shared} />
 }

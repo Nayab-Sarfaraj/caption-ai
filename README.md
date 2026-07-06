@@ -28,6 +28,8 @@ Upload a `.mp4` or `.mov`, choose a caption style, and get back a rendered video
 
 ## Architecture
 
+> **Interactive diagrams** — open [`docs/architecture.html`](docs/architecture.html) in a browser for a zoomable, pannable version with all three diagrams (Architecture · Job Status Flow · Sequence Diagram).
+
 ```mermaid
 graph TB
     subgraph Browser["🌐 Browser"]

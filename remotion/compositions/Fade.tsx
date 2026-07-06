@@ -7,14 +7,22 @@ export interface FadeProps {
   videoSrc: string
   activeColor?: string
   textColor?: string
+  fontFamily?: string
+  fontSizeMultiplier?: number
 }
 
-export const Fade: React.FC<FadeProps> = ({ transcript, videoSrc, textColor = '#FFFFFF' }) => {
+export const Fade: React.FC<FadeProps> = ({
+  transcript,
+  videoSrc,
+  textColor = '#FFFFFF',
+  fontFamily = 'system-ui, -apple-system, sans-serif',
+  fontSizeMultiplier = 1,
+}) => {
   const frame = useCurrentFrame()
   const { fps, width, height } = useVideoConfig()
   const currentTime = frame / fps
   const isPortrait = height > width
-  const fontSize = isPortrait ? Math.round(width / 18) : Math.round(width / 30)
+  const fontSize = Math.round((isPortrait ? width / 18 : width / 30) * fontSizeMultiplier)
   const paddingBottom = Math.round(height * 0.08)
   const paddingH = Math.round(width * 0.05)
   const maxWidth = Math.round(width * 0.85)
@@ -71,7 +79,7 @@ export const Fade: React.FC<FadeProps> = ({ transcript, videoSrc, textColor = '#
             style={{
               fontSize,
               fontWeight: 700,
-              fontFamily: 'system-ui, -apple-system, sans-serif',
+              fontFamily,
               color: textColor,
               textShadow: '0 3px 20px rgba(0,0,0,0.9)',
               textAlign: 'center',
