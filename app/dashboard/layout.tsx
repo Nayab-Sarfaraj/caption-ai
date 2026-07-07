@@ -12,7 +12,7 @@ export default async function DashboardLayout({
   if (!userId) redirect('/sign-in')
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#0a0a0a]">
+    <div className="flex h-screen overflow-hidden bg-[#faf9f6] font-[family-name:var(--font-cc)]">
       {/* Desktop sidebar */}
       <div className="hidden lg:flex">
         <Sidebar />

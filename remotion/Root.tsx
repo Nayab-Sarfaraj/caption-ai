@@ -7,6 +7,10 @@ import { Spring } from './compositions/Spring'
 import { Hype } from './compositions/Hype'
 import { Hormozi } from './compositions/Hormozi'
 import { Minimal } from './compositions/Minimal'
+import { BoxHighlight } from './compositions/BoxHighlight'
+import { Comic } from './compositions/Comic'
+import { Pill } from './compositions/Pill'
+import { Script } from './compositions/Script'
 import { CaptionRoot } from './compositions/CaptionRoot'
 import { SAMPLE_TRANSCRIPT, SAMPLE_DURATION_FRAMES } from './sample-transcript'
 
@@ -67,7 +71,7 @@ const RemotionRoot: React.FC = () => {
         width={WIDTH}
         height={HEIGHT}
         durationInFrames={SAMPLE_DURATION_FRAMES}
-        defaultProps={defaultProps}
+        defaultProps={{ ...defaultProps, activeColor: '#22C55E' }}
       />
       <Composition
         id="Hormozi"
@@ -76,7 +80,7 @@ const RemotionRoot: React.FC = () => {
         width={WIDTH}
         height={HEIGHT}
         durationInFrames={SAMPLE_DURATION_FRAMES}
-        defaultProps={defaultProps}
+        defaultProps={{ ...defaultProps, activeColor: '#F7C204' }}
       />
       <Composition
         id="Minimal"
@@ -86,6 +90,42 @@ const RemotionRoot: React.FC = () => {
         height={HEIGHT}
         durationInFrames={SAMPLE_DURATION_FRAMES}
         defaultProps={defaultProps}
+      />
+      <Composition
+        id="BoxHighlight"
+        component={BoxHighlight}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+        durationInFrames={SAMPLE_DURATION_FRAMES}
+        defaultProps={{ ...defaultProps, activeColor: '#7C3AED', accentColor: '#A3E635' }}
+      />
+      <Composition
+        id="Comic"
+        component={Comic}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+        durationInFrames={SAMPLE_DURATION_FRAMES}
+        defaultProps={{ ...defaultProps, activeColor: '#38BDF8' }}
+      />
+      <Composition
+        id="Pill"
+        component={Pill}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+        durationInFrames={SAMPLE_DURATION_FRAMES}
+        defaultProps={{ ...defaultProps, activeColor: '#1F2937' }}
+      />
+      <Composition
+        id="Script"
+        component={Script}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+        durationInFrames={SAMPLE_DURATION_FRAMES}
+        defaultProps={{ ...defaultProps, activeColor: '#FBBF24' }}
       />
       <Composition
         id="CaptionRoot"

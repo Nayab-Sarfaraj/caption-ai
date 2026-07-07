@@ -9,7 +9,7 @@ import type { RenderJobPayload } from '@/src/types/job.types'
 import { z } from 'zod'
 
 const bodySchema = z.object({
-  compositionId: z.enum(['WordByWord', 'Karaoke', 'Fade', 'Spring', 'Hype', 'Hormozi', 'Minimal']).default('WordByWord'),
+  compositionId: z.enum(['WordByWord', 'Karaoke', 'Fade', 'Spring', 'Hype', 'Hormozi', 'Minimal', 'BoxHighlight', 'Comic', 'Pill', 'Script']).default('WordByWord'),
 })
 
 const ENQUEUE_TIMEOUT_MS = 10_000

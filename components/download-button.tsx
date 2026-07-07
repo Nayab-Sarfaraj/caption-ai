@@ -34,15 +34,15 @@ export function DownloadButton({ jobId, filename = 'captioned-video.mp4' }: Down
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 font-[family-name:var(--font-cc)]">
       <button
         onClick={handleDownload}
         disabled={loading}
-        className="w-full rounded-lg bg-white text-black text-sm font-medium py-2.5 hover:bg-zinc-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-[#c1361f] text-white text-sm font-bold py-2.5 hover:brightness-[1.08] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? 'Getting link…' : 'Download Captioned Video'}
       </button>
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p className="text-xs text-[#c1361f]">{error}</p>}
     </div>
   )
 }

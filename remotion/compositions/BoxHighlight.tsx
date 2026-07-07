@@ -1,40 +1,42 @@
 import React from 'react'
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, Video, spring, interpolate } from 'remotion'
-import { loadFont } from '@remotion/google-fonts/Bangers'
+import { AbsoluteFill, useCurrentFrame, useVideoConfig, Video, spring } from 'remotion'
+import { loadFont } from '@remotion/google-fonts/Montserrat'
 import type { Transcript } from '../types'
 
-const { fontFamily: BANGERS } = loadFont()
+const { fontFamily: MONTSERRAT } = loadFont('normal', { weights: ['900'], subsets: ['latin'] })
 
-export interface HypeProps {
+export interface BoxHighlightProps {
   transcript: Transcript
   videoSrc: string
   activeColor?: string
   textColor?: string
+  accentColor?: string
   fontFamily?: string
   fontSizeMultiplier?: number
 }
 
-// "MrBeast style": punchy scale-overshoot bounce per word, thick black stroke,
-// glowing color on the keyword currently being spoken.
-export const Hype: React.FC<HypeProps> = ({
+// Captions.ai "AI Edit" style: short word chunks, most words plain white,
+// current word sits inside a solid color pill with a bright accent text color.
+export const BoxHighlight: React.FC<BoxHighlightProps> = ({
   transcript,
   videoSrc,
-  activeColor = '#22C55E',
+  activeColor = '#7C3AED',
   textColor = '#FFFFFF',
-  fontFamily = BANGERS,
+  accentColor = '#A3E635',
+  fontFamily = MONTSERRAT,
   fontSizeMultiplier = 1,
 }) => {
   const frame = useCurrentFrame()
   const { fps, width, height } = useVideoConfig()
   const currentTime = frame / fps
   const isPortrait = height > width
-  const fontSize = Math.round((isPortrait ? width / 15 : width / 24) * fontSizeMultiplier)
+  const fontSize = Math.round((isPortrait ? width / 16 : width / 26) * fontSizeMultiplier)
   const paddingBottom = Math.round(height * 0.1)
-  const paddingH = Math.round(width * 0.05)
-  const maxWidth = Math.round(width * 0.9)
-  const strokeWidth = Math.max(2, Math.round(fontSize * 0.06))
+  const paddingH = Math.round(width * 0.06)
+  const maxWidth = Math.round(width * 0.85)
+  const boxRadius = Math.round(fontSize * 0.18)
 
-  const CHUNK_SIZE = 4
+  const CHUNK_SIZE = 3
 
   const currentSegment = transcript.segments.find(
     (s) => currentTime >= s.start && currentTime < s.end
@@ -74,7 +76,8 @@ export const Hype: React.FC<HypeProps> = ({
               display: 'flex',
               flexWrap: 'wrap',
               fontSize,
-              gap: '0.55em',
+              gap: '0.4em',
+              alignItems: 'center',
               justifyContent: 'center',
               maxWidth,
             }}
@@ -84,36 +87,33 @@ export const Hype: React.FC<HypeProps> = ({
               const wordFrameStart = Math.max(0, Math.floor(word.start * fps))
               const elapsed = Math.max(0, frame - wordFrameStart)
 
-              const bounce = spring({
-                frame: elapsed,
-                fps,
-                config: { damping: 9, stiffness: 260, mass: 0.7 },
-              })
-              const scale = isCurrent ? 0.6 + bounce * 0.55 : 1
-
-              const opacity = interpolate(elapsed, [0, 4], [0, 1], {
-                extrapolateRight: 'clamp',
-              })
+              const pop = isCurrent
+                ? spring({ frame: elapsed, fps, config: { damping: 16, stiffness: 240, mass: 0.7 } })
+                : 1
 
               return (
                 <span
                   key={i}
                   style={{
                     fontSize,
-                    fontWeight: 400,
+                    fontWeight: 900,
                     fontFamily,
                     textTransform: 'uppercase',
-                    color: isCurrent ? activeColor : textColor,
-                    WebkitTextStroke: `${strokeWidth}px #000000`,
-                    paintOrder: 'stroke fill',
-                    textShadow: isCurrent
-                      ? `0 0 30px ${activeColor}, 0 4px 12px rgba(0,0,0,0.9)`
-                      : '0 4px 12px rgba(0,0,0,0.9)',
                     display: 'inline-block',
-                    transform: `scale(${scale})`,
-                    transformOrigin: 'center bottom',
-                    opacity,
                     lineHeight: 1.15,
+                    transform: `scale(${isCurrent ? 0.85 + pop * 0.15 : 1})`,
+                    ...(isCurrent
+                      ? {
+                          color: accentColor,
+                          backgroundColor: activeColor,
+                          borderRadius: boxRadius,
+                          padding: `${Math.round(fontSize * 0.05)}px ${Math.round(fontSize * 0.22)}px`,
+                          textShadow: 'none',
+                        }
+                      : {
+                          color: textColor,
+                          textShadow: '0 3px 12px rgba(0,0,0,0.85)',
+                        }),
                   }}
                 >
                   {word.word}

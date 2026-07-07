@@ -4,22 +4,27 @@ import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { useMutation } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
+import { CaptionStylePreview } from '@/components/caption-style-preview'
 
-type CompositionId = 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring' | 'Hype' | 'Hormozi' | 'Minimal'
+type CompositionId = 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring' | 'Hype' | 'Hormozi' | 'Minimal' | 'BoxHighlight' | 'Comic' | 'Pill' | 'Script'
 type UploadStep = 'idle' | 'getting-url' | 'uploading' | 'confirming' | 'done' | 'error'
 
 const ACCEPTED_VIDEO = { 'video/mp4': ['.mp4'], 'video/quicktime': ['.mov'] }
 const ACCEPTED_CAPTION = { 'text/plain': ['.srt', '.vtt'], 'text/vtt': ['.vtt'] }
 const MAX_VIDEO_SIZE = 500 * 1024 * 1024
 
-const STYLES: { id: CompositionId; label: string; preview: string; desc: string }[] = [
-  { id: 'WordByWord', label: 'Word by Word', preview: 'the [WORD] pops',     desc: 'Active word scales up' },
-  { id: 'Karaoke',   label: 'Karaoke',      preview: 'past · now · future', desc: 'Words shift color' },
-  { id: 'Fade',      label: 'Fade',          preview: 'Line fades in...',    desc: 'Line fades per segment' },
-  { id: 'Spring',    label: 'Spring',        preview: 'Words ↑ bounce ↑ up', desc: 'Words spring from below' },
-  { id: 'Hype',      label: 'Hype',          preview: 'BOOM · POP · BOUNCE', desc: 'MrBeast-style bounce + glow' },
-  { id: 'Hormozi',   label: 'Hormozi',       preview: 'YELLOW STROKE POP',   desc: 'Yellow-stroke pop-in, Anton font' },
-  { id: 'Minimal',   label: 'Minimal',       preview: 'calm lowercase text', desc: 'Restrained, single-color, no hype' },
+const STYLES: { id: CompositionId; label: string; desc: string }[] = [
+  { id: 'WordByWord', label: 'Word by Word', desc: 'Active word scales up' },
+  { id: 'Karaoke',   label: 'Karaoke',      desc: 'Words shift color' },
+  { id: 'Fade',      label: 'Fade',          desc: 'Line fades per segment' },
+  { id: 'Spring',    label: 'Spring',        desc: 'Words spring from below' },
+  { id: 'Hype',      label: 'Hype',          desc: 'MrBeast-style bounce + glow' },
+  { id: 'Hormozi',   label: 'Hormozi',       desc: 'Yellow-stroke pop-in, Anton font' },
+  { id: 'Minimal',   label: 'Minimal',       desc: 'Restrained, single-color, no hype' },
+  { id: 'BoxHighlight', label: 'Box Highlight', desc: 'Captions.ai-style keyword box pop' },
+  { id: 'Comic',     label: 'Comic',         desc: 'Cartoon font, keyword color swap' },
+  { id: 'Pill',      label: 'Pill',          desc: 'Clean dark pill badge, no hype' },
+  { id: 'Script',    label: 'Script',        desc: 'Gold italic script accent word' },
 ]
 
 export function UploadDropzone() {
@@ -103,62 +108,81 @@ export function UploadDropzone() {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-6">
       {/* Drop zone */}
       <div
         {...videoDropzone.getRootProps()}
         className={[
-          'rounded-xl border-2 border-dashed p-10 text-center cursor-pointer transition-all',
-          videoDropzone.isDragActive
-            ? 'border-white/30 bg-white/5'
-            : 'border-white/10 hover:border-white/20 hover:bg-white/[0.02]',
+          'border min-h-[200px] flex items-center justify-center text-center cursor-pointer transition-colors duration-150 bg-white',
+          videoDropzone.isDragActive ? 'border-[#c1361f] bg-[#c1361f08]' : 'border-[#14120f1f] hover:border-[#14120f3d]',
           isUploading ? 'pointer-events-none opacity-50' : '',
         ].join(' ')}
       >
         <input {...videoDropzone.getInputProps()} />
         {videoFile ? (
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-white">{videoFile.name}</p>
-            <p className="text-xs text-zinc-500">
+          <div className="space-y-1.5 py-8">
+            <p className="text-sm text-[#1a1917]">{videoFile.name}</p>
+            <p className="text-xs text-[#6b6862]">
               {(videoFile.size / 1024 / 1024).toFixed(1)} MB · {videoFile.type === 'video/mp4' ? 'MP4' : 'MOV'}
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            <div className="mx-auto w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
-              <svg className="w-5 h-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          <div className="py-8">
+            <div className="w-9 h-9 mx-auto mb-3.5 border border-[#14120f1f] flex items-center justify-center text-[#6b6862]">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
               </svg>
             </div>
-            <div>
-              <p className="text-sm font-medium text-white">Drop your video here</p>
-              <p className="text-xs text-zinc-500 mt-0.5">MP4 or MOV · max 500 MB · max 10 min</p>
-            </div>
+            <p className="text-sm text-[#1a1917]">Import or drag your video</p>
+            <p className="text-xs text-[#a39e96] mt-1.5">MP4 or MOV · 500MB max · 10:00 max</p>
           </div>
         )}
       </div>
 
-      {/* Style picker */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        {STYLES.map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            onClick={() => setStyle(s.id)}
-            disabled={isUploading}
-            className={[
-              'rounded-lg border p-3 text-left transition-all space-y-1.5 disabled:opacity-40',
-              style === s.id
-                ? 'border-white bg-white/5'
-                : 'border-white/10 hover:border-white/20',
-            ].join(' ')}
-          >
-            <p className="text-[11px] font-mono text-zinc-400 truncate leading-relaxed">{s.preview}</p>
-            <p className="text-xs font-medium text-white">{s.label}</p>
-            <p className="text-[11px] text-zinc-500 leading-tight">{s.desc}</p>
-          </button>
-        ))}
+      {/* Style picker — CC channel tiles */}
+      <div className="space-y-2.5">
+        <div className="flex items-baseline justify-between">
+          <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96]">Caption Style</p>
+          <span className="text-[11px] text-[#a39e96]">{STYLES.length} styles</span>
+        </div>
+        <div className="relative">
+          <div className="flex gap-3 overflow-x-auto pb-1 -mx-0.5 px-0.5 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {STYLES.map((s) => {
+              const active = style === s.id
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setStyle(s.id)}
+                  disabled={isUploading}
+                  className={[
+                    'shrink-0 w-[148px] snap-start text-left transition-all disabled:opacity-40 overflow-hidden rounded-xl',
+                    active ? 'ring-2 ring-inset ring-[#c1361f]' : 'ring-1 ring-inset ring-[#14120f1f] hover:ring-[#14120f3d]',
+                  ].join(' ')}
+                >
+                  <div className="relative">
+                    <CaptionStylePreview id={s.id} />
+                    {active && (
+                      <span className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-[#c1361f] flex items-center justify-center">
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                      </span>
+                    )}
+                  </div>
+                  <div className="px-3 py-2.5 bg-white">
+                    <p className="text-xs text-[#1a1917] font-medium">{s.label}</p>
+                    <p className="text-[11px] text-[#a39e96] leading-tight mt-1 line-clamp-1">{s.desc}</p>
+                  </div>
+                </button>
+              )
+            })}
+            {/* trailing spacer so the last card can scroll fully clear of the fade */}
+            <div className="shrink-0 w-2" aria-hidden="true" />
+          </div>
+          {/* right-edge fade signals there's more to scroll, instead of a hard clip */}
+          <div className="absolute inset-y-0 right-0 w-14 pointer-events-none bg-gradient-to-r from-transparent to-[#faf9f6]" />
+        </div>
       </div>
 
       {/* Optional SRT/VTT */}
@@ -166,7 +190,7 @@ export function UploadDropzone() {
         <button
           type="button"
           onClick={() => setShowCaption(!showCaption)}
-          className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+          className="text-xs text-[#a39e96] hover:text-[#6b6862] transition-colors"
         >
           {showCaption ? '− Hide' : '+ Have an .srt or .vtt? Skip AI transcription'}
         </button>
@@ -174,15 +198,15 @@ export function UploadDropzone() {
           <div
             {...captionDropzone.getRootProps()}
             className={[
-              'mt-2 rounded-lg border border-dashed p-4 text-center cursor-pointer transition-all',
-              captionDropzone.isDragActive ? 'border-white/30 bg-white/5' : 'border-white/10 hover:border-white/20',
+              'mt-2 border border-dashed p-4 text-center cursor-pointer transition-all bg-white',
+              captionDropzone.isDragActive ? 'border-[#c1361f] bg-[#c1361f08]' : 'border-[#14120f1f] hover:border-[#14120f3d]',
               isUploading ? 'pointer-events-none opacity-50' : '',
             ].join(' ')}
           >
             <input {...captionDropzone.getInputProps()} />
             {captionFile
-              ? <span className="text-sm text-white">{captionFile.name}</span>
-              : <span className="text-sm text-zinc-500">Drop .srt or .vtt</span>}
+              ? <span className="text-sm text-[#1a1917]">{captionFile.name}</span>
+              : <span className="text-sm text-[#a39e96]">Drop .srt or .vtt</span>}
           </div>
         )}
       </div>
@@ -190,24 +214,24 @@ export function UploadDropzone() {
       {/* Progress bar */}
       {isUploading && (
         <div className="space-y-1.5">
-          <div className="h-0.5 w-full bg-white/10 rounded-full overflow-hidden">
+          <div className="h-[3px] w-full bg-[#14120f1f] overflow-hidden">
             <div
-              className="h-full bg-white rounded-full transition-all duration-300"
+              className="h-full bg-[#c1361f] transition-all duration-300"
               style={{ width: `${step === 'uploading' ? uploadProgress : 100}%` }}
             />
           </div>
-          <p className="text-xs text-zinc-500 text-center">{stepLabel[step]}</p>
+          <p className="text-xs text-[#a39e96] text-center">{stepLabel[step]}</p>
         </div>
       )}
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-[#c1361f]">{error}</p>}
 
       {/* CTA */}
       <button
         type="button"
         disabled={!videoFile || isUploading}
         onClick={() => uploadMutation.mutate()}
-        className="w-full rounded-lg bg-white text-black text-sm font-medium py-2.5 hover:bg-zinc-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        className="w-full bg-[#c1361f] text-white text-sm font-bold py-3 hover:brightness-[1.08] transition-all disabled:opacity-35 disabled:cursor-not-allowed"
       >
         {isUploading ? stepLabel[step] : 'Generate Captions'}
       </button>

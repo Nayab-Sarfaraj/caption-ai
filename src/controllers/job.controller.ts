@@ -13,9 +13,10 @@ const ENQUEUE_TIMEOUT_MS = 10_000
 const HEX_COLOR = z.string().regex(/^#[0-9a-fA-F]{6}$/).optional()
 
 const triggerRenderSchema = z.object({
-  compositionId: z.enum(['WordByWord', 'Karaoke', 'Fade', 'Spring', 'Hype', 'Hormozi', 'Minimal']).default('WordByWord'),
+  compositionId: z.enum(['WordByWord', 'Karaoke', 'Fade', 'Spring', 'Hype', 'Hormozi', 'Minimal', 'BoxHighlight', 'Comic', 'Pill', 'Script']).default('WordByWord'),
   activeColor: HEX_COLOR,
   textColor: HEX_COLOR,
+  accentColor: HEX_COLOR,
 })
 
 export async function handleGetJob(
@@ -83,6 +84,7 @@ export async function handleTriggerRender(
     phase: 'render',
     activeColor: parsed.data.activeColor,
     textColor: parsed.data.textColor,
+    accentColor: parsed.data.accentColor,
   }
 
   try {
@@ -107,18 +109,24 @@ export async function handleTriggerRender(
   return NextResponse.json({ jobId, status: 'rendering' })
 }
 
-export async function handleListJobs(_req: NextRequest): Promise<NextResponse> {
+export async function handleListJobs(req: NextRequest): Promise<NextResponse> {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const jobs = await findJobsByUserId(userId)
-  return NextResponse.json(
-    jobs.map((j) => ({
+  const page = Math.max(1, Number(req.nextUrl.searchParams.get('page')) || 1)
+  const pageSize = Math.min(50, Math.max(1, Number(req.nextUrl.searchParams.get('pageSize')) || 20))
+
+  const { jobs, total } = await findJobsByUserId(userId, { page, pageSize })
+  return NextResponse.json({
+    jobs: jobs.map((j) => ({
       id: j._id.toString(),
       status: j.status,
       originalFilename: j.originalFilename,
       transcriptSource: j.transcriptSource,
       createdAt: j.createdAt,
-    }))
-  )
+    })),
+    total,
+    page,
+    pageSize,
+  })
 }

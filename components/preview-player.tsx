@@ -5,22 +5,32 @@ import { useRouter } from 'next/navigation'
 import { Player } from '@remotion/player'
 import { CaptionRoot } from '@/remotion/compositions/CaptionRoot'
 import type { CompositionId } from '@/remotion/compositions/CaptionRoot'
+import { CaptionStylePreview } from '@/components/caption-style-preview'
 import type { Transcript } from '@/src/types/transcript.types'
 
-const STYLES: { id: CompositionId; label: string; desc: string }[] = [
-  { id: 'WordByWord', label: 'Word by Word', desc: 'Active word scales up' },
-  { id: 'Karaoke',   label: 'Karaoke',      desc: 'Words shift color' },
-  { id: 'Fade',      label: 'Fade',          desc: 'Line fades per segment' },
-  { id: 'Spring',    label: 'Spring',        desc: 'Words spring from below' },
-  { id: 'Hype',      label: 'Hype',         desc: 'MrBeast-style bounce + glow' },
-  { id: 'Hormozi',   label: 'Hormozi',      desc: 'Yellow-stroke pop-in, Anton font' },
-  { id: 'Minimal',   label: 'Minimal',      desc: 'Restrained, single-color, no hype' },
+const STYLES: { id: CompositionId; label: string; desc: string; category: string }[] = [
+  { id: 'WordByWord', label: 'Word by Word', desc: 'Active word scales up',            category: 'Highlight' },
+  { id: 'Karaoke',   label: 'Karaoke',      desc: 'Words shift color',                 category: 'Highlight' },
+  { id: 'Spring',    label: 'Spring',        desc: 'Words spring from below',           category: 'Highlight' },
+  { id: 'BoxHighlight', label: 'Box Highlight', desc: 'Captions.ai-style keyword box pop', category: 'Highlight' },
+  { id: 'Hype',      label: 'Hype',         desc: 'MrBeast-style bounce + glow',        category: 'Hype' },
+  { id: 'Hormozi',   label: 'Hormozi',      desc: 'Yellow-stroke pop-in, Anton font',   category: 'Hype' },
+  { id: 'Comic',     label: 'Comic',         desc: 'Cartoon font, keyword color swap',  category: 'Hype' },
+  { id: 'Minimal',   label: 'Minimal',      desc: 'Restrained, single-color, no hype',  category: 'Clean' },
+  { id: 'Pill',      label: 'Pill',          desc: 'Clean dark pill badge, no hype',     category: 'Clean' },
+  { id: 'Fade',      label: 'Fade',          desc: 'Line fades per segment',             category: 'Clean' },
+  { id: 'Script',    label: 'Script',        desc: 'Gold italic script accent word',     category: 'Editorial' },
 ]
+const CATEGORY_ORDER = ['Highlight', 'Hype', 'Clean', 'Editorial']
 
 const FONTS = [
   { label: 'System',       value: 'system-ui, -apple-system, sans-serif' },
   { label: 'Bangers',      value: 'Bangers, "Comic Sans MS", cursive' },
   { label: 'Anton',        value: 'Anton, Impact, sans-serif' },
+  { label: 'Montserrat',   value: 'Montserrat, sans-serif' },
+  { label: 'Fredoka',      value: 'Fredoka, sans-serif' },
+  { label: 'Roboto',       value: 'Roboto, sans-serif' },
+  { label: 'Caveat',       value: 'Caveat, cursive' },
   { label: 'Inter',        value: 'Inter, system-ui, sans-serif' },
   { label: 'Impact',       value: 'Impact, "Arial Black", sans-serif' },
   { label: 'Arial Black',  value: '"Arial Black", "Arial Bold", sans-serif' },
@@ -42,7 +52,6 @@ const FONTS = [
 ]
 const FONTS_INITIAL = 5
 
-
 const HIGHLIGHT_PRESETS = ['#FACC15', '#FFFFFF', '#22C55E', '#3B82F6', '#EF4444', '#EC4899', '#F97316', '#A855F7']
 const TEXT_PRESETS      = ['#FFFFFF', '#000000', '#FACC15', '#A1A1AA', '#6EE7B7', '#93C5FD']
 
@@ -59,7 +68,7 @@ function ColorSwatch({
 }) {
   return (
     <div className="space-y-2">
-      <p className="text-xs text-zinc-500">{label}</p>
+      <p className="text-xs text-[#a39e96]">{label}</p>
       <div className="flex items-center gap-1.5 flex-wrap">
         {presets.map((color) => (
           <button
@@ -67,24 +76,23 @@ function ColorSwatch({
             type="button"
             title={color}
             onClick={() => onChange(color)}
-            className="w-6 h-6 rounded-full transition-transform hover:scale-110 focus:outline-none"
+            className="w-6 h-6 transition-transform hover:scale-110 focus:outline-none"
             style={{
               backgroundColor: color,
-              border: '2px solid transparent',
               boxShadow:
                 value.toLowerCase() === color.toLowerCase()
-                  ? '0 0 0 2px #111, 0 0 0 4px #fff'
-                  : '0 0 0 1px rgba(255,255,255,0.15)',
+                  ? '0 0 0 2px #fff, 0 0 0 3px #c1361f'
+                  : '0 0 0 1px rgba(20,18,14,0.18)',
             }}
           />
         ))}
         {/* Custom color */}
         <label
           title="Custom color"
-          className="w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-110"
+          className="w-6 h-6 flex items-center justify-center cursor-pointer transition-transform hover:scale-110"
           style={{
             background: 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)',
-            boxShadow: '0 0 0 1px rgba(255,255,255,0.2)',
+            boxShadow: '0 0 0 1px rgba(20,18,14,0.18)',
           }}
         >
           <input
@@ -108,8 +116,7 @@ interface PreviewPlayerProps {
   height?: number
   filename: string
   statusLabel: string
-  statusDot: string
-  statusText: string
+  statusColor: string
   transcriptSource?: string
   createdAt?: string
 }
@@ -117,6 +124,7 @@ interface PreviewPlayerProps {
 interface StyleSettings {
   activeColor: string
   textColor: string
+  accentColor: string
   fontFamily: string
   fontSizeMultiplier: number
 }
@@ -126,6 +134,7 @@ type SettingsMap = Record<CompositionId, StyleSettings>
 const DEFAULT: StyleSettings = {
   activeColor: '#FACC15',
   textColor: '#FFFFFF',
+  accentColor: '#A3E635',
   fontFamily: FONTS[0].value,
   fontSizeMultiplier: 1.0,
 }
@@ -138,6 +147,10 @@ const INITIAL_SETTINGS: SettingsMap = {
   Hype:       { ...DEFAULT, activeColor: '#22C55E', textColor: '#FFFFFF', fontFamily: 'Bangers, "Comic Sans MS", cursive' },
   Hormozi:    { ...DEFAULT, activeColor: '#F7C204', textColor: '#FFFFFF', fontFamily: 'Anton, Impact, sans-serif' },
   Minimal:    { ...DEFAULT, activeColor: '#FFFFFF', textColor: '#FFFFFF', fontFamily: 'Inter, system-ui, sans-serif' },
+  BoxHighlight: { ...DEFAULT, activeColor: '#7C3AED', textColor: '#FFFFFF', accentColor: '#A3E635', fontFamily: 'Montserrat, sans-serif' },
+  Comic:      { ...DEFAULT, activeColor: '#38BDF8', textColor: '#FFFFFF', fontFamily: 'Fredoka, sans-serif' },
+  Pill:       { ...DEFAULT, activeColor: '#1F2937', textColor: '#FFFFFF', fontFamily: 'Roboto, sans-serif' },
+  Script:     { ...DEFAULT, activeColor: '#FBBF24', textColor: '#FFFFFF', fontFamily: 'Inter, system-ui, sans-serif' },
 }
 
 export function PreviewPlayer({
@@ -149,8 +162,7 @@ export function PreviewPlayer({
   height = 1080,
   filename,
   statusLabel,
-  statusDot,
-  statusText,
+  statusColor,
   transcriptSource,
   createdAt,
 }: PreviewPlayerProps) {
@@ -174,6 +186,7 @@ export function PreviewPlayer({
       videoSrc,
       activeColor: cur.activeColor,
       textColor: cur.textColor,
+      accentColor: cur.accentColor,
       fontFamily: cur.fontFamily,
       fontSizeMultiplier: cur.fontSizeMultiplier,
     }),
@@ -191,6 +204,7 @@ export function PreviewPlayer({
           compositionId: style,
           activeColor: cur.activeColor,
           textColor: cur.textColor,
+          accentColor: cur.accentColor,
           fontFamily: cur.fontFamily,
           fontSizeMultiplier: cur.fontSizeMultiplier,
         }),
@@ -209,9 +223,9 @@ export function PreviewPlayer({
   const aspectRatio = `${width}/${height}`
 
   return (
-    <div className="flex flex-col lg:flex-row gap-5 items-start">
+    <div className="flex flex-col lg:flex-row gap-5 items-start font-[family-name:var(--font-cc)]">
       {/* Left: player */}
-      <div className="flex-1 min-w-0 rounded-xl overflow-hidden border border-white/10 bg-black">
+      <div className="flex-1 min-w-0 overflow-hidden border border-[#14120f1f] bg-black">
         <Player
           component={CaptionRoot as unknown as React.FC<Record<string, unknown>>}
           inputProps={inputProps as unknown as Record<string, unknown>}
@@ -227,42 +241,42 @@ export function PreviewPlayer({
       </div>
 
       {/* Right: info + controls */}
-      <div className="w-full lg:w-80 shrink-0 rounded-xl border border-white/10 bg-[#111] p-5 space-y-4">
+      <div className="w-full lg:w-80 shrink-0 border border-[#14120f1f] bg-white p-5 space-y-4">
         {/* Job info */}
         <div className="space-y-1.5">
-          <h1 className="text-sm font-semibold text-white truncate">{filename}</h1>
+          <h1 className="text-sm font-bold text-[#1a1917] truncate">{filename}</h1>
           <div className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full shrink-0 ${statusDot}`} />
-            <span className={`text-sm ${statusText}`}>{statusLabel}</span>
+            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: statusColor }} />
+            <span className="text-sm" style={{ color: statusColor }}>{statusLabel}</span>
           </div>
         </div>
 
         {transcriptSource && (
           <div className="flex items-center justify-between text-sm">
-            <span className="text-zinc-500">Transcript</span>
-            <span className="text-zinc-300 text-xs">
+            <span className="text-[#a39e96]">Transcript</span>
+            <span className="text-[#6b6862] text-xs">
               {transcriptSource === 'user' ? 'Uploaded SRT/VTT' : 'AI · Deepgram'}
             </span>
           </div>
         )}
         {createdAt && (
           <div className="flex items-center justify-between text-sm">
-            <span className="text-zinc-500">Created</span>
-            <span className="text-zinc-300 text-xs">{createdAt}</span>
+            <span className="text-[#a39e96]">Created</span>
+            <span className="text-[#6b6862] text-xs">{createdAt}</span>
           </div>
         )}
 
-        <div className="border-t border-white/10" />
+        <div className="border-t border-[#14120f1f]" />
 
         {view === 'styles' && (
-          /* ── Style selection ── */
+          /* ── Style selection (categorized) ── */
           <>
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Caption Style</p>
+              <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96]">Caption Style</p>
               <button
                 type="button"
                 onClick={() => setView('appearance')}
-                className="flex items-center gap-1 text-xs text-zinc-400 hover:text-white transition-colors"
+                className="flex items-center gap-1 text-xs text-[#6b6862] hover:text-[#1a1917] transition-colors"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
@@ -270,28 +284,41 @@ export function PreviewPlayer({
                 Edit
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              {STYLES.map((s) => {
-                const st = settings[s.id]
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => setStyle(s.id)}
-                    className={[
-                      'rounded-lg border p-2.5 text-left transition-all space-y-1',
-                      style === s.id ? 'border-white bg-white/5' : 'border-white/10 hover:border-white/20',
-                    ].join(' ')}
-                  >
-                    <p className="text-xs font-medium text-white">{s.label}</p>
-                    <p className="text-[10px] text-zinc-500 leading-tight">{s.desc}</p>
-                    <div className="flex gap-1 pt-0.5">
-                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: st.activeColor, boxShadow: '0 0 0 1px rgba(255,255,255,0.15)' }} />
-                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: st.textColor, boxShadow: '0 0 0 1px rgba(255,255,255,0.15)' }} />
-                    </div>
-                  </button>
-                )
-              })}
+            <div className="space-y-4 max-h-[480px] overflow-y-auto pr-0.5">
+              {CATEGORY_ORDER.map((cat) => (
+                <div key={cat} className="space-y-2">
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-[#1a1917]">{cat}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {STYLES.filter((s) => s.category === cat).map((s) => {
+                      const active = style === s.id
+                      return (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => setStyle(s.id)}
+                          className={[
+                            'relative text-left transition-all overflow-hidden rounded-xl',
+                            active ? 'ring-2 ring-inset ring-[#c1361f]' : 'ring-1 ring-inset ring-[#14120f1f] hover:ring-[#14120f3d]',
+                          ].join(' ')}
+                        >
+                          <CaptionStylePreview id={s.id} />
+                          {active && (
+                            <span className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-[#c1361f] flex items-center justify-center">
+                              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                              </svg>
+                            </span>
+                          )}
+                          <div className="px-2.5 py-2 bg-white">
+                            <p className="text-xs text-[#1a1917] font-medium">{s.label}</p>
+                            <p className="text-[10px] text-[#a39e96] leading-tight mt-0.5">{s.desc}</p>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </>
         )}
@@ -300,22 +327,30 @@ export function PreviewPlayer({
           /* ── Appearance (per-style) ── */
           <>
             <div className="flex items-center gap-2">
-              <button type="button" onClick={() => setView('styles')} className="flex items-center gap-1 text-xs text-zinc-400 hover:text-white transition-colors">
+              <button type="button" onClick={() => setView('styles')} className="flex items-center gap-1 text-xs text-[#6b6862] hover:text-[#1a1917] transition-colors">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
                 Back
               </button>
-              <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
+              <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96]">
                 {STYLES.find(s => s.id === style)?.label}
               </p>
             </div>
 
-            <ColorSwatch label="Highlight" value={cur.activeColor} onChange={(v) => update('activeColor', v)} presets={HIGHLIGHT_PRESETS} />
+            <ColorSwatch
+              label={style === 'BoxHighlight' ? 'Box' : style === 'Pill' ? 'Pill Background' : 'Highlight'}
+              value={cur.activeColor}
+              onChange={(v) => update('activeColor', v)}
+              presets={HIGHLIGHT_PRESETS}
+            />
             <ColorSwatch label="Text" value={cur.textColor} onChange={(v) => update('textColor', v)} presets={TEXT_PRESETS} />
+            {style === 'BoxHighlight' && (
+              <ColorSwatch label="Accent" value={cur.accentColor} onChange={(v) => update('accentColor', v)} presets={HIGHLIGHT_PRESETS} />
+            )}
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-xs text-zinc-500">Font</p>
-                <button type="button" onClick={() => setView('fonts')} className="flex items-center gap-0.5 text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors">
+                <p className="text-xs text-[#a39e96]">Font</p>
+                <button type="button" onClick={() => setView('fonts')} className="flex items-center gap-0.5 text-[10px] text-[#a39e96] hover:text-[#6b6862] transition-colors">
                   More
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
                 </button>
@@ -327,8 +362,8 @@ export function PreviewPlayer({
                     type="button"
                     onClick={() => update('fontFamily', f.value)}
                     className={[
-                      'px-2.5 py-1 rounded-md border text-xs transition-all',
-                      cur.fontFamily === f.value ? 'border-white bg-white/10 text-white' : 'border-white/10 text-zinc-400 hover:border-white/25 hover:text-zinc-200',
+                      'px-2.5 py-1 border text-xs transition-all',
+                      cur.fontFamily === f.value ? 'border-[#c1361f] bg-[#c1361f08] text-[#1a1917]' : 'border-[#14120f1f] text-[#6b6862] hover:border-[#14120f3d] hover:text-[#1a1917]',
                     ].join(' ')}
                     style={{ fontFamily: f.value }}
                   >
@@ -340,14 +375,14 @@ export function PreviewPlayer({
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-xs text-zinc-500">Size</p>
-                <p className="text-xs text-zinc-400 font-mono tabular-nums">{cur.fontSizeMultiplier.toFixed(2)}×</p>
+                <p className="text-xs text-[#a39e96]">Size</p>
+                <p className="text-xs text-[#6b6862] tabular-nums">{cur.fontSizeMultiplier.toFixed(2)}×</p>
               </div>
               <input type="range" min={0.5} max={2.0} step={0.05} value={cur.fontSizeMultiplier}
                 onChange={(e) => update('fontSizeMultiplier', parseFloat(e.target.value))}
-                className="w-full accent-white cursor-pointer"
+                className="w-full accent-[#c1361f] cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] text-zinc-600"><span>Small</span><span>Large</span></div>
+              <div className="flex justify-between text-[10px] text-[#a39e96]"><span>Small</span><span>Large</span></div>
             </div>
           </>
         )}
@@ -356,11 +391,11 @@ export function PreviewPlayer({
           /* ── Font browser (full panel) ── */
           <>
             <div className="flex items-center gap-2">
-              <button type="button" onClick={() => setView('appearance')} className="flex items-center gap-1 text-xs text-zinc-400 hover:text-white transition-colors">
+              <button type="button" onClick={() => setView('appearance')} className="flex items-center gap-1 text-xs text-[#6b6862] hover:text-[#1a1917] transition-colors">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
                 Back
               </button>
-              <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Font Family</p>
+              <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96]">Font Family</p>
             </div>
             <div className="overflow-y-auto max-h-64 pr-0.5">
               <div className="grid grid-cols-2 gap-2">
@@ -370,12 +405,12 @@ export function PreviewPlayer({
                     type="button"
                     onClick={() => update('fontFamily', f.value)}
                     className={[
-                      'rounded-lg border p-3 text-left transition-all space-y-1',
-                      cur.fontFamily === f.value ? 'border-white bg-white/5' : 'border-white/10 hover:border-white/20',
+                      'border p-3 text-left transition-all space-y-1',
+                      cur.fontFamily === f.value ? 'border-[#c1361f] bg-[#c1361f08]' : 'border-[#14120f1f] hover:border-[#14120f3d]',
                     ].join(' ')}
                   >
-                    <p className="text-lg leading-none text-white" style={{ fontFamily: f.value }}>Aa</p>
-                    <p className="text-[10px] text-zinc-500">{f.label}</p>
+                    <p className="text-lg leading-none text-[#1a1917]" style={{ fontFamily: f.value }}>Aa</p>
+                    <p className="text-[10px] text-[#a39e96]">{f.label}</p>
                   </button>
                 ))}
               </div>
@@ -383,14 +418,14 @@ export function PreviewPlayer({
           </>
         )}
 
-        <div className="border-t border-white/10" />
+        <div className="border-t border-[#14120f1f]" />
 
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {error && <p className="text-xs text-[#c1361f]">{error}</p>}
         <button
           type="button"
           onClick={handleExport}
           disabled={exporting}
-          className="w-full rounded-lg bg-white text-black text-sm font-medium py-2.5 hover:bg-zinc-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-[#c1361f] text-white text-sm font-bold py-2.5 hover:brightness-[1.08] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {exporting ? 'Starting export…' : `Export · ${STYLES.find((s) => s.id === style)?.label ?? style}`}
         </button>

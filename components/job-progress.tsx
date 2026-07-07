@@ -59,14 +59,14 @@ export function JobProgress({ jobId, initialStatus, onDone, onFailed }: JobProgr
   if (isTerminal) return null
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between text-xs text-zinc-400">
+    <div className="space-y-2 font-[family-name:var(--font-cc)]">
+      <div className="flex items-center justify-between text-xs text-[#6b6862]">
         <span>{statusLabel}</span>
-        <span className="font-mono">{percent}%</span>
+        <span className="tabular-nums">{percent}%</span>
       </div>
-      <div className="h-0.5 w-full bg-white/10 rounded-full overflow-hidden">
+      <div className="h-[3px] w-full bg-[#14120f1f] overflow-hidden">
         <div
-          className="h-full bg-white rounded-full transition-all duration-300"
+          className="h-full bg-[#c1361f] transition-all duration-300"
           style={{ width: `${percent}%` }}
         />
       </div>

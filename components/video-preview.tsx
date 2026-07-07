@@ -9,6 +9,10 @@ import { Spring } from '@/remotion/compositions/Spring'
 import { Hype } from '@/remotion/compositions/Hype'
 import { Hormozi } from '@/remotion/compositions/Hormozi'
 import { Minimal } from '@/remotion/compositions/Minimal'
+import { BoxHighlight } from '@/remotion/compositions/BoxHighlight'
+import { Comic } from '@/remotion/compositions/Comic'
+import { Pill } from '@/remotion/compositions/Pill'
+import { Script } from '@/remotion/compositions/Script'
 
 const Player = dynamic(() => import('@remotion/player').then((m) => m.Player), { ssr: false })
 
@@ -20,6 +24,10 @@ const COMPOSITIONS = {
   Hype,
   Hormozi,
   Minimal,
+  BoxHighlight,
+  Comic,
+  Pill,
+  Script,
 } as const
 
 export type CompositionId = keyof typeof COMPOSITIONS

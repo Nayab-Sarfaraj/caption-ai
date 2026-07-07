@@ -18,9 +18,24 @@ export async function findJobById(id: string): Promise<IJob | null> {
   return Job.findById(id)
 }
 
-export async function findJobsByUserId(userId: string): Promise<IJob[]> {
+export interface PaginatedJobs {
+  jobs: IJob[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+export async function findJobsByUserId(
+  userId: string,
+  { page = 1, pageSize = 20 }: { page?: number; pageSize?: number } = {}
+): Promise<PaginatedJobs> {
   await connectDB()
-  return Job.find({ userId }).sort({ createdAt: -1 }).limit(50)
+  const skip = (page - 1) * pageSize
+  const [jobs, total] = await Promise.all([
+    Job.find({ userId }).sort({ createdAt: -1 }).skip(skip).limit(pageSize),
+    Job.countDocuments({ userId }),
+  ])
+  return { jobs, total, page, pageSize }
 }
 
 export async function countTodayUploads(userId: string): Promise<number> {

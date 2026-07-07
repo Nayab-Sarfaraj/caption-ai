@@ -10,14 +10,14 @@ import type { Transcript } from '@/src/types/transcript.types'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 
-const STATUS: Record<string, { dot: string; label: string; text: string }> = {
-  done:             { dot: 'bg-green-400',  label: 'Done',           text: 'text-green-400' },
-  rendering:        { dot: 'bg-yellow-400', label: 'Rendering…',    text: 'text-yellow-400' },
-  transcribing:     { dot: 'bg-yellow-400', label: 'Transcribing…', text: 'text-yellow-400' },
-  transcript_ready: { dot: 'bg-blue-400',   label: 'Ready',          text: 'text-blue-400' },
-  processing:       { dot: 'bg-yellow-400', label: 'Processing…',   text: 'text-yellow-400' },
-  pending:          { dot: 'bg-zinc-500',   label: 'Pending',        text: 'text-zinc-400' },
-  failed:           { dot: 'bg-red-400',    label: 'Failed',         text: 'text-red-400' },
+const STATUS: Record<string, { color: string; label: string }> = {
+  done:             { color: '#2e7d4f', label: 'DONE' },
+  rendering:        { color: '#b8860b', label: 'RENDERING…' },
+  transcribing:     { color: '#b8860b', label: 'TRANSCRIBING…' },
+  transcript_ready: { color: '#1e5f8c', label: 'READY' },
+  processing:       { color: '#b8860b', label: 'PROCESSING…' },
+  pending:          { color: '#a39e96', label: 'PENDING' },
+  failed:           { color: '#c1361f', label: 'FAILED' },
 }
 
 const FPS = 30
@@ -60,10 +60,10 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   const videoHeight = job.height ?? 1080
 
   return (
-    <div className="px-4 sm:px-6 py-6 sm:py-8 space-y-5 min-h-full">
+    <div className="px-4 sm:px-6 py-6 sm:py-8 space-y-5 min-h-full font-[family-name:var(--font-cc)]">
       <Link
         href="/dashboard"
-        className="inline-flex items-center gap-1 text-sm text-zinc-400 hover:text-white transition-colors"
+        className="inline-flex items-center gap-1 text-sm text-[#6b6862] hover:text-[#1a1917] transition-colors"
       >
         <ChevronLeft className="w-4 h-4" />
         Back
@@ -79,17 +79,16 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           height={videoHeight}
           filename={job.originalFilename}
           statusLabel={s.label}
-          statusDot={s.dot}
-          statusText={s.text}
+          statusColor={s.color}
           transcriptSource={job.transcriptSource}
           createdAt={job.createdAt ? new Date(job.createdAt).toLocaleString() : undefined}
         />
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5 items-start">
-          {/* Left: video or status placeholder */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5 items-start">
+        {/* Left: video or status placeholder */}
           <div>
             {isDone && outputUrl ? (
-              <div className="rounded-xl border border-white/10 bg-[#111] overflow-hidden">
+              <div className="border border-[#14120f1f] bg-black overflow-hidden">
                 <video
                   src={outputUrl}
                   controls
@@ -97,22 +96,22 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
                 />
               </div>
             ) : (
-              <div className="rounded-xl border border-white/10 bg-[#111] overflow-hidden">
-                <div className="aspect-video bg-zinc-900 flex flex-col items-center justify-center gap-3">
+              <div className="border border-[#14120f1f] bg-black overflow-hidden">
+                <div className="aspect-video flex flex-col items-center justify-center gap-3">
                   {(isProcessing || isRendering) && (
                     <div className="flex gap-1.5">
                       {[0, 0.15, 0.3].map((d) => (
                         <span
                           key={d}
-                          className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-bounce"
-                          style={{ animationDelay: `${d}s` }}
+                          className="w-1.5 h-1.5 animate-bounce"
+                          style={{ backgroundColor: '#b8860b', animationDelay: `${d}s` }}
                         />
                       ))}
                     </div>
                   )}
-                  <p className={`text-sm font-medium ${s.text}`}>{s.label}</p>
+                  <p className="text-sm font-bold" style={{ color: s.color }}>{s.label}</p>
                   {isFailed && job.errorMessage && (
-                    <p className="text-xs text-zinc-500 max-w-xs text-center px-4">{job.errorMessage}</p>
+                    <p className="text-xs text-white/60 max-w-xs text-center px-4">{job.errorMessage}</p>
                   )}
                 </div>
               </div>
@@ -120,30 +119,30 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           </div>
 
           {/* Right: info panel */}
-          <div className="rounded-xl border border-white/10 bg-[#111] p-5 space-y-5">
+          <div className="border border-[#14120f1f] bg-white p-5 space-y-5">
             <div className="space-y-2">
-              <h1 className="text-sm font-semibold text-white truncate">{job.originalFilename}</h1>
+              <h1 className="text-sm font-bold text-[#1a1917] truncate">{job.originalFilename}</h1>
               <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} />
-                <span className={`text-sm ${s.text}`}>{s.label}</span>
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                <span className="text-sm" style={{ color: s.color }}>{s.label}</span>
               </div>
             </div>
 
-            <div className="border-t border-white/10" />
+            <div className="border-t border-[#14120f1f]" />
 
             <div className="space-y-3 text-sm">
               {job.transcriptSource && (
                 <div className="flex items-center justify-between">
-                  <span className="text-zinc-500">Transcript</span>
-                  <span className="text-zinc-300 text-xs">
+                  <span className="text-[#a39e96]">Transcript</span>
+                  <span className="text-[#6b6862] text-xs">
                     {job.transcriptSource === 'user' ? 'Uploaded SRT/VTT' : 'AI · Deepgram'}
                   </span>
                 </div>
               )}
               {job.createdAt && (
                 <div className="flex items-center justify-between">
-                  <span className="text-zinc-500">Created</span>
-                  <span className="text-zinc-300 text-xs">
+                  <span className="text-[#a39e96]">Created</span>
+                  <span className="text-[#6b6862] text-xs">
                     {new Date(job.createdAt).toLocaleString()}
                   </span>
                 </div>

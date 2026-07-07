@@ -73,6 +73,7 @@ export const Hormozi: React.FC<HormoziProps> = ({
             style={{
               display: 'flex',
               flexWrap: 'wrap',
+              fontSize,
               gap: '0.5em',
               justifyContent: 'center',
               maxWidth,

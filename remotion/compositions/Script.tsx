@@ -1,11 +1,13 @@
 import React from 'react'
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, Video, spring, interpolate } from 'remotion'
-import { loadFont } from '@remotion/google-fonts/Bangers'
-import type { Transcript } from '../types'
+import { AbsoluteFill, useCurrentFrame, useVideoConfig, Video, spring } from 'remotion'
+import { loadFont as loadBaseFont } from '@remotion/google-fonts/Inter'
+import { loadFont as loadScriptFont } from '@remotion/google-fonts/Caveat'
+import type { Transcript, TranscriptSegment } from '../types'
 
-const { fontFamily: BANGERS } = loadFont()
+const { fontFamily: INTER } = loadBaseFont('normal', { weights: ['500'], subsets: ['latin'] })
+const { fontFamily: CAVEAT } = loadScriptFont('normal', { weights: ['700'], subsets: ['latin'] })
 
-export interface HypeProps {
+export interface ScriptProps {
   transcript: Transcript
   videoSrc: string
   activeColor?: string
@@ -14,29 +16,28 @@ export interface HypeProps {
   fontSizeMultiplier?: number
 }
 
-// "MrBeast style": punchy scale-overshoot bounce per word, thick black stroke,
-// glowing color on the keyword currently being spoken.
-export const Hype: React.FC<HypeProps> = ({
+// VEED "Handwritten/Whisper" style: plain sentence-case base text, current
+// word swaps into a gold italic script font — editorial, non-hype accent.
+export const Script: React.FC<ScriptProps> = ({
   transcript,
   videoSrc,
-  activeColor = '#22C55E',
+  activeColor = '#FBBF24',
   textColor = '#FFFFFF',
-  fontFamily = BANGERS,
+  fontFamily = INTER,
   fontSizeMultiplier = 1,
 }) => {
   const frame = useCurrentFrame()
   const { fps, width, height } = useVideoConfig()
   const currentTime = frame / fps
   const isPortrait = height > width
-  const fontSize = Math.round((isPortrait ? width / 15 : width / 24) * fontSizeMultiplier)
-  const paddingBottom = Math.round(height * 0.1)
-  const paddingH = Math.round(width * 0.05)
-  const maxWidth = Math.round(width * 0.9)
-  const strokeWidth = Math.max(2, Math.round(fontSize * 0.06))
+  const fontSize = Math.round((isPortrait ? width / 18 : width / 30) * fontSizeMultiplier)
+  const paddingBottom = Math.round(height * 0.09)
+  const paddingH = Math.round(width * 0.06)
+  const maxWidth = Math.round(width * 0.82)
 
-  const CHUNK_SIZE = 4
+  const CHUNK_SIZE = 6
 
-  const currentSegment = transcript.segments.find(
+  const currentSegment: TranscriptSegment | undefined = transcript.segments.find(
     (s) => currentTime >= s.start && currentTime < s.end
   )
 
@@ -71,10 +72,15 @@ export const Hype: React.FC<HypeProps> = ({
         >
           <div
             style={{
+              backgroundColor: 'rgba(17,17,17,0.72)',
+              borderRadius: Math.round(fontSize * 0.3),
+              padding: `${Math.round(fontSize * 0.3)}px ${Math.round(fontSize * 0.55)}px`,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
               display: 'flex',
               flexWrap: 'wrap',
               fontSize,
-              gap: '0.55em',
+              gap: '0.35em',
+              alignItems: 'baseline',
               justifyContent: 'center',
               maxWidth,
             }}
@@ -84,36 +90,22 @@ export const Hype: React.FC<HypeProps> = ({
               const wordFrameStart = Math.max(0, Math.floor(word.start * fps))
               const elapsed = Math.max(0, frame - wordFrameStart)
 
-              const bounce = spring({
-                frame: elapsed,
-                fps,
-                config: { damping: 9, stiffness: 260, mass: 0.7 },
-              })
-              const scale = isCurrent ? 0.6 + bounce * 0.55 : 1
-
-              const opacity = interpolate(elapsed, [0, 4], [0, 1], {
-                extrapolateRight: 'clamp',
-              })
+              const pop = isCurrent
+                ? spring({ frame: elapsed, fps, config: { damping: 16, stiffness: 200, mass: 0.7 } })
+                : 1
 
               return (
                 <span
                   key={i}
                   style={{
-                    fontSize,
-                    fontWeight: 400,
-                    fontFamily,
-                    textTransform: 'uppercase',
+                    fontSize: isCurrent ? Math.round(fontSize * 1.15) : fontSize,
+                    fontWeight: isCurrent ? 700 : 500,
+                    fontFamily: isCurrent ? CAVEAT : fontFamily,
+                    fontStyle: isCurrent ? 'italic' : 'normal',
                     color: isCurrent ? activeColor : textColor,
-                    WebkitTextStroke: `${strokeWidth}px #000000`,
-                    paintOrder: 'stroke fill',
-                    textShadow: isCurrent
-                      ? `0 0 30px ${activeColor}, 0 4px 12px rgba(0,0,0,0.9)`
-                      : '0 4px 12px rgba(0,0,0,0.9)',
                     display: 'inline-block',
-                    transform: `scale(${scale})`,
-                    transformOrigin: 'center bottom',
-                    opacity,
-                    lineHeight: 1.15,
+                    transform: `scale(${isCurrent ? 0.85 + pop * 0.15 : 1})`,
+                    lineHeight: 1.2,
                   }}
                 >
                   {word.word}

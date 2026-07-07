@@ -87,7 +87,7 @@ async function processTranscribePhase(bullJob: Job<RenderJobPayload>): Promise<v
 // ─── Render phase ────────────────────────────────────────────────────────────
 
 async function processRenderPhase(bullJob: Job<RenderJobPayload>): Promise<void> {
-  const { jobId, userId, videoKey, compositionId, fps, activeColor = '#FACC15', textColor = '#FFFFFF' } = bullJob.data
+  const { jobId, userId, videoKey, compositionId, fps, activeColor = '#FACC15', textColor = '#FFFFFF', accentColor } = bullJob.data
   const tmpDir = `/tmp/${jobId}`
 
   try {
@@ -108,7 +108,7 @@ async function processRenderPhase(bullJob: Job<RenderJobPayload>): Promise<void>
     const serveUrl = await getBundle()
     const { selectComposition, renderMedia } = await import('@remotion/renderer')
 
-    const inputProps = { transcript, videoSrc, activeColor, textColor }
+    const inputProps = { transcript, videoSrc, activeColor, textColor, accentColor }
 
     const composition = await selectComposition({
       serveUrl,
