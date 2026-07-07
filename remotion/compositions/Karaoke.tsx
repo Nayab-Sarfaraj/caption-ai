@@ -75,7 +75,7 @@ export const Karaoke: React.FC<KaraokeProps> = ({
             padding: `${Math.round(fontSize * 0.3)}px ${Math.round(fontSize * 0.6)}px`,
             display: 'flex',
             flexWrap: 'wrap',
-            gap: '0.45em',
+            gap: '0.6em',
             justifyContent: 'center',
             maxWidth,
           }}

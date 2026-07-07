@@ -71,7 +71,7 @@ export const Spring: React.FC<SpringProps> = ({
             style={{
               display: 'flex',
               flexWrap: 'wrap',
-              gap: '0.45em',
+              gap: '0.6em',
               justifyContent: 'center',
               maxWidth,
             }}

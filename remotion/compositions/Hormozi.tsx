@@ -1,8 +1,11 @@
 import React from 'react'
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, Video, spring } from 'remotion'
+import { AbsoluteFill, useCurrentFrame, useVideoConfig, Video, spring, interpolate } from 'remotion'
+import { loadFont } from '@remotion/google-fonts/Anton'
 import type { Transcript } from '../types'
 
-export interface WordByWordProps {
+const { fontFamily: ANTON } = loadFont()
+
+export interface HormoziProps {
   transcript: Transcript
   videoSrc: string
   activeColor?: string
@@ -11,22 +14,25 @@ export interface WordByWordProps {
   fontSizeMultiplier?: number
 }
 
-export const WordByWord: React.FC<WordByWordProps> = ({
+// "Hormozi style": condensed uppercase, yellow stroke outline, each word pops
+// in from below as it's spoken. Restrained motion vs Hype — pop-in only, no bounce.
+export const Hormozi: React.FC<HormoziProps> = ({
   transcript,
   videoSrc,
-  activeColor = '#FACC15',
+  activeColor = '#F7C204',
   textColor = '#FFFFFF',
-  fontFamily = 'system-ui, -apple-system, sans-serif',
+  fontFamily = ANTON,
   fontSizeMultiplier = 1,
 }) => {
   const frame = useCurrentFrame()
   const { fps, width, height } = useVideoConfig()
   const currentTime = frame / fps
   const isPortrait = height > width
-  const fontSize = Math.round((isPortrait ? width / 18 : width / 28) * fontSizeMultiplier)
-  const paddingBottom = Math.round(height * 0.08)
-  const paddingH = Math.round(width * 0.05)
-  const maxWidth = Math.round(width * 0.88)
+  const fontSize = Math.round((isPortrait ? width / 16 : width / 26) * fontSizeMultiplier)
+  const paddingBottom = Math.round(height * 0.12)
+  const paddingH = Math.round(width * 0.06)
+  const maxWidth = Math.round(width * 0.85)
+  const strokeWidth = Math.max(2, Math.round(fontSize * 0.045))
 
   const CHUNK_SIZE = 5
 
@@ -49,13 +55,9 @@ export const WordByWord: React.FC<WordByWordProps> = ({
     : []
 
   return (
-    <AbsoluteFill style={{ backgroundColor: 'transparent' }}>
+    <AbsoluteFill>
       {videoSrc && (
-        <Video
-          src={videoSrc}
-          crossOrigin="anonymous"
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
+        <Video src={videoSrc} crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       )}
       {currentSegment && (
         <AbsoluteFill
@@ -71,7 +73,7 @@ export const WordByWord: React.FC<WordByWordProps> = ({
             style={{
               display: 'flex',
               flexWrap: 'wrap',
-              gap: '0.6em',
+              gap: '0.5em',
               justifyContent: 'center',
               maxWidth,
             }}
@@ -81,25 +83,33 @@ export const WordByWord: React.FC<WordByWordProps> = ({
               const wordFrameStart = Math.max(0, Math.floor(word.start * fps))
               const elapsed = Math.max(0, frame - wordFrameStart)
 
-              const scale = isCurrent
-                ? spring({ frame: elapsed, fps, config: { damping: 14, stiffness: 220, mass: 0.8 } })
-                : 1
+              const riseSpring = spring({
+                frame: elapsed,
+                fps,
+                config: { damping: 18, stiffness: 210, mass: 0.7 },
+                from: Math.round(fontSize * 0.35),
+                to: 0,
+              })
+              const opacity = interpolate(elapsed, [0, 5], [0, 1], {
+                extrapolateRight: 'clamp',
+              })
 
               return (
                 <span
                   key={i}
                   style={{
                     fontSize,
-                    fontWeight: 900,
+                    fontWeight: 400,
                     fontFamily,
-                    color: isCurrent ? activeColor : `${textColor}e6`,
-                    textShadow: isCurrent
-                      ? `0 0 40px ${activeColor}80, 0 3px 24px rgba(0,0,0,0.9)`
-                      : '0 3px 24px rgba(0,0,0,0.9)',
+                    textTransform: 'uppercase',
+                    color: isCurrent ? activeColor : textColor,
+                    WebkitTextStroke: `${strokeWidth}px #000000`,
+                    paintOrder: 'stroke fill',
+                    textShadow: '0 3px 10px rgba(0,0,0,0.85)',
                     display: 'inline-block',
-                    transform: `scale(${0.85 + scale * 0.15})`,
-                    transformOrigin: 'center bottom',
-                    lineHeight: 1.2,
+                    transform: `translateY(${riseSpring}px)`,
+                    opacity,
+                    lineHeight: 1.1,
                   }}
                 >
                   {word.word}

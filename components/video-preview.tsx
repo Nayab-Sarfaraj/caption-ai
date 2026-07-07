@@ -6,6 +6,9 @@ import { WordByWord } from '@/remotion/compositions/WordByWord'
 import { Karaoke } from '@/remotion/compositions/Karaoke'
 import { Fade } from '@/remotion/compositions/Fade'
 import { Spring } from '@/remotion/compositions/Spring'
+import { Hype } from '@/remotion/compositions/Hype'
+import { Hormozi } from '@/remotion/compositions/Hormozi'
+import { Minimal } from '@/remotion/compositions/Minimal'
 
 const Player = dynamic(() => import('@remotion/player').then((m) => m.Player), { ssr: false })
 
@@ -14,6 +17,9 @@ const COMPOSITIONS = {
   Karaoke,
   Fade,
   Spring,
+  Hype,
+  Hormozi,
+  Minimal,
 } as const
 
 export type CompositionId = keyof typeof COMPOSITIONS

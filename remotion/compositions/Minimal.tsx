@@ -1,8 +1,11 @@
 import React from 'react'
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, Video, interpolate } from 'remotion'
+import { loadFont } from '@remotion/google-fonts/Inter'
 import type { Transcript, TranscriptSegment } from '../types'
 
-export interface FadeProps {
+const { fontFamily: INTER } = loadFont('normal', { weights: ['500'], subsets: ['latin'] })
+
+export interface MinimalProps {
   transcript: Transcript
   videoSrc: string
   activeColor?: string
@@ -11,23 +14,27 @@ export interface FadeProps {
   fontSizeMultiplier?: number
 }
 
-export const Fade: React.FC<FadeProps> = ({
+// "Iman Gadzhi / Ali Abdaal style": lowercase, single flat color, no per-word
+// emphasis or bounce — just a smooth crossfade between phrases. Deliberately
+// restrained, for creators who don't want the hype-caption look.
+export const Minimal: React.FC<MinimalProps> = ({
   transcript,
   videoSrc,
   textColor = '#FFFFFF',
-  fontFamily = 'system-ui, -apple-system, sans-serif',
+  fontFamily = INTER,
   fontSizeMultiplier = 1,
 }) => {
   const frame = useCurrentFrame()
   const { fps, width, height } = useVideoConfig()
   const currentTime = frame / fps
   const isPortrait = height > width
-  const fontSize = Math.round((isPortrait ? width / 18 : width / 30) * fontSizeMultiplier)
-  const paddingBottom = Math.round(height * 0.08)
-  const paddingH = Math.round(width * 0.05)
-  const maxWidth = Math.round(width * 0.85)
+  const fontSize = Math.round((isPortrait ? width / 20 : width / 34) * fontSizeMultiplier)
+  const paddingBottom = Math.round(height * 0.09)
+  const paddingH = Math.round(width * 0.08)
+  const maxWidth = Math.round(width * 0.8)
 
-  const CHUNK_SIZE = 5
+  const CHUNK_SIZE = 6
+  const fadeDuration = 0.15
 
   const currentSegment: TranscriptSegment | undefined = transcript.segments.find(
     (s) => currentTime >= s.start && currentTime < s.end
@@ -46,10 +53,8 @@ export const Fade: React.FC<FadeProps> = ({
   const visibleWords = currentSegment
     ? currentSegment.words.slice(chunkStart, chunkStart + CHUNK_SIZE)
     : []
-  const chunkText = visibleWords.map((w) => w.word).join(' ')
+  const chunkText = visibleWords.map((w) => w.word).join(' ').toLowerCase()
   const chunkStartTime = visibleWords.length > 0 ? visibleWords[0].start : currentSegment?.start ?? 0
-
-  const fadeDuration = 0.2
 
   const opacity = currentSegment
     ? interpolate(
@@ -78,14 +83,15 @@ export const Fade: React.FC<FadeProps> = ({
           <p
             style={{
               fontSize,
-              fontWeight: 700,
+              fontWeight: 500,
               fontFamily,
               color: textColor,
-              textShadow: '0 3px 20px rgba(0,0,0,0.9)',
+              textShadow: '0 2px 10px rgba(0,0,0,0.7)',
               textAlign: 'center',
               opacity,
               maxWidth,
-              lineHeight: 1.3,
+              lineHeight: 1.4,
+              letterSpacing: '-0.01em',
               wordSpacing: '0.2em',
             }}
           >

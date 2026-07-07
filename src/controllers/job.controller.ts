@@ -13,7 +13,7 @@ const ENQUEUE_TIMEOUT_MS = 10_000
 const HEX_COLOR = z.string().regex(/^#[0-9a-fA-F]{6}$/).optional()
 
 const triggerRenderSchema = z.object({
-  compositionId: z.enum(['WordByWord', 'Karaoke', 'Fade', 'Spring']).default('WordByWord'),
+  compositionId: z.enum(['WordByWord', 'Karaoke', 'Fade', 'Spring', 'Hype', 'Hormozi', 'Minimal']).default('WordByWord'),
   activeColor: HEX_COLOR,
   textColor: HEX_COLOR,
 })

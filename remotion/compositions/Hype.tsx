@@ -1,8 +1,11 @@
 import React from 'react'
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, Video, spring } from 'remotion'
+import { AbsoluteFill, useCurrentFrame, useVideoConfig, Video, spring, interpolate } from 'remotion'
+import { loadFont } from '@remotion/google-fonts/Bangers'
 import type { Transcript } from '../types'
 
-export interface WordByWordProps {
+const { fontFamily: BANGERS } = loadFont()
+
+export interface HypeProps {
   transcript: Transcript
   videoSrc: string
   activeColor?: string
@@ -11,24 +14,27 @@ export interface WordByWordProps {
   fontSizeMultiplier?: number
 }
 
-export const WordByWord: React.FC<WordByWordProps> = ({
+// "MrBeast style": punchy scale-overshoot bounce per word, thick black stroke,
+// glowing color on the keyword currently being spoken.
+export const Hype: React.FC<HypeProps> = ({
   transcript,
   videoSrc,
-  activeColor = '#FACC15',
+  activeColor = '#22C55E',
   textColor = '#FFFFFF',
-  fontFamily = 'system-ui, -apple-system, sans-serif',
+  fontFamily = BANGERS,
   fontSizeMultiplier = 1,
 }) => {
   const frame = useCurrentFrame()
   const { fps, width, height } = useVideoConfig()
   const currentTime = frame / fps
   const isPortrait = height > width
-  const fontSize = Math.round((isPortrait ? width / 18 : width / 28) * fontSizeMultiplier)
-  const paddingBottom = Math.round(height * 0.08)
+  const fontSize = Math.round((isPortrait ? width / 15 : width / 24) * fontSizeMultiplier)
+  const paddingBottom = Math.round(height * 0.1)
   const paddingH = Math.round(width * 0.05)
-  const maxWidth = Math.round(width * 0.88)
+  const maxWidth = Math.round(width * 0.9)
+  const strokeWidth = Math.max(2, Math.round(fontSize * 0.06))
 
-  const CHUNK_SIZE = 5
+  const CHUNK_SIZE = 4
 
   const currentSegment = transcript.segments.find(
     (s) => currentTime >= s.start && currentTime < s.end
@@ -49,13 +55,9 @@ export const WordByWord: React.FC<WordByWordProps> = ({
     : []
 
   return (
-    <AbsoluteFill style={{ backgroundColor: 'transparent' }}>
+    <AbsoluteFill>
       {videoSrc && (
-        <Video
-          src={videoSrc}
-          crossOrigin="anonymous"
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
+        <Video src={videoSrc} crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       )}
       {currentSegment && (
         <AbsoluteFill
@@ -71,7 +73,7 @@ export const WordByWord: React.FC<WordByWordProps> = ({
             style={{
               display: 'flex',
               flexWrap: 'wrap',
-              gap: '0.6em',
+              gap: '0.55em',
               justifyContent: 'center',
               maxWidth,
             }}
@@ -81,25 +83,36 @@ export const WordByWord: React.FC<WordByWordProps> = ({
               const wordFrameStart = Math.max(0, Math.floor(word.start * fps))
               const elapsed = Math.max(0, frame - wordFrameStart)
 
-              const scale = isCurrent
-                ? spring({ frame: elapsed, fps, config: { damping: 14, stiffness: 220, mass: 0.8 } })
-                : 1
+              const bounce = spring({
+                frame: elapsed,
+                fps,
+                config: { damping: 9, stiffness: 260, mass: 0.7 },
+              })
+              const scale = isCurrent ? 0.6 + bounce * 0.55 : 1
+
+              const opacity = interpolate(elapsed, [0, 4], [0, 1], {
+                extrapolateRight: 'clamp',
+              })
 
               return (
                 <span
                   key={i}
                   style={{
                     fontSize,
-                    fontWeight: 900,
+                    fontWeight: 400,
                     fontFamily,
-                    color: isCurrent ? activeColor : `${textColor}e6`,
+                    textTransform: 'uppercase',
+                    color: isCurrent ? activeColor : textColor,
+                    WebkitTextStroke: `${strokeWidth}px #000000`,
+                    paintOrder: 'stroke fill',
                     textShadow: isCurrent
-                      ? `0 0 40px ${activeColor}80, 0 3px 24px rgba(0,0,0,0.9)`
-                      : '0 3px 24px rgba(0,0,0,0.9)',
+                      ? `0 0 30px ${activeColor}, 0 4px 12px rgba(0,0,0,0.9)`
+                      : '0 4px 12px rgba(0,0,0,0.9)',
                     display: 'inline-block',
-                    transform: `scale(${0.85 + scale * 0.15})`,
+                    transform: `scale(${scale})`,
                     transformOrigin: 'center bottom',
-                    lineHeight: 1.2,
+                    opacity,
+                    lineHeight: 1.15,
                   }}
                 >
                   {word.word}

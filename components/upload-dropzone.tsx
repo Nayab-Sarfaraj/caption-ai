@@ -5,7 +5,7 @@ import { useDropzone } from 'react-dropzone'
 import { useMutation } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 
-type CompositionId = 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring'
+type CompositionId = 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring' | 'Hype' | 'Hormozi' | 'Minimal'
 type UploadStep = 'idle' | 'getting-url' | 'uploading' | 'confirming' | 'done' | 'error'
 
 const ACCEPTED_VIDEO = { 'video/mp4': ['.mp4'], 'video/quicktime': ['.mov'] }
@@ -17,6 +17,9 @@ const STYLES: { id: CompositionId; label: string; preview: string; desc: string 
   { id: 'Karaoke',   label: 'Karaoke',      preview: 'past · now · future', desc: 'Words shift color' },
   { id: 'Fade',      label: 'Fade',          preview: 'Line fades in...',    desc: 'Line fades per segment' },
   { id: 'Spring',    label: 'Spring',        preview: 'Words ↑ bounce ↑ up', desc: 'Words spring from below' },
+  { id: 'Hype',      label: 'Hype',          preview: 'BOOM · POP · BOUNCE', desc: 'MrBeast-style bounce + glow' },
+  { id: 'Hormozi',   label: 'Hormozi',       preview: 'YELLOW STROKE POP',   desc: 'Yellow-stroke pop-in, Anton font' },
+  { id: 'Minimal',   label: 'Minimal',       preview: 'calm lowercase text', desc: 'Restrained, single-color, no hype' },
 ]
 
 export function UploadDropzone() {

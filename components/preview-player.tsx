@@ -12,10 +12,16 @@ const STYLES: { id: CompositionId; label: string; desc: string }[] = [
   { id: 'Karaoke',   label: 'Karaoke',      desc: 'Words shift color' },
   { id: 'Fade',      label: 'Fade',          desc: 'Line fades per segment' },
   { id: 'Spring',    label: 'Spring',        desc: 'Words spring from below' },
+  { id: 'Hype',      label: 'Hype',         desc: 'MrBeast-style bounce + glow' },
+  { id: 'Hormozi',   label: 'Hormozi',      desc: 'Yellow-stroke pop-in, Anton font' },
+  { id: 'Minimal',   label: 'Minimal',      desc: 'Restrained, single-color, no hype' },
 ]
 
 const FONTS = [
   { label: 'System',       value: 'system-ui, -apple-system, sans-serif' },
+  { label: 'Bangers',      value: 'Bangers, "Comic Sans MS", cursive' },
+  { label: 'Anton',        value: 'Anton, Impact, sans-serif' },
+  { label: 'Inter',        value: 'Inter, system-ui, sans-serif' },
   { label: 'Impact',       value: 'Impact, "Arial Black", sans-serif' },
   { label: 'Arial Black',  value: '"Arial Black", "Arial Bold", sans-serif' },
   { label: 'Arial',        value: 'Arial, Helvetica, sans-serif' },
@@ -129,6 +135,9 @@ const INITIAL_SETTINGS: SettingsMap = {
   Karaoke:    { ...DEFAULT },
   Fade:       { ...DEFAULT },
   Spring:     { ...DEFAULT },
+  Hype:       { ...DEFAULT, activeColor: '#22C55E', textColor: '#FFFFFF', fontFamily: 'Bangers, "Comic Sans MS", cursive' },
+  Hormozi:    { ...DEFAULT, activeColor: '#F7C204', textColor: '#FFFFFF', fontFamily: 'Anton, Impact, sans-serif' },
+  Minimal:    { ...DEFAULT, activeColor: '#FFFFFF', textColor: '#FFFFFF', fontFamily: 'Inter, system-ui, sans-serif' },
 }
 
 export function PreviewPlayer({

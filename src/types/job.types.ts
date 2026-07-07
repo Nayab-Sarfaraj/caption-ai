@@ -3,7 +3,7 @@ export interface RenderJobPayload {
   userId: string
   videoKey: string
   transcriptKey?: string
-  compositionId: 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring'
+  compositionId: 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring' | 'Hype' | 'Hormozi' | 'Minimal'
   fps: number
   outputFormat: 'mp4'
   phase: 'transcribe' | 'render'
