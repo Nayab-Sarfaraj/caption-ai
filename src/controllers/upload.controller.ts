@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { uploadRequestSchema, captionUploadSchema, jobConfirmSchema } from '@/src/helpers/validators'
-import { createUploadJob } from '@/src/services/upload.service'
+import { uploadRequestSchema, captionUploadSchema, jobConfirmSchema, batchUploadRequestSchema } from '@/src/helpers/validators'
+import { createUploadJob, createBatchUploadJobs } from '@/src/services/upload.service'
 import { findJobById, updateJobStatus, updateJobTranscript, updateJobDimensions } from '@/src/repositories/job.repository'
 import { parseCaptionFile } from '@/src/helpers/srt-parser'
 import { connectDB } from '@/src/lib/mongo'
@@ -31,6 +31,31 @@ export async function handleCreateUpload(req: NextRequest): Promise<NextResponse
       )
     }
     console.error('Upload error:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function handleCreateBatchUpload(req: NextRequest): Promise<NextResponse> {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const body = await req.json()
+  const parsed = batchUploadRequestSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
+  }
+
+  try {
+    const data = await createBatchUploadJobs(userId, parsed.data.files)
+    return NextResponse.json(data)
+  } catch (err: unknown) {
+    if (err instanceof Error && err.message === 'RATE_LIMIT') {
+      return NextResponse.json(
+        { error: 'Upload limit reached (5 per day on free tier)' },
+        { status: 429 }
+      )
+    }
+    console.error('Batch upload error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

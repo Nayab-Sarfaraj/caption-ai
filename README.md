@@ -527,7 +527,7 @@ npm run remotion:studio  # Remotion Studio for composition development
 ## Roadmap
 
 **Phase 2 — Payments + polish**
-- Stripe Checkout + webhooks (flat monthly tier, no credit system)
+- Razorpay Subscriptions + webhooks (flat monthly tier, no credit system)
 - Brand kit: saved font / color / animation presets per user
 - Batch upload (multiple videos per job)
 - Better retry UI for failed renders

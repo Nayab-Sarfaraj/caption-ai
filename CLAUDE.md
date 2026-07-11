@@ -18,6 +18,7 @@ Caption generator — word-by-word animated captions for uploaded video, rendere
 - Transcription: Deepgram (Nova-3 batch default, hosted Whisper as fallback/config flag)
 - Realtime updates: SSE (render/job progress)
 - Data fetching: TanStack Query (React Query v5)
+- Payments: Razorpay Subscriptions (not Stripe — see Product decisions)
 
 ## Architecture
 
@@ -58,6 +59,7 @@ Both Next.js and the worker connect to the same Redis instance — that's the on
 - **Deepgram SDK method:** `@deepgram/sdk` v5+ changed API. Correct call is `client.listen.v1.media.transcribeUrl({ url, model: 'nova-3', punctuate: true, smart_format: true })` — NOT the old `listen.prerecorded.transcribeUrl` pattern.
 - **Job rate-limit query:** `job.repository.ts` needs compound index `{ userId: 1, createdAt: 1 }` on the Job model — without it the daily upload-count query table-scans.
 - **SSE route runtime:** always `export const runtime = 'nodejs'` on SSE + webhook routes — ioredis is TCP and silently fails on Vercel Edge Runtime.
+- **Razorpay webhook signature:** verify using `crypto.createHmac('sha256', webhookSecret)` over the **raw** request body — same "don't let Next.js parse the JSON before verifying" trap as Stripe. Use `req.text()`, never `req.json()`, in the webhook route.
 
 ## Out of scope for now
 
@@ -75,6 +77,7 @@ Layered architecture — controllers/services/repositories pattern, not logic du
     /upload/route.ts           → calls controller, returns response
     /jobs/[id]/route.ts
     /jobs/[id]/stream/route.ts → SSE endpoint
+    /webhooks/razorpay/route.ts → Razorpay webhook handler
   /(dashboard)/...             → UI pages
   layout.tsx, page.tsx
 
@@ -82,16 +85,18 @@ Layered architecture — controllers/services/repositories pattern, not logic du
   /controllers                 → request/response handling only, calls services
     upload.controller.ts
     job.controller.ts
+    billing.controller.ts      → Razorpay checkout/webhook request handling
   /services                    → business logic, orchestration
     upload.service.ts
     transcription.service.ts   → Deepgram/Whisper abstraction lives here
     job.service.ts
     render.service.ts          → used by worker, not by Next directly
+    billing.service.ts         → Razorpay subscription creation, webhook event handling
   /repositories                → DB access only, no business logic
     user.repository.ts
     job.repository.ts
   /models                      → Mongoose schemas
-    User.ts
+    User.ts                    → includes razorpayCustomerId, razorpaySubscriptionId, subscriptionStatus
     Job.ts
   /lib                         → shared infra clients (singletons)
     mongo.ts
@@ -99,6 +104,7 @@ Layered architecture — controllers/services/repositories pattern, not logic du
     storage.ts                → S3/R2 client
     deepgram.ts
     queue.ts                  → BullMQ queue definition (shared with worker)
+    razorpay.ts                → Razorpay SDK client singleton
   /helpers                     → pure utility functions (no side effects)
     srt-parser.ts
     validators.ts
@@ -124,6 +130,7 @@ Layered architecture — controllers/services/repositories pattern, not logic du
 ```
 
 **Rules:**
+
 - Controllers never touch the DB or external APIs directly — always through a service.
 - Services never import Next.js request/response types — keeps them reusable by the worker too.
 - Repositories are the only files that import Mongoose models directly.
@@ -140,12 +147,14 @@ Layered architecture — controllers/services/repositories pattern, not logic du
 - **Rate limiting:** free tier capped at 5 uploads/day (or 3 renders/month if using free-with-watermark model). Paid tier: soft flag for review if >20 uploads/day, no hard block.
 - **Pricing:** target $12–15/month flat, unlimited renders within upload limits above. Free tier: watermark + 3 renders/month, no card required.
 - **Legal:** template ToS/Privacy Policy at launch (e.g. Termly), swap for real legal review post-revenue.
+- **Payments — Razorpay, not Stripe:** Stripe is invite-only in India with no self-serve signup, so it's not usable for this project. Razorpay supports India-registered businesses directly, plus UPI/cards/eMandate payment methods relevant to an India-based and international customer base. Use Razorpay Subscriptions API (Plan + Subscription per customer, auto-charged on schedule) and Razorpay webhooks for lifecycle sync — architecturally the same shape as the original Stripe plan (create → webhook → sync `subscriptionStatus` on `User`), just different SDK/event names. RevenueCat is not used — no mobile app in this project yet.
 
 ## Phases
 
 **Phase 1 — MVP**
+
 - Next.js app scaffold, Tailwind + shadcn setup
-- Google login (NextAuth), Mongo connection
+- Google login (Clerk), Mongo connection
 - Upload UI → presigned URL → storage
 - Optional `.srt`/`.vtt` upload path
 - Deepgram Nova-3 batch integration
@@ -155,17 +164,39 @@ Layered architecture — controllers/services/repositories pattern, not logic du
 - Flat single pricing tier (even if payments aren't wired yet, no credit system in the data model)
 
 **Phase 2 — Payments + polish**
-- Payment integration: Stripe Checkout + webhooks (direct — no RevenueCat; not needed until/unless a mobile app version ships and cross-platform entitlement sync becomes relevant). **Action item: create a separate Stripe account for this project — existing RevenueCat/Play Store setup from PixlAI does not apply here.**
+
+- Payment integration: Razorpay Subscriptions + webhooks. **Action items:**
+  - Create a Razorpay account, complete business KYC verification
+  - Create a Plan (amount + monthly billing cycle) in Razorpay dashboard/API, note the Plan ID
+  - Decide checkout UX: Razorpay Checkout (embedded JS modal) vs Subscription Link (simpler, hosted, no-code) before implementation
+  - `src/lib/razorpay.ts` — Razorpay Node SDK client singleton, same pattern as `mongo.ts`/`redis.ts`
+  - `User` model: add `razorpayCustomerId`, `razorpaySubscriptionId`, `subscriptionStatus` (`'none' | 'active' | 'halted' | 'cancelled'`)
+  - Webhook route `app/api/webhooks/razorpay/route.ts` — raw body + HMAC-SHA256 signature verification (see gotcha above), subscribe to `subscription.activated`, `subscription.charged`, `subscription.halted`, `subscription.cancelled`
+  - All webhook handlers must be idempotent upserts keyed on `razorpaySubscriptionId` — Razorpay can retry/resend events
+  - Access gate: `canRender(userId)` returns `{ allowed, watermark }` — paid+active → no watermark; free tier under monthly quota → watermark: true; free tier over quota → not allowed. Gate in service layer, not middleware (needs a DB read).
 - Brand kit: saved font/color/animation presets per user
 - Batch upload (multiple videos per job run)
 - Better error handling/retry UI for failed renders
 - Basic usage dashboard (renders done, storage used)
 
 **Phase 3 — Differentiator / scale**
+
 - Public API exposing Remotion compositions programmatically
 - Multi-worker scaling on VM (or move to multiple VMs) as load grows
 - Additional caption styles / customization controls
 - Revisit diarization/multi-speaker if podcast use case gains traction
+
+## Environment Variables Reference
+
+```
+# .env.local (Next.js — never commit)
+RAZORPAY_KEY_ID=
+RAZORPAY_KEY_SECRET=
+RAZORPAY_WEBHOOK_SECRET=
+RAZORPAY_PLAN_ID=
+```
+
+No new worker env vars for billing — worker doesn't touch Razorpay directly.
 
 ## Commands
 

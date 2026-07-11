@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { connectDB } from '@/src/lib/mongo'
 import { findJobsByUserId } from '@/src/repositories/job.repository'
 import { UploadDropzone } from '@/components/upload-dropzone'
-import { JobsTable } from '@/components/jobs-table'
+import { JobsGrid } from '@/components/jobs-table'
 import Link from 'next/link'
 
 const RECENT_COUNT = 4
@@ -27,7 +27,7 @@ export default async function DashboardPage() {
         <UploadDropzone />
       </div>
 
-      {/* Recent jobs — rendered as SRT-block syntax */}
+      {/* Recent jobs — card view */}
       {jobs.length > 0 && (
         <section className="mt-10">
           <div className="flex items-baseline justify-between mb-3">
@@ -41,7 +41,7 @@ export default async function DashboardPage() {
               </Link>
             )}
           </div>
-          <JobsTable
+          <JobsGrid
             jobs={jobs.map((job) => ({
               id: job._id.toString(),
               originalFilename: job.originalFilename,

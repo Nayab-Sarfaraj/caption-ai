@@ -20,6 +20,13 @@ const envSchema = z.object({
   // Deepgram
   DEEPGRAM_API_KEY: z.string().min(1),
   TRANSCRIPTION_PROVIDER: z.enum(['deepgram', 'whisper']).default('deepgram'),
+
+  // Razorpay
+  RAZORPAY_KEY_ID: z.string().min(1),
+  RAZORPAY_KEY_SECRET: z.string().min(1),
+  RAZORPAY_WEBHOOK_SECRET: z.string().min(1),
+  RAZORPAY_PLAN_ID: z.string().min(1),
+  NEXT_PUBLIC_APP_URL: z.string().url(),
 })
 
 // Validate at import time — fail loudly on startup, not silently at runtime

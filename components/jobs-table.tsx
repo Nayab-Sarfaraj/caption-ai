@@ -25,6 +25,7 @@ export interface JobListItem {
   originalFilename: string
   status: string
   createdAt?: Date | string | null
+  batchId?: string | null
 }
 
 export function JobsTable({ jobs, startIndex = 0 }: { jobs: JobListItem[]; startIndex?: number }) {
@@ -50,6 +51,46 @@ export function JobsTable({ jobs, startIndex = 0 }: { jobs: JobListItem[]; start
           </Link>
         )
       })}
+    </div>
+  )
+}
+
+export function JobCard({ job }: { job: JobListItem }) {
+  const s = JOB_STATUS[job.status] ?? JOB_STATUS.pending
+  return (
+    <Link
+      href={`/dashboard/jobs/${job.id}`}
+      className="group overflow-hidden rounded-xl ring-1 ring-inset ring-[#14120f1f] hover:ring-[#14120f3d] transition-colors bg-white"
+    >
+      <div
+        className="relative aspect-video flex items-center justify-center"
+        style={{ background: 'radial-gradient(130% 100% at 25% 10%, #302f2c 0%, #1a1917 55%, #0a0a09 100%)' }}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-white/25 group-hover:text-white/40 transition-colors">
+          <path d="M8 5.5v13l11-6.5-11-6.5z" fill="currentColor" />
+        </svg>
+        <span
+          className="absolute top-2 right-2 inline-flex items-center gap-1.5 text-[10px] px-1.5 py-1 rounded-[3px] bg-black/45"
+          style={{ color: s.color }}
+        >
+          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+          {s.label}
+        </span>
+      </div>
+      <div className="px-3 py-2.5">
+        <p className="text-xs font-medium text-[#1a1917] truncate">{job.originalFilename}</p>
+        <p className="text-[11px] text-[#a39e96] mt-0.5">
+          {job.createdAt ? jobTimecode(new Date(job.createdAt)) : '--:--:--'}
+        </p>
+      </div>
+    </Link>
+  )
+}
+
+export function JobsGrid({ jobs }: { jobs: JobListItem[] }) {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      {jobs.map((job) => <JobCard key={job.id} job={job} />)}
     </div>
   )
 }

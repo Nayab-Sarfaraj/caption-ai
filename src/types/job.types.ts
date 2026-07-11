@@ -10,6 +10,8 @@ export interface RenderJobPayload {
   activeColor?: string  // highlight color, default #FACC15
   textColor?: string    // base text color, default #FFFFFF
   accentColor?: string  // BoxHighlight in-box text color, default #A3E635
+  fontFamily?: string   // CSS font-family stack, composition falls back to its own default
+  watermark?: boolean   // free-tier render — threaded through for compositions to render later, not drawn yet
 }
 
 export interface JobProgressEvent {

@@ -6,6 +6,8 @@ import { generatePresignedGet } from '@/src/helpers/presigned-url'
 import { JobProgress } from '@/components/job-progress'
 import { DownloadButton } from '@/components/download-button'
 import { PreviewPlayer } from '@/components/preview-player-wrapper'
+import { RetryButton } from '@/components/retry-button'
+import { mapErrorMessage } from '@/src/helpers/error-messages'
 import type { Transcript } from '@/src/types/transcript.types'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
@@ -80,7 +82,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           filename={job.originalFilename}
           statusLabel={s.label}
           statusColor={s.color}
-          transcriptSource={job.transcriptSource}
+          transcriptSource={job.transcriptSource ?? undefined}
           createdAt={job.createdAt ? new Date(job.createdAt).toLocaleString() : undefined}
         />
       ) : (
@@ -110,8 +112,8 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
                     </div>
                   )}
                   <p className="text-sm font-bold" style={{ color: s.color }}>{s.label}</p>
-                  {isFailed && job.errorMessage && (
-                    <p className="text-xs text-white/60 max-w-xs text-center px-4">{job.errorMessage}</p>
+                  {isFailed && (
+                    <p className="text-xs text-white/60 max-w-xs text-center px-4">{mapErrorMessage(job.errorMessage)}</p>
                   )}
                 </div>
               </div>
@@ -155,6 +157,10 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
 
             {isDone && (
               <DownloadButton jobId={id} filename={`captioned-${job.originalFilename}`} />
+            )}
+
+            {isFailed && (
+              <RetryButton jobId={id} manualRetryCount={job.manualRetryCount} />
             )}
           </div>
         </div>

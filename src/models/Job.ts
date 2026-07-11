@@ -13,9 +13,20 @@ export interface IJob extends Document {
   transcriptKey: string | null  // R2 key if transcript stored externally (large files)
   outputKey: string | null
   errorMessage: string | null
-  retryCount: number
+  retryCount: number            // BullMQ automatic retry count — NOT the same as manualRetryCount below
+  manualRetryCount: number      // user-initiated retries from the dashboard, capped separately
+  batchId: string | null        // shared across jobs created from one batch-upload session
+  fileSize: number | null       // bytes, set at upload confirm time — null for jobs uploaded before this field existed
   width: number
   height: number
+  // Resolved render config from the last trigger-render call (post brand-kit
+  // merge) — persisted so a manual retry reuses what was actually attempted,
+  // not whatever the user's brand kit happens to say right now.
+  compositionId: string | null
+  activeColor: string | null
+  textColor: string | null
+  accentColor: string | null
+  fontFamily: string | null
   createdAt: Date
   updatedAt: Date
 }
@@ -36,8 +47,16 @@ const JobSchema = new Schema<IJob>(
     outputKey: { type: String, default: null },
     errorMessage: { type: String, default: null },
     retryCount: { type: Number, default: 0 },
+    manualRetryCount: { type: Number, default: 0 },
+    batchId: { type: String, default: null, index: true },
+    fileSize: { type: Number, default: null },
     width: { type: Number, default: 1920 },
     height: { type: Number, default: 1080 },
+    compositionId: { type: String, default: null },
+    activeColor: { type: String, default: null },
+    textColor: { type: String, default: null },
+    accentColor: { type: String, default: null },
+    fontFamily: { type: String, default: null },
   },
   { timestamps: true }
 )

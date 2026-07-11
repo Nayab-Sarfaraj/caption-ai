@@ -1,22 +1,27 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { findJobById, findJobsByUserId } from '@/src/repositories/job.repository'
+import { findJobById, findJobsByUserId, updateJobRenderConfig } from '@/src/repositories/job.repository'
 import { generatePresignedGet } from '@/src/helpers/presigned-url'
 import { getRenderQueue } from '@/src/lib/queue'
 import { updateJobStatus } from '@/src/repositories/job.repository'
+import { getBrandKit } from '@/src/services/brand-kit.service'
+import { canRender } from '@/src/services/billing.service'
+import { retryJob, RetryServiceError } from '@/src/services/job.service'
 import { connectDB } from '@/src/lib/mongo'
 import type { RenderJobPayload } from '@/src/types/job.types'
+import { compositionIdSchema, hexColorSchema, fontFamilySchema } from '@/src/helpers/validators'
 import { z } from 'zod'
 
 const ENQUEUE_TIMEOUT_MS = 10_000
 
-const HEX_COLOR = z.string().regex(/^#[0-9a-fA-F]{6}$/).optional()
-
+// No .default() here — brand-kit fallback (below) needs to tell "not sent"
+// apart from "sent". Precedence: request body > brand kit > hardcoded default.
 const triggerRenderSchema = z.object({
-  compositionId: z.enum(['WordByWord', 'Karaoke', 'Fade', 'Spring', 'Hype', 'Hormozi', 'Minimal', 'BoxHighlight', 'Comic', 'Pill', 'Script']).default('WordByWord'),
-  activeColor: HEX_COLOR,
-  textColor: HEX_COLOR,
-  accentColor: HEX_COLOR,
+  compositionId: compositionIdSchema.optional(),
+  activeColor: hexColorSchema.optional(),
+  textColor: hexColorSchema.optional(),
+  accentColor: hexColorSchema.optional(),
+  fontFamily: fontFamilySchema.optional(),
 })
 
 export async function handleGetJob(
@@ -74,18 +79,40 @@ export async function handleTriggerRender(
     )
   }
 
+  const { allowed, watermark } = await canRender(userId)
+  if (!allowed) {
+    return NextResponse.json(
+      { error: 'Free render limit reached this month — subscribe for unlimited renders' },
+      { status: 402 }
+    )
+  }
+
+  const brandKit = await getBrandKit(userId)
+
   const payload: RenderJobPayload = {
     jobId,
     userId,
     videoKey: job.videoKey,
-    compositionId: parsed.data.compositionId,
+    compositionId: parsed.data.compositionId ?? brandKit?.defaultCompositionId ?? 'WordByWord',
     fps: 30,
     outputFormat: 'mp4',
     phase: 'render',
-    activeColor: parsed.data.activeColor,
-    textColor: parsed.data.textColor,
-    accentColor: parsed.data.accentColor,
+    activeColor: parsed.data.activeColor ?? brandKit?.activeColor ?? undefined,
+    textColor: parsed.data.textColor ?? brandKit?.textColor ?? undefined,
+    accentColor: parsed.data.accentColor ?? brandKit?.accentColor ?? undefined,
+    fontFamily: parsed.data.fontFamily ?? brandKit?.fontFamily ?? undefined,
+    watermark,
   }
+
+  // Persist the resolved config so a later manual retry (Stage 4) can reuse
+  // exactly what was attempted here, not whatever the brand kit says by then.
+  await updateJobRenderConfig(jobId, {
+    compositionId: payload.compositionId,
+    activeColor: payload.activeColor,
+    textColor: payload.textColor,
+    accentColor: payload.accentColor,
+    fontFamily: payload.fontFamily,
+  })
 
   try {
     await Promise.race([
@@ -107,6 +134,35 @@ export async function handleTriggerRender(
   }
 
   return NextResponse.json({ jobId, status: 'rendering' })
+}
+
+const RETRY_ERROR_STATUS: Record<string, number> = {
+  NOT_FOUND: 404,
+  NOT_FAILED: 409,
+  RETRY_CAP_EXCEEDED: 429,
+  RENDER_LIMIT: 402,
+  ENQUEUE_FAILED: 503,
+}
+
+export async function handleRetryJob(
+  _req: NextRequest,
+  jobId: string
+): Promise<NextResponse> {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  await connectDB()
+
+  try {
+    const { status } = await retryJob(jobId, userId)
+    return NextResponse.json({ jobId, status })
+  } catch (err) {
+    if (err instanceof RetryServiceError) {
+      return NextResponse.json({ error: err.message }, { status: RETRY_ERROR_STATUS[err.code] ?? 500 })
+    }
+    console.error('Retry error:', err)
+    return NextResponse.json({ error: 'Retry failed' }, { status: 500 })
+  }
 }
 
 export async function handleListJobs(req: NextRequest): Promise<NextResponse> {

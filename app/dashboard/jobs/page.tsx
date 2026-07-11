@@ -2,7 +2,8 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { connectDB } from '@/src/lib/mongo'
 import { findJobsByUserId } from '@/src/repositories/job.repository'
-import { JobsTable } from '@/components/jobs-table'
+import { JobCard, type JobListItem } from '@/components/jobs-table'
+import { BatchProgress } from '@/components/batch-progress'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 
@@ -23,7 +24,6 @@ export default async function AllJobsPage({
   const { jobs, total } = await findJobsByUserId(userId, { page, pageSize: PAGE_SIZE })
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
-  const startIndex = (page - 1) * PAGE_SIZE
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-8 py-7 sm:py-10 font-[family-name:var(--font-cc)]">
@@ -47,14 +47,14 @@ export default async function AllJobsPage({
         <p className="text-sm text-[#a39e96] mt-6">No videos yet.</p>
       ) : (
         <>
-          <JobsTable
+          <JobsWithBatches
             jobs={jobs.map((job) => ({
               id: job._id.toString(),
               originalFilename: job.originalFilename,
               status: job.status,
               createdAt: job.createdAt,
+              batchId: job.batchId,
             }))}
-            startIndex={startIndex}
           />
 
           {totalPages > 1 && (
@@ -86,6 +86,26 @@ export default async function AllJobsPage({
           )}
         </>
       )}
+    </div>
+  )
+}
+
+// Jobs sharing a non-null batchId render as one BatchProgress card; standalone
+// jobs (batchId null — every Phase 1 upload, and any single upload since)
+// render as individual cards, unchanged from before batching existed.
+function JobsWithBatches({ jobs }: { jobs: JobListItem[] }) {
+  const seenBatches = new Set<string>()
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      {jobs.map((job) => {
+        if (!job.batchId) return <JobCard key={job.id} job={job} />
+        if (seenBatches.has(job.batchId)) return null
+
+        seenBatches.add(job.batchId)
+        const batchJobs = jobs.filter((j) => j.batchId === job.batchId)
+        return <BatchProgress key={job.batchId} batchId={job.batchId} jobs={batchJobs} />
+      })}
     </div>
   )
 }

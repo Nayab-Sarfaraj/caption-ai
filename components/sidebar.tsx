@@ -5,13 +5,24 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { UserButton, SignOutButton } from '@clerk/nextjs'
 import { LogOut } from 'lucide-react'
+import type { SubscriptionStatus } from '@/src/models/User'
 
 const NAV = [
   { href: '/dashboard', index: '01', label: 'HOME', exact: true },
   { href: '/dashboard/jobs', index: '02', label: 'VIDEOS', exact: false },
+  { href: '/dashboard/usage', index: '03', label: 'USAGE', exact: false },
+  { href: '/dashboard/settings', index: '04', label: 'SETTINGS', exact: false },
+  { href: '/dashboard/billing', index: '05', label: 'BILLING', exact: false },
 ]
 
-export function Sidebar() {
+const PLAN_BADGE: Record<SubscriptionStatus, string> = {
+  active: 'Pro plan',
+  halted: 'Payment failed',
+  cancelled: 'Cancelled',
+  none: 'Free plan',
+}
+
+export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: SubscriptionStatus }) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
 
@@ -72,7 +83,7 @@ export function Sidebar() {
           <UserButton />
           {!collapsed && (
             <span className="text-[10px] uppercase tracking-wide text-[#a39e96] border border-[#14120f1f] px-1.5 py-0.5">
-              Free plan
+              {PLAN_BADGE[subscriptionStatus]}
             </span>
           )}
         </div>
