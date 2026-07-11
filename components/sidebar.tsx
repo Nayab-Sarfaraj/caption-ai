@@ -78,13 +78,31 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
         })}
       </nav>
 
+      {subscriptionStatus !== 'active' && (
+        <div className={collapsed ? 'flex justify-center px-2 pb-2' : 'px-2 pb-2'}>
+          <Link
+            href="/dashboard/billing"
+            title={collapsed ? 'Upgrade to Pro' : undefined}
+            className={[
+              'flex items-center justify-center gap-1.5 bg-[#c1361f] text-white text-xs font-bold py-2 hover:brightness-[1.08] transition-all',
+              collapsed ? 'w-8 h-8 shrink-0' : 'w-full',
+            ].join(' ')}
+          >
+            {collapsed ? '⚡' : '⚡ Upgrade to Pro'}
+          </Link>
+        </div>
+      )}
+
       <div className="border-t border-[#14120f1f]">
         <div className={['p-3 flex items-center gap-2.5', collapsed ? 'justify-center' : ''].join(' ')}>
           <UserButton />
           {!collapsed && (
-            <span className="text-[10px] uppercase tracking-wide text-[#a39e96] border border-[#14120f1f] px-1.5 py-0.5">
+            <Link
+              href="/dashboard/billing"
+              className="text-[10px] uppercase tracking-wide text-[#a39e96] hover:text-[#c1361f] hover:border-[#c1361f] border border-[#14120f1f] px-1.5 py-0.5 transition-colors"
+            >
               {PLAN_BADGE[subscriptionStatus]}
-            </span>
+            </Link>
           )}
         </div>
         <div className={['px-2 pb-2', collapsed ? 'flex justify-center' : ''].join(' ')}>

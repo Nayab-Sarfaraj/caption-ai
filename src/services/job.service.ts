@@ -1,6 +1,7 @@
 import {
   findJobById,
   updateJobStatus,
+  updateJobRenderConfig,
   incrementManualRetryIfUnderCap,
 } from '@/src/repositories/job.repository'
 import { generatePresignedGet } from '@/src/helpers/presigned-url'
@@ -61,6 +62,20 @@ export async function retryJob(jobId: string, userId: string): Promise<{ status:
   // Atomic — guards a double-click racing past the cap even after the check above.
   const updated = await incrementManualRetryIfUnderCap(jobId, MAX_MANUAL_RETRIES)
   if (!updated) throw new RetryServiceError('RETRY_CAP_EXCEEDED', `Retry limit reached (${MAX_MANUAL_RETRIES} max)`)
+
+  // Re-persist watermarked state — a retry re-checks canRender fresh, so it
+  // can legitimately differ from the original attempt (e.g. user subscribed
+  // in between), and the job page reads this field to show the right CTA.
+  if (skipTranscription) {
+    await updateJobRenderConfig(jobId, {
+      compositionId: (job.compositionId as RenderJobPayload['compositionId']) ?? 'WordByWord',
+      activeColor: job.activeColor ?? undefined,
+      textColor: job.textColor ?? undefined,
+      accentColor: job.accentColor ?? undefined,
+      fontFamily: job.fontFamily ?? undefined,
+      watermarked: watermark,
+    })
+  }
 
   const payload: RenderJobPayload = skipTranscription
     ? {

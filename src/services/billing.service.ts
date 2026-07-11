@@ -11,7 +11,9 @@ import { countRendersThisMonth } from '@/src/repositories/job.repository'
 // 1200 monthly cycles = 100 years, the practical proxy for an unbounded flat-tier plan.
 const TOTAL_COUNT_MONTHLY = 1200
 
-const FREE_TIER_MONTHLY_RENDERS = 3
+// Single source of truth — usage page, billing page, and the render-trigger
+// gate all read this. Redeclaring it per-file lets it drift silently.
+export const FREE_TIER_MONTHLY_RENDERS = 3
 
 export interface RazorpaySubscriptionWebhookEntity {
   id: string
@@ -99,4 +101,15 @@ export async function canRender(clerkId: string): Promise<{ allowed: boolean; wa
   }
 
   return { allowed: false, watermark: false }
+}
+
+// Free renders left this month for a non-paying user — 0 once subscribed
+// (unlimited, the number stops being meaningful) so callers can treat it as
+// "N left" without also checking subscriptionStatus themselves.
+export async function getRendersRemaining(clerkId: string): Promise<number> {
+  const user = await findByClerkId(clerkId)
+  if (user?.subscriptionStatus === 'active') return 0
+
+  const count = await countRendersThisMonth(clerkId)
+  return Math.max(0, FREE_TIER_MONTHLY_RENDERS - count)
 }

@@ -4,7 +4,9 @@ import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { useMutation } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { CaptionStylePreview } from '@/components/caption-style-preview'
+import { PaywallModal } from '@/components/paywall-modal'
 
 type CompositionId = 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring' | 'Hype' | 'Hormozi' | 'Minimal' | 'BoxHighlight' | 'Comic' | 'Pill' | 'Script'
 type UploadStep = 'idle' | 'getting-url' | 'uploading' | 'confirming' | 'done' | 'error'
@@ -28,7 +30,7 @@ const STYLES: { id: CompositionId; label: string; desc: string }[] = [
   { id: 'Script',    label: 'Script',        desc: 'Gold italic script accent word' },
 ]
 
-export function UploadDropzone() {
+export function UploadDropzone({ isPaid, rendersRemaining }: { isPaid: boolean; rendersRemaining: number }) {
   const router = useRouter()
   const [step, setStep]                   = useState<UploadStep>('idle')
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -39,6 +41,7 @@ export function UploadDropzone() {
   const [captionFile, setCaptionFile]     = useState<File | null>(null)
   const [style, setStyle]                 = useState<CompositionId>('WordByWord')
   const [showCaption, setShowCaption]     = useState(false)
+  const [showPaywall, setShowPaywall]     = useState(false)
 
   const onVideoDrop = useCallback(
     (f: File[]) => {
@@ -183,8 +186,44 @@ export function UploadDropzone() {
     confirming: 'Finalizing…', done: 'Done!', error: 'Upload failed',
   }
 
+  const blocked = !isPaid && rendersRemaining <= 0
+
+  const runGenerate = useCallback(() => {
+    if (batchMode) {
+      batchUploadMutation.mutate()
+    } else {
+      uploadMutation.mutate()
+    }
+  }, [batchMode, batchUploadMutation, uploadMutation])
+
+  const handleGenerateClick = useCallback(() => {
+    if (!isPaid) {
+      setShowPaywall(true)
+    } else {
+      runGenerate()
+    }
+  }, [isPaid, runGenerate])
+
   return (
     <div className="space-y-6">
+      {showPaywall && (
+        <PaywallModal
+          onClose={() => setShowPaywall(false)}
+          onContinueFree={() => { setShowPaywall(false); runGenerate() }}
+        />
+      )}
+
+      {!isPaid && (
+        <p className="text-xs text-[#a39e96]">
+          {blocked
+            ? 'Free limit reached this month ·'
+            : `${rendersRemaining} free render${rendersRemaining === 1 ? '' : 's'} left this month · watermarked ·`}{' '}
+          <Link href="/dashboard/billing" className="text-[#c1361f] hover:brightness-90 transition-all font-medium">
+            Upgrade for unlimited
+          </Link>
+        </p>
+      )}
+
       {/* Mode toggle */}
       <div className="flex items-center justify-between">
         <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96]">{'// Upload'}</p>
@@ -344,7 +383,7 @@ export function UploadDropzone() {
       <button
         type="button"
         disabled={!hasFiles || isUploading}
-        onClick={() => (batchMode ? batchUploadMutation.mutate() : uploadMutation.mutate())}
+        onClick={handleGenerateClick}
         className="w-full bg-[#c1361f] text-white text-sm font-bold py-3 hover:brightness-[1.08] transition-all disabled:opacity-35 disabled:cursor-not-allowed"
       >
         {isUploading

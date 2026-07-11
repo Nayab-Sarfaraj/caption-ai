@@ -3,9 +3,9 @@ import { redirect } from 'next/navigation'
 import { connectDB } from '@/src/lib/mongo'
 import { findByClerkId } from '@/src/repositories/user.repository'
 import { getUsageStats, getTotalStorageBytes, countRendersThisMonth } from '@/src/repositories/job.repository'
+import { FREE_TIER_MONTHLY_RENDERS } from '@/src/services/billing.service'
 import { formatBytes } from '@/src/helpers/format-bytes'
-
-const FREE_TIER_MONTHLY_RENDERS = 3
+import { BillingActions } from '@/components/billing-actions'
 
 const PLAN_LABEL: Record<string, string> = {
   active: 'Pro',
@@ -56,17 +56,21 @@ export default async function UsagePage() {
       </div>
 
       {!isPaid && (
-        <div className="mt-4 border border-[#14120f1f] bg-white p-5">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-[#a39e96]">Free-tier renders this month</span>
-            <span className="text-[#6b6862] tabular-nums">{rendersThisMonth} / {FREE_TIER_MONTHLY_RENDERS}</span>
+        <div className="mt-4 border border-[#14120f1f] bg-white p-5 space-y-4">
+          <div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-[#a39e96]">Free-tier renders this month</span>
+              <span className="text-[#6b6862] tabular-nums">{rendersThisMonth} / {FREE_TIER_MONTHLY_RENDERS}</span>
+            </div>
+            <div className="h-1.5 w-full bg-[#14120f1f] overflow-hidden rounded-full mt-2.5">
+              <div
+                className="h-full bg-[#c1361f] transition-all"
+                style={{ width: `${Math.min(100, (rendersThisMonth / FREE_TIER_MONTHLY_RENDERS) * 100)}%` }}
+              />
+            </div>
           </div>
-          <div className="h-1.5 w-full bg-[#14120f1f] overflow-hidden rounded-full mt-2.5">
-            <div
-              className="h-full bg-[#c1361f] transition-all"
-              style={{ width: `${Math.min(100, (rendersThisMonth / FREE_TIER_MONTHLY_RENDERS) * 100)}%` }}
-            />
-          </div>
+          <p className="text-xs text-[#6b6862]">Free renders are watermarked. Subscribe for unlimited, watermark-free exports.</p>
+          <BillingActions status={status} />
         </div>
       )}
     </div>

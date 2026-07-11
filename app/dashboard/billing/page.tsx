@@ -3,9 +3,8 @@ import { redirect } from 'next/navigation'
 import { connectDB } from '@/src/lib/mongo'
 import { findByClerkId } from '@/src/repositories/user.repository'
 import { countRendersThisMonth } from '@/src/repositories/job.repository'
+import { FREE_TIER_MONTHLY_RENDERS } from '@/src/services/billing.service'
 import { BillingActions } from '@/components/billing-actions'
-
-const FREE_TIER_MONTHLY_RENDERS = 3
 
 const STATUS_COPY: Record<string, { label: string; desc: string; color: string }> = {
   active: { label: 'PRO', color: '#2e7d4f', desc: 'Unlimited renders, no watermark.' },

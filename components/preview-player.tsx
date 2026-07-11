@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Player } from '@remotion/player'
 import { CaptionRoot } from '@/remotion/compositions/CaptionRoot'
 import type { CompositionId } from '@/remotion/compositions/CaptionRoot'
 import { CaptionStylePreview } from '@/components/caption-style-preview'
 import { ColorSwatch } from '@/components/color-swatch'
+import { PaywallModal } from '@/components/paywall-modal'
 import { STYLES, CATEGORY_ORDER, FONTS, FONTS_INITIAL, HIGHLIGHT_PRESETS, TEXT_PRESETS } from '@/src/helpers/style-options'
 import type { Transcript } from '@/src/types/transcript.types'
 
@@ -22,6 +23,8 @@ interface PreviewPlayerProps {
   statusColor: string
   transcriptSource?: string
   createdAt?: string
+  isPaid: boolean
+  rendersRemaining: number // 0 when isPaid — unlimited stops being a meaningful count
 }
 
 interface StyleSettings {
@@ -68,6 +71,8 @@ export function PreviewPlayer({
   statusColor,
   transcriptSource,
   createdAt,
+  isPaid,
+  rendersRemaining,
 }: PreviewPlayerProps) {
   const router = useRouter()
   const [style, setStyle] = useState<CompositionId>('WordByWord')
@@ -75,8 +80,13 @@ export function PreviewPlayer({
   const [view, setView] = useState<'styles' | 'appearance' | 'fonts'>('styles')
   const [exporting, setExporting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showPaywall, setShowPaywall] = useState(false)
 
   const cur = settings[style]
+  // Mirrors billing.service.ts's canRender — this render, if triggered now,
+  // would come back watermarked (still allowed) or blocked outright.
+  const willWatermark = !isPaid && rendersRemaining > 0
+  const blocked = !isPaid && rendersRemaining <= 0
 
   const update = useCallback(<K extends keyof StyleSettings>(key: K, value: StyleSettings[K]) => {
     setSettings(prev => ({ ...prev, [style]: { ...prev[style], [key]: value } }))
@@ -92,11 +102,12 @@ export function PreviewPlayer({
       accentColor: cur.accentColor,
       fontFamily: cur.fontFamily,
       fontSizeMultiplier: cur.fontSizeMultiplier,
+      watermark: willWatermark,
     }),
-    [style, transcript, videoSrc, cur]
+    [style, transcript, videoSrc, cur, willWatermark]
   )
 
-  const handleExport = useCallback(async () => {
+  const runExport = useCallback(async () => {
     setExporting(true)
     setError(null)
     try {
@@ -113,6 +124,11 @@ export function PreviewPlayer({
         }),
       })
       if (!res.ok) {
+        if (res.status === 402) {
+          setShowPaywall(true)
+          setExporting(false)
+          return
+        }
         const data = await res.json()
         throw new Error(data.error ?? 'Export failed')
       }
@@ -123,24 +139,75 @@ export function PreviewPlayer({
     }
   }, [jobId, style, cur, router])
 
-  const aspectRatio = `${width}/${height}`
+  const handleExportClick = useCallback(() => {
+    if (!isPaid) {
+      setShowPaywall(true)
+    } else {
+      runExport()
+    }
+  }, [isPaid, runExport])
+
+  const playerContainerRef = useRef<HTMLDivElement>(null)
+  const [playerSize, setPlayerSize] = useState({ width: 0, height: 0 })
+
+  // Remotion's <Player> isn't a native replaced element — it doesn't do the
+  // browser's built-in "auto width/height + aspect-ratio + max-*" sizing the
+  // way a plain <video> does (that resolved to 0×0 and the player vanished).
+  // Compute real pixel dimensions instead: fill the container width, but cap
+  // height at 75% of viewport so a portrait (9:16) video doesn't blow up past
+  // the screen — recompute on container/window resize.
+  useEffect(() => {
+    const el = playerContainerRef.current
+    if (!el) return
+    const ratio = width / height
+
+    const compute = () => {
+      const maxHeight = window.innerHeight * 0.75
+      const containerWidth = el.clientWidth
+      let w = containerWidth
+      let h = w / ratio
+      if (h > maxHeight) {
+        h = maxHeight
+        w = h * ratio
+      }
+      setPlayerSize({ width: w, height: h })
+    }
+
+    compute()
+    const ro = new ResizeObserver(compute)
+    ro.observe(el)
+    window.addEventListener('resize', compute)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', compute)
+    }
+  }, [width, height])
 
   return (
     <div className="flex flex-col lg:flex-row gap-5 items-start font-[family-name:var(--font-cc)]">
-      {/* Left: player */}
-      <div className="flex-1 min-w-0 overflow-hidden border border-[#14120f1f] bg-black">
-        <Player
-          component={CaptionRoot as unknown as React.FC<Record<string, unknown>>}
-          inputProps={inputProps as unknown as Record<string, unknown>}
-          durationInFrames={durationInFrames}
-          compositionWidth={width}
-          compositionHeight={height}
-          fps={30}
-          style={{ width: '100%', aspectRatio }}
-          controls
-          clickToPlay
-          showVolumeControls
+      {showPaywall && (
+        <PaywallModal
+          onClose={() => setShowPaywall(false)}
+          onContinueFree={() => { setShowPaywall(false); runExport() }}
         />
+      )}
+
+      {/* Left: player */}
+      <div ref={playerContainerRef} className="flex-1 min-w-0 overflow-hidden border border-[#14120f1f] bg-black flex items-center justify-center">
+        {playerSize.width > 0 && (
+          <Player
+            component={CaptionRoot as unknown as React.FC<Record<string, unknown>>}
+            inputProps={inputProps as unknown as Record<string, unknown>}
+            durationInFrames={durationInFrames}
+            compositionWidth={width}
+            compositionHeight={height}
+            fps={30}
+            style={{ width: playerSize.width, height: playerSize.height }}
+            controls
+            clickToPlay
+            showVolumeControls
+          />
+        )}
       </div>
 
       {/* Right: info + controls */}
@@ -323,14 +390,26 @@ export function PreviewPlayer({
 
         <div className="border-t border-[#14120f1f]" />
 
+        {!isPaid && (
+          <p className="text-xs text-[#a39e96]">
+            {willWatermark
+              ? `${rendersRemaining} free render${rendersRemaining === 1 ? '' : 's'} left this month · watermarked`
+              : 'Free limit reached this month'}
+          </p>
+        )}
+
         {error && <p className="text-xs text-[#c1361f]">{error}</p>}
         <button
           type="button"
-          onClick={handleExport}
+          onClick={handleExportClick}
           disabled={exporting}
           className="w-full bg-[#c1361f] text-white text-sm font-bold py-2.5 hover:brightness-[1.08] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {exporting ? 'Starting export…' : `Export · ${STYLES.find((s) => s.id === style)?.label ?? style}`}
+          {exporting
+            ? 'Starting export…'
+            : blocked
+              ? 'Upgrade to export'
+              : `Export · ${STYLES.find((s) => s.id === style)?.label ?? style}`}
         </button>
       </div>
     </div>

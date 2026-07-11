@@ -11,7 +11,7 @@ export interface RenderJobPayload {
   textColor?: string    // base text color, default #FFFFFF
   accentColor?: string  // BoxHighlight in-box text color, default #A3E635
   fontFamily?: string   // CSS font-family stack, composition falls back to its own default
-  watermark?: boolean   // free-tier render — threaded through for compositions to render later, not drawn yet
+  watermark?: boolean   // free-tier render — drawn by CaptionRoot.tsx's overlay, see worker/render.ts
 }
 
 export interface JobProgressEvent {

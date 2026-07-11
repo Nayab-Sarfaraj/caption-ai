@@ -27,6 +27,7 @@ export interface IJob extends Document {
   textColor: string | null
   accentColor: string | null
   fontFamily: string | null
+  watermarked: boolean | null   // whether the last-triggered render was free-tier watermarked; null = never rendered
   createdAt: Date
   updatedAt: Date
 }
@@ -57,6 +58,7 @@ const JobSchema = new Schema<IJob>(
     textColor: { type: String, default: null },
     accentColor: { type: String, default: null },
     fontFamily: { type: String, default: null },
+    watermarked: { type: Boolean, default: null },
   },
   { timestamps: true }
 )

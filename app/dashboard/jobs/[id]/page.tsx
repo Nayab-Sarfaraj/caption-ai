@@ -2,6 +2,8 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { connectDB } from '@/src/lib/mongo'
 import { findJobById } from '@/src/repositories/job.repository'
+import { findByClerkId } from '@/src/repositories/user.repository'
+import { getRendersRemaining } from '@/src/services/billing.service'
 import { generatePresignedGet } from '@/src/helpers/presigned-url'
 import { JobProgress } from '@/components/job-progress'
 import { DownloadButton } from '@/components/download-button'
@@ -32,6 +34,12 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   await connectDB()
   const job = await findJobById(id)
   if (!job || job.userId !== userId) redirect('/dashboard')
+
+  const [user, rendersRemaining] = await Promise.all([
+    findByClerkId(userId),
+    getRendersRemaining(userId),
+  ])
+  const isPaid = user?.subscriptionStatus === 'active'
 
   const s = STATUS[job.status] ?? STATUS.pending
   const isProcessing = ['pending', 'processing', 'transcribing'].includes(job.status)
@@ -84,17 +92,20 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           statusColor={s.color}
           transcriptSource={job.transcriptSource ?? undefined}
           createdAt={job.createdAt ? new Date(job.createdAt).toLocaleString() : undefined}
+          isPaid={isPaid}
+          rendersRemaining={rendersRemaining}
         />
       ) : (
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5 items-start">
         {/* Left: video or status placeholder */}
           <div>
             {isDone && outputUrl ? (
-              <div className="border border-[#14120f1f] bg-black overflow-hidden">
+              <div className="border border-[#14120f1f] bg-black overflow-hidden flex items-center justify-center">
                 <video
                   src={outputUrl}
                   controls
-                  className="w-full aspect-video object-contain bg-black"
+                  className="bg-black"
+                  style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '75vh', aspectRatio: `${videoWidth}/${videoHeight}` }}
                 />
               </div>
             ) : (
@@ -157,6 +168,15 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
 
             {isDone && (
               <DownloadButton jobId={id} filename={`captioned-${job.originalFilename}`} />
+            )}
+
+            {isDone && job.watermarked && (
+              <div className="border border-[#14120f1f] bg-[#c1361f08] p-3 space-y-1.5">
+                <p className="text-xs text-[#1a1917]">This export has a watermark (free tier).</p>
+                <Link href="/dashboard/billing" className="text-xs font-bold text-[#c1361f] hover:brightness-90 transition-all">
+                  Subscribe to remove it →
+                </Link>
+              </div>
             )}
 
             {isFailed && (

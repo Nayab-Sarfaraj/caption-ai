@@ -112,6 +112,7 @@ export async function handleTriggerRender(
     textColor: payload.textColor,
     accentColor: payload.accentColor,
     fontFamily: payload.fontFamily,
+    watermarked: watermark,
   })
 
   try {

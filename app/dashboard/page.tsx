@@ -2,6 +2,8 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { connectDB } from '@/src/lib/mongo'
 import { findJobsByUserId } from '@/src/repositories/job.repository'
+import { findByClerkId } from '@/src/repositories/user.repository'
+import { getRendersRemaining } from '@/src/services/billing.service'
 import { UploadDropzone } from '@/components/upload-dropzone'
 import { JobsGrid } from '@/components/jobs-table'
 import Link from 'next/link'
@@ -13,7 +15,12 @@ export default async function DashboardPage() {
   if (!userId) redirect('/sign-in')
 
   await connectDB()
-  const { jobs, total } = await findJobsByUserId(userId, { page: 1, pageSize: RECENT_COUNT })
+  const [{ jobs, total }, user, rendersRemaining] = await Promise.all([
+    findJobsByUserId(userId, { page: 1, pageSize: RECENT_COUNT }),
+    findByClerkId(userId),
+    getRendersRemaining(userId),
+  ])
+  const isPaid = user?.subscriptionStatus === 'active'
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-8 py-7 sm:py-10">
@@ -24,7 +31,7 @@ export default async function DashboardPage() {
       </p>
 
       <div className="mt-6">
-        <UploadDropzone />
+        <UploadDropzone isPaid={isPaid} rendersRemaining={rendersRemaining} />
       </div>
 
       {/* Recent jobs — card view */}

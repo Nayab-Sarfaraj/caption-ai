@@ -108,13 +108,17 @@ async function processRenderPhase(bullJob: Job<RenderJobPayload>): Promise<void>
     const serveUrl = await getBundle()
     const { selectComposition, renderMedia } = await import('@remotion/renderer')
 
-    // watermark isn't drawn by any composition yet — threaded through now so
-    // wiring it in later doesn't need a second pass through controller → payload → worker.
-    const inputProps = { transcript, videoSrc, activeColor, textColor, accentColor, fontFamily, watermark }
+    // Render through the CaptionRoot dispatcher (id: 'CaptionRoot' + style
+    // prop) rather than selecting the style composition directly — that's the
+    // same component the live preview uses (components/preview-player.tsx),
+    // so worker and preview can't silently diverge on props one of them
+    // forgets to pass (this already happened once: fontFamily reached the
+    // preview but not the worker until it was explicitly wired through).
+    const inputProps = { style: compositionId, transcript, videoSrc, activeColor, textColor, accentColor, fontFamily, watermark }
 
     const composition = await selectComposition({
       serveUrl,
-      id: compositionId,
+      id: 'CaptionRoot',
       inputProps,
     })
 
