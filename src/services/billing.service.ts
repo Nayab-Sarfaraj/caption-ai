@@ -95,8 +95,9 @@ export async function canRender(clerkId: string): Promise<{ allowed: boolean; wa
     return { allowed: true, watermark: false }
   }
 
+  const cap = FREE_TIER_MONTHLY_RENDERS + (user?.bonusRenders ?? 0)
   const count = await countRendersThisMonth(clerkId)
-  if (count < FREE_TIER_MONTHLY_RENDERS) {
+  if (count < cap) {
     return { allowed: true, watermark: true }
   }
 
@@ -110,6 +111,7 @@ export async function getRendersRemaining(clerkId: string): Promise<number> {
   const user = await findByClerkId(clerkId)
   if (user?.subscriptionStatus === 'active') return 0
 
+  const cap = FREE_TIER_MONTHLY_RENDERS + (user?.bonusRenders ?? 0)
   const count = await countRendersThisMonth(clerkId)
-  return Math.max(0, FREE_TIER_MONTHLY_RENDERS - count)
+  return Math.max(0, cap - count)
 }

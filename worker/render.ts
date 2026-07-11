@@ -16,6 +16,7 @@ import {
 } from '../src/repositories/job.repository'
 import { getBundle } from '../src/services/render.service'
 import { getTranscriptionProvider } from '../src/services/transcription.service'
+import { getRedis } from '../src/lib/redis'
 
 function getS3(): S3Client {
   return new S3Client({
@@ -126,18 +127,43 @@ async function processRenderPhase(bullJob: Job<RenderJobPayload>): Promise<void>
     composition.width = compWidth
     composition.height = compHeight
 
+    // CaptionRoot is registered in Root.tsx with a fixed 6s SAMPLE_DURATION_FRAMES
+    // for Remotion Studio preview only — every real render must override it to
+    // the actual transcript length, or output gets hard-capped at 6 seconds
+    // regardless of the source video's real duration. Same +3s tail buffer
+    // formula already used client-side for the live preview Player
+    // (app/dashboard/jobs/[id]/page.tsx) — keeps both in sync.
+    const lastWordEnd = transcript.words?.length ? transcript.words[transcript.words.length - 1].end : 0
+    composition.durationInFrames = Math.ceil(lastWordEnd * fps) + fps * 3
+
     const outputPath = path.join(tmpDir, 'output.mp4')
 
     await renderMedia({
       composition,
       serveUrl,
       codec: 'h264',
+      // Pinned explicitly rather than relying on Remotion's implicit default —
+      // crf 18 is x264's standard "visually lossless" setting (lower = larger
+      // file/higher quality, 18 is the accepted sweet spot; going lower has
+      // negligible visible gain for delivered captioned video but costs
+      // render time + file size). yuv420p is the broadly-compatible pixel
+      // format every player/platform expects.
+      crf: 18,
+      pixelFormat: 'yuv420p',
       outputLocation: outputPath,
       inputProps,
       fps,
       onProgress: ({ renderedFrames, totalFrames }) => {
         const pct = totalFrames > 0 ? Math.round((renderedFrames / totalFrames) * 100) : 0
         bullJob.updateProgress(pct)
+        // The SSE route (app/api/jobs/[id]/stream/route.ts) subscribes to this
+        // exact channel — bullJob.updateProgress alone never reaches it, that's
+        // BullMQ's own internal tracking, not a Redis pub/sub message. Without
+        // this publish the client never receives a 'progress' event and the
+        // bar sits at 0% until the terminal-status poll fires on done/failed.
+        getRedis().publish(`job:${jobId}:progress`, JSON.stringify({ renderedFrames, totalFrames })).catch((err) => {
+          console.error(`[worker] failed to publish progress for job ${jobId}:`, err)
+        })
         if (renderedFrames % 30 === 0) {
           console.log(`[worker] job ${jobId} render progress: ${pct}%`)
         }

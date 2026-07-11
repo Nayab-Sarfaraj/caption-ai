@@ -1,5 +1,5 @@
 import React from 'react'
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, Video, spring, interpolate } from 'remotion'
+import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo, spring, interpolate } from 'remotion'
 import type { Transcript } from '../types'
 
 export interface SpringProps {
@@ -51,9 +51,10 @@ export const Spring: React.FC<SpringProps> = ({
   return (
     <AbsoluteFill>
       {videoSrc && (
-        <Video
+        <OffthreadVideo
           src={videoSrc}
           crossOrigin="anonymous"
+          pauseWhenBuffering
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
       )}

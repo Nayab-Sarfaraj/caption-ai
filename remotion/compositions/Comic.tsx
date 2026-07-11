@@ -1,5 +1,5 @@
 import React from 'react'
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, Video } from 'remotion'
+import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo } from 'remotion'
 import { loadFont } from '@remotion/google-fonts/Fredoka'
 import type { Transcript, TranscriptSegment } from '../types'
 
@@ -58,7 +58,7 @@ export const Comic: React.FC<ComicProps> = ({
   return (
     <AbsoluteFill>
       {videoSrc && (
-        <Video src={videoSrc} crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <OffthreadVideo src={videoSrc} crossOrigin="anonymous" pauseWhenBuffering style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       )}
       {currentSegment && (
         <AbsoluteFill

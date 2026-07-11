@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { UserButton, SignOutButton } from '@clerk/nextjs'
 import { LogOut } from 'lucide-react'
 import type { SubscriptionStatus } from '@/src/models/User'
+import { PaywallModal } from '@/components/paywall-modal'
 
 const NAV = [
   { href: '/dashboard', index: '01', label: 'HOME', exact: true },
@@ -25,6 +26,7 @@ const PLAN_BADGE: Record<SubscriptionStatus, string> = {
 export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: SubscriptionStatus }) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
+  const [showPaywall, setShowPaywall] = useState(false)
 
   return (
     <aside
@@ -78,10 +80,13 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
         })}
       </nav>
 
+      {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
+
       {subscriptionStatus !== 'active' && (
         <div className={collapsed ? 'flex justify-center px-2 pb-2' : 'px-2 pb-2'}>
-          <Link
-            href="/dashboard/billing"
+          <button
+            type="button"
+            onClick={() => setShowPaywall(true)}
             title={collapsed ? 'Upgrade to Pro' : undefined}
             className={[
               'flex items-center justify-center gap-1.5 bg-[#c1361f] text-white text-xs font-bold py-2 hover:brightness-[1.08] transition-all',
@@ -89,7 +94,7 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
             ].join(' ')}
           >
             {collapsed ? '⚡' : '⚡ Upgrade to Pro'}
-          </Link>
+          </button>
         </div>
       )}
 
@@ -97,12 +102,24 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
         <div className={['p-3 flex items-center gap-2.5', collapsed ? 'justify-center' : ''].join(' ')}>
           <UserButton />
           {!collapsed && (
-            <Link
-              href="/dashboard/billing"
-              className="text-[10px] uppercase tracking-wide text-[#a39e96] hover:text-[#c1361f] hover:border-[#c1361f] border border-[#14120f1f] px-1.5 py-0.5 transition-colors"
-            >
-              {PLAN_BADGE[subscriptionStatus]}
-            </Link>
+            // Already Pro → go manage/cancel on the real billing page, not a
+            // "go unlimited" pitch for something they already have.
+            subscriptionStatus === 'active' ? (
+              <Link
+                href="/dashboard/billing"
+                className="text-[10px] uppercase tracking-wide text-[#a39e96] hover:text-[#c1361f] hover:border-[#c1361f] border border-[#14120f1f] px-1.5 py-0.5 transition-colors"
+              >
+                {PLAN_BADGE[subscriptionStatus]}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowPaywall(true)}
+                className="text-[10px] uppercase tracking-wide text-[#a39e96] hover:text-[#c1361f] hover:border-[#c1361f] border border-[#14120f1f] px-1.5 py-0.5 transition-colors"
+              >
+                {PLAN_BADGE[subscriptionStatus]}
+              </button>
+            )
           )}
         </div>
         <div className={['px-2 pb-2', collapsed ? 'flex justify-center' : ''].join(' ')}>

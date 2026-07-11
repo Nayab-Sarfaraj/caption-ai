@@ -9,6 +9,7 @@ export interface IUser extends Document {
   razorpaySubscriptionId: string | null
   razorpayCustomerId: string | null  // only populated once the webhook confirms the authorization payment
   subscriptionStatus: SubscriptionStatus
+  bonusRenders: number  // manual grant on top of FREE_TIER_MONTHLY_RENDERS — comps, beta testers, support gestures
   createdAt: Date
   updatedAt: Date
 }
@@ -25,6 +26,7 @@ const UserSchema = new Schema<IUser>(
       enum: ['none', 'active', 'halted', 'cancelled'],
       default: 'none',
     },
+    bonusRenders: { type: Number, default: 0 },
   },
   { timestamps: true }
 )

@@ -1,5 +1,5 @@
 import React from 'react'
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, Video, interpolate } from 'remotion'
+import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo, interpolate } from 'remotion'
 import { loadFont } from '@remotion/google-fonts/Inter'
 import type { Transcript, TranscriptSegment } from '../types'
 
@@ -68,7 +68,7 @@ export const Minimal: React.FC<MinimalProps> = ({
   return (
     <AbsoluteFill>
       {videoSrc && (
-        <Video src={videoSrc} crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <OffthreadVideo src={videoSrc} crossOrigin="anonymous" pauseWhenBuffering style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       )}
       {currentSegment && (
         <AbsoluteFill

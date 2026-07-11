@@ -9,6 +9,7 @@ import { JobProgress } from '@/components/job-progress'
 import { DownloadButton } from '@/components/download-button'
 import { PreviewPlayer } from '@/components/preview-player-wrapper'
 import { RetryButton } from '@/components/retry-button'
+import { RemoveWatermarkCta } from '@/components/remove-watermark-cta'
 import { mapErrorMessage } from '@/src/helpers/error-messages'
 import type { Transcript } from '@/src/types/transcript.types'
 import Link from 'next/link'
@@ -170,14 +171,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
               <DownloadButton jobId={id} filename={`captioned-${job.originalFilename}`} />
             )}
 
-            {isDone && job.watermarked && (
-              <div className="border border-[#14120f1f] bg-[#c1361f08] p-3 space-y-1.5">
-                <p className="text-xs text-[#1a1917]">This export has a watermark (free tier).</p>
-                <Link href="/dashboard/billing" className="text-xs font-bold text-[#c1361f] hover:brightness-90 transition-all">
-                  Subscribe to remove it →
-                </Link>
-              </div>
-            )}
+            {isDone && job.watermarked && <RemoveWatermarkCta />}
 
             {isFailed && (
               <RetryButton jobId={id} manualRetryCount={job.manualRetryCount} />

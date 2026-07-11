@@ -4,7 +4,6 @@ import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { useMutation } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { CaptionStylePreview } from '@/components/caption-style-preview'
 import { PaywallModal } from '@/components/paywall-modal'
 
@@ -218,9 +217,13 @@ export function UploadDropzone({ isPaid, rendersRemaining }: { isPaid: boolean; 
           {blocked
             ? 'Free limit reached this month ·'
             : `${rendersRemaining} free render${rendersRemaining === 1 ? '' : 's'} left this month · watermarked ·`}{' '}
-          <Link href="/dashboard/billing" className="text-[#c1361f] hover:brightness-90 transition-all font-medium">
+          <button
+            type="button"
+            onClick={() => setShowPaywall(true)}
+            className="text-[#c1361f] hover:brightness-90 transition-all font-medium underline-offset-2 hover:underline"
+          >
             Upgrade for unlimited
-          </Link>
+          </button>
         </p>
       )}
 
@@ -231,7 +234,7 @@ export function UploadDropzone({ isPaid, rendersRemaining }: { isPaid: boolean; 
           type="button"
           onClick={toggleBatchMode}
           disabled={isUploading}
-          className="text-xs text-[#a39e96] hover:text-[#6b6862] transition-colors disabled:opacity-40"
+          className="text-xs font-medium text-[#1a1917] border border-[#14120f1f] px-2.5 py-1 hover:border-[#c1361f] hover:text-[#c1361f] transition-colors disabled:opacity-40"
         >
           {batchMode ? '← Single video upload' : `Upload multiple videos (up to ${MAX_BATCH_FILES})`}
         </button>
@@ -342,7 +345,7 @@ export function UploadDropzone({ isPaid, rendersRemaining }: { isPaid: boolean; 
           <button
             type="button"
             onClick={() => setShowCaption(!showCaption)}
-            className="text-xs text-[#a39e96] hover:text-[#6b6862] transition-colors"
+            className="text-xs font-medium text-[#1a1917] hover:text-[#c1361f] transition-colors"
           >
             {showCaption ? '− Hide' : '+ Have an .srt or .vtt? Skip AI transcription'}
           </button>

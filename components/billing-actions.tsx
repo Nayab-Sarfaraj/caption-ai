@@ -50,7 +50,7 @@ export function BillingActions({ status }: { status: SubscriptionStatus }) {
           type="button"
           onClick={handleCancel}
           disabled={loading}
-          className="text-sm text-[#6b6862] hover:text-[#c1361f] transition-colors disabled:opacity-50"
+          className="text-sm font-medium text-[#1a1917] border border-[#14120f1f] px-4 py-2 hover:border-[#c1361f] hover:text-[#c1361f] transition-colors disabled:opacity-50"
         >
           {loading ? 'Cancelling…' : 'Cancel subscription'}
         </button>

@@ -1,5 +1,5 @@
 import React from 'react'
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, Video, spring } from 'remotion'
+import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo, spring } from 'remotion'
 import type { Transcript } from '../types'
 
 export interface WordByWordProps {
@@ -51,9 +51,10 @@ export const WordByWord: React.FC<WordByWordProps> = ({
   return (
     <AbsoluteFill style={{ backgroundColor: 'transparent' }}>
       {videoSrc && (
-        <Video
+        <OffthreadVideo
           src={videoSrc}
           crossOrigin="anonymous"
+          pauseWhenBuffering
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
       )}

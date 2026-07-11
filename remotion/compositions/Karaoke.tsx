@@ -1,5 +1,5 @@
 import React from 'react'
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, Video } from 'remotion'
+import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo } from 'remotion'
 import type { Transcript, TranscriptSegment } from '../types'
 
 export interface KaraokeProps {
@@ -50,14 +50,14 @@ export const Karaoke: React.FC<KaraokeProps> = ({
 
   if (!currentSegment) return (
     <AbsoluteFill>
-      {videoSrc && <Video src={videoSrc} crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+      {videoSrc && <OffthreadVideo src={videoSrc} crossOrigin="anonymous" pauseWhenBuffering style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
     </AbsoluteFill>
   )
 
   return (
     <AbsoluteFill>
       {videoSrc && (
-        <Video src={videoSrc} crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <OffthreadVideo src={videoSrc} crossOrigin="anonymous" pauseWhenBuffering style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       )}
       <AbsoluteFill
         style={{

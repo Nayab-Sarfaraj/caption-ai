@@ -1,5 +1,5 @@
 import React from 'react'
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, Video, interpolate } from 'remotion'
+import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo, interpolate } from 'remotion'
 import type { Transcript, TranscriptSegment } from '../types'
 
 export interface FadeProps {
@@ -63,7 +63,7 @@ export const Fade: React.FC<FadeProps> = ({
   return (
     <AbsoluteFill>
       {videoSrc && (
-        <Video src={videoSrc} crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <OffthreadVideo src={videoSrc} crossOrigin="anonymous" pauseWhenBuffering style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       )}
       {currentSegment && (
         <AbsoluteFill
