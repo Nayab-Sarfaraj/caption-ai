@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'caption-worker',
-      script: './worker/dist/index.js',
+      script: './worker/dist/worker/index.js',
       cwd: '/home/nayabsarfaraj/captions',
       env: {
         NODE_ENV: 'production',
