@@ -13,7 +13,8 @@
       "@/components/*": ["./components/*"],
       "@/lib/*": ["./src/lib/*"],
       "@/types/*": ["./src/types/*"],
-      "@/config/*": ["./config/*"]
+      "@/config/*": ["./config/*"],
+      "@/remotion/*": ["./remotion/*"]
     }
   }
 }

@@ -152,9 +152,9 @@ async function processRenderPhase(bullJob: Job<RenderJobPayload>): Promise<void>
       pixelFormat: 'yuv420p',
       outputLocation: outputPath,
       inputProps,
-      fps,
-      onProgress: ({ renderedFrames, totalFrames }) => {
-        const pct = totalFrames > 0 ? Math.round((renderedFrames / totalFrames) * 100) : 0
+      onProgress: ({ renderedFrames, progress }) => {
+        const totalFrames = composition.durationInFrames
+        const pct = Math.round(progress * 100)
         bullJob.updateProgress(pct)
         // The SSE route (app/api/jobs/[id]/stream/route.ts) subscribes to this
         // exact channel — bullJob.updateProgress alone never reaches it, that's
