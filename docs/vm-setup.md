@@ -93,8 +93,12 @@ it's used for Razorpay redirect handling and other absolute-URL construction).
 ## 8. Build worker TypeScript
 
 ```bash
-npx tsc --project worker/tsconfig.json
-# output in worker/dist/
+npm run worker:build
+# runs tsc, then tsc-alias to rewrite @/ path aliases to relative requires
+# (tsc's "paths" only affects type-checking — Node can't resolve @/ at
+# runtime with plain tsc output, so the shared /src files import errors
+# with MODULE_NOT_FOUND without this rewrite step)
+# output in worker/dist/worker/index.js
 ```
 
 ## 9. Build Next.js
@@ -205,7 +209,7 @@ like when it isn't wired up).
 cd /home/ubuntu/captions
 git pull origin main
 npm install
-npx tsc --project worker/tsconfig.json
+npm run worker:build
 npm run build
 pm2 restart caption-worker caption-web
 ```
