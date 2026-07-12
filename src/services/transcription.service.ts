@@ -17,7 +17,13 @@ class DeepgramProvider implements TranscriptionProvider {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = (await client.listen.v1.media.transcribeUrl({
       url: audioUrl,
-      model: 'nova-2',
+      model: 'nova-3',
+      // 'multi' enables real code-switching (Hinglish etc.) — Nova-2 transcribes
+      // each language fine but can't follow a switch mid-sentence; Nova-3 was
+      // trained specifically on code-switching data. ~19% pricier than
+      // monolingual Nova-3 ($0.0092/min vs $0.0077/min PAYG) but required for
+      // mixed-language speech to come out right at all.
+      language: 'multi',
       smart_format: true,
       punctuate: true,
       diarize: false,

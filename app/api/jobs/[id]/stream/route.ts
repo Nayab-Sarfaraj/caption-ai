@@ -10,7 +10,7 @@ const POLL_INTERVAL_MS = 2000
 const MAX_STREAM_DURATION_MS = 10 * 60 * 1000 // 10 min
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
@@ -99,6 +99,12 @@ export async function GET(
     send({ type: 'failed', errorMessage: 'Stream timeout — check job status manually' })
     close()
   }, MAX_STREAM_DURATION_MS)
+
+  // Without this, closing the tab / navigating away mid-render leaves the
+  // Redis subscriber connection and the 2s Mongo poll running server-side for
+  // up to the full 10-minute max — every abandoned page view leaks resources
+  // (and Redis commands) regardless of whether anyone's still watching.
+  req.signal.addEventListener('abort', close)
 
   return new Response(readable, {
     headers: {

@@ -46,7 +46,7 @@ Both Next.js and the worker connect to the same Redis instance — that's the on
 - No credit system, no per-feature gating in MVP — flat tier only.
 - Keep transcription provider swappable behind one interface (Deepgram Nova-3 / Whisper) — don't hardcode calls inline.
 - Caption styles are real Remotion compositions (React components), not config-driven black boxes — this is the differentiator, keep it that way.
-- VM needs ffmpeg + Chromium system deps installed for Remotion — check their docs for exact apt packages before deploying worker.
+- VM needs Chromium system deps installed for Remotion — check their docs for exact apt packages before deploying worker. ffmpeg is NOT required as a system package since Remotion 4.0 — it's bundled and auto-downloaded into node_modules at render time if missing.
 - Wrap render steps in try/finally — always clean up temp files on the VM, even on failure.
 
 ## Known gotchas (carry over from past projects)
