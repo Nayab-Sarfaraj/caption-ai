@@ -1,4 +1,10 @@
-import 'dotenv/config'
+import path from 'path'
+import dotenv from 'dotenv'
+// Bare 'dotenv/config' loads '.env' at process.cwd(), which is neither
+// worker/.env (the file docs/vm-setup.md step 6 has you create) nor
+// .env.local (Next's file) — pm2 runs this with cwd at the repo root, so
+// nothing ever populated MONGO_URI etc. in production without this.
+dotenv.config({ path: path.join(process.cwd(), 'worker/.env') })
 import { Worker } from 'bullmq'
 import { connectDB } from '../src/lib/mongo'
 import { getRedisBullMQOptions } from '../src/lib/redis'
