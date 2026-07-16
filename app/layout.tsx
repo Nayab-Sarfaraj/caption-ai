@@ -67,7 +67,7 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${courierPrime.variable} ${PREVIEW_FONT_VARS} h-full antialiased dark`}>
+      <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${courierPrime.variable} ${PREVIEW_FONT_VARS} h-full antialiased dark scroll-smooth`}>
         <body className="min-h-full flex flex-col">
             <Providers>{children}</Providers>
           </body>

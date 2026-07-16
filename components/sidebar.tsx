@@ -7,25 +7,7 @@ import { UserButton, SignOutButton } from '@clerk/nextjs'
 import { LogOut } from 'lucide-react'
 import type { SubscriptionStatus } from '@/src/models/User'
 import { PaywallModal } from '@/components/paywall-modal'
-
-const NAV = [
-  { href: '/dashboard', index: '01', label: 'HOME', exact: true },
-  { href: '/dashboard/jobs', index: '02', label: 'VIDEOS', exact: false },
-  { href: '/dashboard/usage', index: '03', label: 'USAGE', exact: false },
-  { href: '/dashboard/settings', index: '04', label: 'SETTINGS', exact: false },
-  { href: '/dashboard/billing', index: '05', label: 'BILLING', exact: false },
-]
-
-const PLAN_BADGE: Record<SubscriptionStatus, string> = {
-  active: 'Pro plan',
-  past_due: 'Payment failed',
-  unpaid: 'Payment failed',
-  canceled: 'Cancelled',
-  incomplete: 'Pending',
-  incomplete_expired: 'Free plan',
-  trialing: 'Trial',
-  none: 'Free plan',
-}
+import { NAV, PLAN_BADGE } from '@/src/helpers/dashboard-nav'
 
 export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: SubscriptionStatus }) {
   const pathname = usePathname()

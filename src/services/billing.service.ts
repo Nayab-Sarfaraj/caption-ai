@@ -1,4 +1,5 @@
 import { getPolar } from '@/src/lib/polar'
+import { getPostHog } from '@/src/lib/posthog'
 import { env } from '@/config/env'
 import {
   findByClerkId,
@@ -91,6 +92,14 @@ export async function handleWebhookEvent(event: PolarSubscriptionEvent): Promise
     polarCustomerId: sub.customerId ?? undefined,
     billingTier: sub.productId ? tierForProductId(sub.productId) : undefined,
   })
+
+  if (sub.status === 'active') {
+    getPostHog()?.capture({
+      distinctId: clerkId,
+      event: 'subscription_active',
+      properties: { tier: sub.productId ? tierForProductId(sub.productId) : null },
+    })
+  }
 }
 
 // Live period/renewal info — not cached locally, Polar is the source of

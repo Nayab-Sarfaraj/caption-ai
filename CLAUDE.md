@@ -19,6 +19,7 @@ Caption generator — word-by-word animated captions for uploaded video, rendere
 - Realtime updates: SSE (render/job progress)
 - Data fetching: TanStack Query (React Query v5)
 - Payments: Polar (merchant of record, Subscriptions API — not Stripe/Razorpay, see Product decisions)
+- Analytics: PostHog (`posthog-js` client + `posthog-node` server) — pageviews/autocapture, funnel events (upload → render → checkout → subscribe), session replay
 
 ## Architecture
 
@@ -61,6 +62,7 @@ Both Next.js and the worker connect to the same Redis instance — that's the on
 - **SSE route runtime:** always `export const runtime = 'nodejs'` on SSE + webhook routes — ioredis is TCP and silently fails on Vercel Edge Runtime.
 - **Polar webhook signature:** verify using `validateEvent(rawBody, headers, webhookSecret)` from `@polar-sh/sdk/webhooks` (Standard Webhooks spec — needs the raw `webhook-id`/`webhook-timestamp`/`webhook-signature` headers, not just the body). Same "don't let Next.js parse the JSON before verifying" trap as Stripe/Razorpay — use `req.text()`, never `req.json()`, in the webhook route.
 - **Polar checkout is checkout-first, not subscription-first:** `checkouts.create()` returns a hosted URL before any subscription exists — there's no subscription ID to store locally until the customer actually completes payment. The `subscription.*` webhook (via `customer.externalId`, set to our `clerkId` at checkout creation) is what links and syncs in one step. Don't try to pre-create a "pending" subscription row like a Stripe/Razorpay-shaped flow would.
+- **PostHog is optional, never a hard dependency:** `getPostHog()` in `src/lib/posthog.ts` returns `null` if `NEXT_PUBLIC_POSTHOG_KEY` isn't set — always call it as `getPostHog()?.capture(...)`, never assume a client exists. Analytics going down should never break uploads/renders/billing. Server client is a single persistent instance (pm2, not serverless) — deliberately skips the official docs' `flushAt:1`/`shutdown()`-per-call pattern, which is a workaround for short-lived serverless functions this app doesn't have.
 
 ## Out of scope for now
 
@@ -106,6 +108,7 @@ Layered architecture — controllers/services/repositories pattern, not logic du
     deepgram.ts
     queue.ts                  → BullMQ queue definition (shared with worker)
     polar.ts                   → Polar SDK client singleton
+    posthog.ts                  → PostHog server client singleton, returns null if unconfigured
   /helpers                     → pure utility functions (no side effects)
     srt-parser.ts
     validators.ts
@@ -196,6 +199,8 @@ POLAR_PRODUCT_ID_WEEKLY=
 POLAR_PRODUCT_ID_MONTHLY=
 POLAR_PRODUCT_ID_YEARLY=
 POLAR_SERVER=sandbox
+NEXT_PUBLIC_POSTHOG_KEY=
+NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
 ```
 
 No new worker env vars for billing — worker doesn't touch Polar directly.

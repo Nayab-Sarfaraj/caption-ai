@@ -4,6 +4,7 @@ import { validateEvent, WebhookVerificationError } from '@polar-sh/sdk/webhooks'
 import { env } from '@/config/env'
 import { createCheckout, cancelSubscription, handleWebhookEvent, createCustomerPortalUrl } from '@/src/services/billing.service'
 import { createCheckoutSchema } from '@/src/helpers/validators'
+import { getPostHog } from '@/src/lib/posthog'
 
 export async function handleCreateCheckout(req: NextRequest): Promise<NextResponse> {
   const { userId } = await auth()
@@ -14,6 +15,7 @@ export async function handleCreateCheckout(req: NextRequest): Promise<NextRespon
 
   try {
     const { url } = await createCheckout(userId, parsed.data.tier)
+    getPostHog()?.capture({ distinctId: userId, event: 'checkout_started', properties: { tier: parsed.data.tier } })
     return NextResponse.json({ url })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Checkout creation failed'

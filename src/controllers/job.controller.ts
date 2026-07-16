@@ -8,6 +8,7 @@ import { getBrandKit } from '@/src/services/brand-kit.service'
 import { canRender } from '@/src/services/billing.service'
 import { retryJob, RetryServiceError } from '@/src/services/job.service'
 import { connectDB } from '@/src/lib/mongo'
+import { getPostHog } from '@/src/lib/posthog'
 import type { RenderJobPayload } from '@/src/types/job.types'
 import { compositionIdSchema, hexColorSchema, fontFamilySchema } from '@/src/helpers/validators'
 import { z } from 'zod'
@@ -128,6 +129,11 @@ export async function handleTriggerRender(
       ),
     ])
     await updateJobStatus(jobId, 'rendering')
+    getPostHog()?.capture({
+      distinctId: userId,
+      event: 'render_triggered',
+      properties: { jobId, compositionId: payload.compositionId, watermark },
+    })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Enqueue failed'
     console.error('Render enqueue error:', message)

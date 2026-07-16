@@ -6,6 +6,7 @@ import { findJobById, updateJobStatus, updateJobTranscript, updateJobDimensions 
 import { parseCaptionFile } from '@/src/helpers/srt-parser'
 import { connectDB } from '@/src/lib/mongo'
 import { getRenderQueue } from '@/src/lib/queue'
+import { getPostHog } from '@/src/lib/posthog'
 import type { RenderJobPayload } from '@/src/types/job.types'
 
 const ENQUEUE_TIMEOUT_MS = 10_000
@@ -133,6 +134,7 @@ export async function handleConfirmUpload(req: NextRequest): Promise<NextRespons
       ),
     ])
     await updateJobStatus(jobId, 'processing')
+    getPostHog()?.capture({ distinctId: userId, event: 'video_uploaded', properties: { jobId } })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Enqueue failed'
     console.error('Enqueue error:', message)

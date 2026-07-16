@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@clerk/nextjs/server'
 import Link from 'next/link'
 import { CaptionStylePreview, STYLE_PREVIEW_META } from '@/components/caption-style-preview'
+import { ScrollToHash } from '@/components/scroll-to-hash'
 import type { CompositionId } from '@/remotion/compositions/CaptionRoot'
 import { PRICING_TIERS } from '@/src/helpers/pricing-tiers'
 
@@ -51,12 +52,24 @@ export default async function RootPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
       />
+      <ScrollToHash />
       {/* Nav */}
       <header className="max-w-5xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full border-2 border-[#c1361f]" />
           <span className="text-[13px] font-bold tracking-[0.08em] uppercase">Hypecap</span>
         </div>
+        <nav className="hidden md:flex items-center gap-6">
+          <a href="#styles" className="text-xs text-[#6b6862] hover:text-[#1a1917] transition-colors">
+            Styles
+          </a>
+          <a href="#how-it-works" className="text-xs text-[#6b6862] hover:text-[#1a1917] transition-colors">
+            How it works
+          </a>
+          <a href="#pricing" className="text-xs text-[#6b6862] hover:text-[#1a1917] transition-colors">
+            Pricing
+          </a>
+        </nav>
         <div className="flex items-center gap-5">
           <Link href="/sign-in" className="text-xs text-[#6b6862] hover:text-[#1a1917] transition-colors">
             Sign in
@@ -117,7 +130,7 @@ export default async function RootPage() {
       </section>
 
       {/* How it works */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-8 py-14 border-t border-[#14120f1f]">
+      <section id="how-it-works" className="max-w-5xl mx-auto px-4 sm:px-8 py-14 border-t border-[#14120f1f]">
         <h2 className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96] mb-5">{'// How it works'}</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[#14120f1f] border border-[#14120f1f]">
           {STEPS.map((s) => (
@@ -159,7 +172,7 @@ export default async function RootPage() {
       </section>
 
       {/* Pricing */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-8 py-14 border-t border-[#14120f1f]">
+      <section id="pricing" className="max-w-5xl mx-auto px-4 sm:px-8 py-14 border-t border-[#14120f1f]">
         <h2 className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96] mb-5">{'// Pricing'}</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl">
           <div className="border border-[#14120f1f] bg-white p-6">
