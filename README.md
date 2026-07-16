@@ -22,7 +22,7 @@ Flat pricing · No credit system · Captions that are real React components
 
 ## What it does
 
-Upload a `.mp4` or `.mov`, choose a caption style, and get back a rendered video with frame-accurate animated captions. Deepgram Nova-2 handles AI transcription with word-level timestamps. Or skip AI entirely by uploading your own `.srt` / `.vtt` file. Four caption styles — all real Remotion React components, not config-driven black boxes.
+Upload a `.mp4` or `.mov`, choose a caption style, and get back a rendered video with frame-accurate animated captions. Deepgram Nova-2 handles AI transcription with word-level timestamps. Or skip AI entirely by uploading your own `.srt` / `.vtt` file. 11 caption styles — all real Remotion React components, not config-driven black boxes.
 
 ---
 
@@ -182,59 +182,31 @@ sequenceDiagram
 
 ## Caption Styles
 
-All four styles are Remotion React components in `/remotion/compositions/`. Each accepts `{ transcript: Transcript, videoSrc: string }`.
+All 11 styles are Remotion React components in `/remotion/compositions/`. Every style accepts `{ transcript, videoSrc, activeColor, textColor, accentColor, fontFamily, watermark }` through the `CaptionRoot` dispatcher — the same props reach both the live preview and the worker render, so what you see is exactly what exports.
 
 <table>
-<tr>
-<th width="25%">Word by Word</th>
-<th width="25%">Karaoke</th>
-<th width="25%">Fade</th>
-<th width="25%">Spring</th>
-</tr>
-<tr>
-<td>
-
-Active word highlights in **yellow** and scales up with a spring animation. A sliding window (±2–3 words) keeps context visible.
-
-```
-the quick [BROWN] fox
-```
-</td>
-<td>
-
-Shows the current **segment** on a dark pill background. Past words are dimmed, the current word is yellow — like a karaoke teleprompter.
-
-```
-past · [NOW] · future
-```
-</td>
-<td>
-
-Full segment text **fades in** at the start of each block. Clean and minimal — no per-word tracking needed.
-
-```
-Line fades in smoothly…
-```
-</td>
-<td>
-
-Each word **springs upward** from below as it enters the visible window. Uses Remotion's spring physics.
-
-```
-Words ↑ bounce ↑ into ↑ view
-```
-</td>
-</tr>
+<tr><th>Style</th><th>Description</th></tr>
+<tr><td><strong>Word by Word</strong></td><td>Active word highlights and scales up with a spring animation. Sliding window shows ±2–3 surrounding words.</td></tr>
+<tr><td><strong>Karaoke</strong></td><td>Current segment on a dark pill. Past words dimmed, current word highlighted — teleprompter style.</td></tr>
+<tr><td><strong>Fade</strong></td><td>Full segment text fades in at the start of each block. Clean and minimal.</td></tr>
+<tr><td><strong>Spring</strong></td><td>Each word springs upward from below as it enters the visible window.</td></tr>
+<tr><td><strong>Hype</strong></td><td>High-energy word-by-word with bold scaling and colour flash.</td></tr>
+<tr><td><strong>Hormozi</strong></td><td>Large stacked caps inspired by Alex Hormozi's content style.</td></tr>
+<tr><td><strong>Minimal</strong></td><td>Understated single-line captions, no animation noise.</td></tr>
+<tr><td><strong>Box Highlight</strong></td><td>Active word gets a filled box behind it.</td></tr>
+<tr><td><strong>Comic</strong></td><td>Speech-bubble style with chunky strokes.</td></tr>
+<tr><td><strong>Pill</strong></td><td>Active word wrapped in a rounded pill badge.</td></tr>
+<tr><td><strong>Script</strong></td><td>Flowing script-font style for lifestyle/vlog content.</td></tr>
 </table>
 
-The `CaptionRoot` composition wraps all four and switches between them via a `style` prop — the `@remotion/player` reference stays stable while you swap styles without remounting.
+`CaptionRoot` wraps all 11 and switches via a `style` prop — the `@remotion/player` reference stays stable while you swap styles without remounting.
 
 ---
 
 ## Project Structure
 
 ```
-captions/
+hypecap/
 ├── app/                              # Next.js App Router — thin route files only
 │   ├── api/
 │   │   ├── upload/route.ts           # POST — presigned PUT URL + Job creation
@@ -244,28 +216,60 @@ captions/
 │   │   ├── jobs/[id]/enqueue/        # POST — add to BullMQ queue
 │   │   ├── jobs/[id]/render/         # POST — trigger render phase
 │   │   ├── jobs/[id]/stream/         # GET — SSE progress stream
-│   │   └── webhooks/clerk/           # Clerk user.created → MongoDB sync
+│   │   ├── billing/subscribe/        # POST — create Polar checkout session
+│   │   ├── billing/portal/           # POST — Polar customer portal URL
+│   │   ├── webhooks/clerk/           # Clerk user.created → MongoDB sync
+│   │   └── webhooks/polar/           # Polar subscription.* events → sync User doc
 │   ├── dashboard/                    # Upload UI + job grid
-│   └── dashboard/jobs/[id]/          # Job detail, preview, download
+│   ├── dashboard/jobs/[id]/          # Job detail, preview, download
+│   ├── dashboard/billing/            # Subscription status + upgrade UI
+│   ├── dashboard/usage/              # Render usage this month
+│   ├── page.tsx                      # Public landing page (SEO, pricing, style showcase)
+│   ├── icon.tsx                      # Dynamic favicon
+│   ├── opengraph-image.tsx           # OG image
+│   ├── sitemap.ts                    # Auto-generated sitemap
+│   └── robots.ts                     # robots.txt
 │
 ├── src/                              # Shared logic (Next.js + worker both import this)
 │   ├── controllers/                  # Request/response only — delegates to services
-│   ├── services/                     # Business logic (upload, transcription, render, job)
+│   ├── services/
+│   │   ├── upload.service.ts
+│   │   ├── transcription.service.ts  # Deepgram/Whisper abstraction
+│   │   ├── render.service.ts         # bundle() + cache
+│   │   ├── job.service.ts
+│   │   └── billing.service.ts        # Polar checkout, webhooks, canRender gate
 │   ├── repositories/                 # DB access only — no business logic
 │   ├── models/                       # Mongoose schemas (Job, User)
-│   ├── lib/                          # Singleton clients (mongo, redis, queue, storage)
-│   ├── helpers/                      # Pure utilities (presigned URLs, SRT parser, validators)
+│   ├── lib/
+│   │   ├── mongo.ts                  # Mongoose singleton
+│   │   ├── redis.ts                  # ioredis singleton + pub/sub factory
+│   │   ├── queue.ts                  # BullMQ queue definition
+│   │   ├── storage.ts                # R2/S3 client singleton
+│   │   ├── polar.ts                  # Polar SDK singleton
+│   │   └── posthog.ts                # PostHog server-side singleton
+│   ├── helpers/
+│   │   ├── presigned-url.ts
+│   │   ├── srt-parser.ts
+│   │   ├── validators.ts
+│   │   └── pricing-tiers.ts          # Single source of truth for pricing (landing, paywall, billing page)
 │   └── types/                        # Shared TS types (Transcript, RenderJobPayload)
 │
 ├── remotion/                         # Remotion compositions
-│   ├── Root.tsx                      # registerRoot — all 4 compositions
-│   ├── types.ts                      # Transcript types (duplicated from src — bundler isolation)
+│   ├── Root.tsx                      # registerRoot — all 11 compositions
+│   ├── types.ts                      # Transcript types (duplicated — bundler isolation)
 │   └── compositions/
-│       ├── CaptionRoot.tsx           # Style-switching wrapper
+│       ├── CaptionRoot.tsx           # Style-switching dispatcher (used by preview + worker)
 │       ├── WordByWord.tsx
 │       ├── Karaoke.tsx
 │       ├── Fade.tsx
-│       └── Spring.tsx
+│       ├── Spring.tsx
+│       ├── Hype.tsx
+│       ├── Hormozi.tsx
+│       ├── Minimal.tsx
+│       ├── BoxHighlight.tsx
+│       ├── Comic.tsx
+│       ├── Pill.tsx
+│       └── Script.tsx
 │
 ├── worker/                           # Separate Node process — GCP VM
 │   ├── index.ts                      # BullMQ Worker, SIGTERM graceful shutdown
@@ -277,12 +281,17 @@ captions/
 │   ├── preview-player.tsx            # @remotion/player + style switcher + export
 │   ├── job-progress.tsx              # SSE consumer, live progress bar
 │   ├── download-button.tsx           # Fetches fresh presigned GET, browser download
-│   └── sidebar.tsx                   # Desktop nav + Clerk UserButton
+│   ├── billing-actions.tsx           # Subscribe / cancel / portal buttons
+│   ├── paywall-modal.tsx             # Shown when free render cap is hit
+│   ├── posthog-identify.tsx          # Links Clerk userId to PostHog person on mount
+│   ├── scroll-to-hash.tsx            # Smooth scroll for landing page anchor links
+│   └── sidebar.tsx                   # Desktop nav + Clerk UserButton + plan badge
 │
+├── instrumentation-client.ts         # PostHog browser SDK init (Next.js instrumentation)
 ├── config/env.ts                     # Zod-validated env — fails loudly at startup
 ├── docs/vm-setup.md                  # GCP VM setup checklist
 ├── docker-compose.yml                # Local MongoDB + Redis
-├── ecosystem.config.js               # pm2 config for the worker
+├── ecosystem.config.js               # pm2 config for Next.js + worker
 └── proxy.ts                          # Clerk auth middleware (repo root)
 ```
 
@@ -322,11 +331,17 @@ interface RenderJobPayload {
   jobId: string
   userId: string
   videoKey: string
-  transcriptKey?: string   // R2 key for large transcripts stored externally
-  compositionId: 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring'
+  transcriptKey?: string        // R2 key for large transcripts stored externally
+  compositionId: 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring' | 'Hype' | 'Hormozi' | 'Minimal' | 'BoxHighlight' | 'Comic' | 'Pill' | 'Script'
   fps: number
   outputFormat: 'mp4'
   phase: 'transcribe' | 'render'
+  // Style customisation — passed through to CaptionRoot inputProps
+  activeColor?: string          // colour of the highlighted/active word
+  textColor?: string            // base word colour
+  accentColor?: string          // secondary accent used by some styles
+  fontFamily?: string           // override font (CSS font-family string)
+  watermark?: boolean           // true on free-tier renders
 }
 ```
 
@@ -346,13 +361,24 @@ Copy `.env.example` → `.env.local` and fill in all values.
 | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID (for R2 endpoint) |
 | `R2_ACCESS_KEY_ID` | R2 API token access key |
 | `R2_SECRET_ACCESS_KEY` | R2 API token secret |
-| `R2_BUCKET_NAME` | R2 bucket name (e.g. `captions`) |
+| `R2_BUCKET_NAME` | R2 bucket name |
 | `DEEPGRAM_API_KEY` | Deepgram API key |
 | `TRANSCRIPTION_PROVIDER` | `deepgram` (default) or `whisper` (stub) |
+| `POLAR_ACCESS_TOKEN` | Polar API access token |
+| `POLAR_WEBHOOK_SECRET` | Polar webhook signing secret |
+| `POLAR_PRODUCT_ID_WEEKLY` | Polar product ID for the weekly plan |
+| `POLAR_PRODUCT_ID_MONTHLY` | Polar product ID for the monthly plan |
+| `POLAR_PRODUCT_ID_YEARLY` | Polar product ID for the yearly plan |
+| `POLAR_SERVER` | `sandbox` (default) or `production` |
+| `NEXT_PUBLIC_APP_URL` | Full app URL, e.g. `https://hypecap.com` (used for Polar redirect) |
+| `NEXT_PUBLIC_POSTHOG_KEY` | PostHog project API key (`phc_...`) — optional, analytics disabled if absent |
+| `NEXT_PUBLIC_POSTHOG_HOST` | PostHog ingest host, defaults to `https://us.i.posthog.com` |
 
 > **Worker** reads from `worker/.env` — same variable names, no `NEXT_PUBLIC_*` vars needed.
 
-> **R2 CORS** — you must configure a CORS policy on the R2 bucket allowing `PUT` and `Content-Type` from your app domain before presigned uploads will work.
+> **R2 CORS** — configure a CORS policy on the R2 bucket allowing `PUT` and `Content-Type` from your app domain before presigned uploads will work.
+
+> **Polar setup** — create three separate Products in Polar (Weekly / Monthly / Yearly), copy their IDs into env. Set `POLAR_SERVER=sandbox` for local testing, `production` when live.
 
 ---
 
@@ -476,6 +502,34 @@ SRT files have block-level timing only — no word-level timestamps. Each block 
 
 </details>
 
+<details>
+<summary><strong>Polar billing — why no local payment state</strong></summary>
+
+Polar's checkout is hosted — there's no subscription to reference locally until the customer completes payment. `createCheckout()` sets `externalCustomerId: clerkId` so Polar's `subscription.*` webhook can map back to the right user without any intermediate state. The app never stores card numbers, invoice amounts, or payment methods — all of that lives in Polar. `cancelAtPeriodEnd: true` is used for cancellations so the user keeps paid access through their current cycle; the local `subscriptionStatus` is only updated when Polar fires the next webhook confirming the period actually ended.
+
+</details>
+
+<details>
+<summary><strong>PostHog — server-side vs client-side</strong></summary>
+
+Two separate PostHog integrations run in parallel. The browser SDK (`instrumentation-client.ts`) is initialised via Next.js instrumentation and routes through `/ingest/*` (a rewrite in `next.config.ts`) rather than directly to `i.posthog.com` — this keeps requests on the same origin so ad-blockers (Brave, uBlock) don't drop them. The server-side SDK (`src/lib/posthog.ts`) captures backend events like `checkout_started` and `subscription_active` using the same Clerk `userId` as the `distinctId`, so both sides merge into one person in PostHog. The server client is optional — if `NEXT_PUBLIC_POSTHOG_KEY` is not set, `getPostHog()` returns `null` and all capture calls are no-ops.
+
+</details>
+
+<details>
+<summary><strong>Render customisation props</strong></summary>
+
+Style-specific props (`activeColor`, `textColor`, `accentColor`, `fontFamily`, `watermark`) are passed through `RenderJobPayload` to the worker and forwarded as `inputProps` to `CaptionRoot`. This is the same component the live preview uses — wiring props through `CaptionRoot` rather than selecting composition styles directly means the worker and preview cannot silently diverge on which props each receives.
+
+</details>
+
+<details>
+<summary><strong>Render performance — CRF and concurrency</strong></summary>
+
+The worker renders with `crf: 22` (H.264) and `concurrency: os.cpus().length`. CRF 22 is visually high quality for web/social while producing smaller files faster than the previous CRF 18. Full CPU concurrency replaces the old hardcoded `1` — Remotion parallelises frame rendering across all available cores, which significantly cuts render time on multi-core VMs.
+
+</details>
+
 ---
 
 ## Tech Stack
@@ -491,19 +545,37 @@ SRT files have block-level timing only — no word-level timestamps. Each block 
 | **Transcription** | Deepgram Nova-2 | Word-level timestamps, fast batch API |
 | **Rendering** | Remotion 4 | React-based video rendering, headless Chromium |
 | **Preview** | `@remotion/player` | Real-time in-browser composition preview |
+| **Billing** | Polar | Subscription checkout, webhooks, customer portal |
+| **Analytics** | PostHog | Event capture, session replay, funnel analysis |
 | **Data fetching** | TanStack Query v5 | Mutations for upload flow |
 | **Validation** | Zod | Request validation + env schema |
 | **Worker runtime** | Node.js + pm2 | Long-running process, GCP VM |
 
 ---
 
-## Product Limits (MVP)
+## Pricing
+
+| Plan | Price | Renders | Watermark |
+|---|---|---|---|
+| Free | $0 | 3 / month | Yes |
+| Weekly | $6.99 / week | Unlimited | No |
+| Monthly | $14.99 / month | Unlimited | No |
+| Yearly | $119 / year (~$9.92/mo) | Unlimited | No |
+
+Free-tier renders are watermarked. A paywall modal is shown when the monthly cap is hit. `bonusRenders` field on the User doc lets you manually grant extra free renders (beta testers, support gestures) without touching billing.
+
+Billing is handled entirely by **Polar** — checkout sessions, subscription lifecycle, and the customer portal (invoices + payment method management) are all Polar-hosted. The app receives `subscription.*` webhooks and syncs `polarSubscriptionId`, `subscriptionStatus`, and `billingTier` onto the User document. No payment data is stored locally.
+
+---
+
+## Product Limits
 
 | Constraint | Value |
 |---|---|
 | Max file size | 500 MB |
 | Accepted formats | MP4, MOV |
 | Daily uploads (free tier) | 5 per user |
+| Free renders per month | 3 (+ any bonus renders granted) |
 | Render concurrency | 1 (single worker) |
 | Storage retention | 7 days |
 | BullMQ retry on failure | 1 automatic retry |
@@ -526,15 +598,17 @@ npm run remotion:studio  # Remotion Studio for composition development
 
 ## Roadmap
 
-**Phase 2 — Payments + polish**
-- Polar Subscriptions + webhooks (flat monthly tier, no credit system)
-- Brand kit: saved font / color / animation presets per user
-- Batch upload (multiple videos per job)
-- Better retry UI for failed renders
-- Usage dashboard (renders done, storage used)
+**Shipped (Phase 2)**
+- Polar billing — Weekly / Monthly / Yearly subscriptions, customer portal
+- Watermarked free-tier renders with paywall modal
+- 11 caption styles (up from 4)
+- PostHog analytics (browser + server-side)
+- Landing page with pricing, style showcase, SEO metadata
 
-**Phase 3 — Scale + API**
+**Up next (Phase 3)**
+- Brand kit — saved colour / font / animation presets per user
+- Batch upload (multiple videos per job)
+- Improved retry UI for failed renders
 - Public REST API exposing Remotion compositions programmatically
 - Multi-worker scaling (multiple VM instances)
-- Additional caption styles and per-style customization controls
 - Multi-speaker diarization (podcast use case)
