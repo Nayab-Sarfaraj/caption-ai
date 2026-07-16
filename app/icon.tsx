@@ -21,7 +21,7 @@ export default function Icon() {
           fontFamily: 'system-ui, sans-serif',
         }}
       >
-        H
+        I
       </div>
     ),
     { ...size }

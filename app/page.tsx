@@ -31,7 +31,7 @@ const STEPS = [
 const JSON_LD = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
-  name: 'Hypecap',
+  name: 'Instacap',
   applicationCategory: 'MultimediaApplication',
   operatingSystem: 'Web',
   description: 'Word-by-word animated captions for uploaded video, rendered via Remotion. No credit system, real caption styles instead of a black-box config.',
@@ -58,7 +58,7 @@ export default async function RootPage() {
       <header className="max-w-5xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full border-2 border-[#c1361f]" />
-          <span className="text-[13px] font-bold tracking-[0.08em] uppercase">Hypecap</span>
+          <span className="text-[13px] font-bold tracking-[0.08em] uppercase">Instacap</span>
         </div>
         <nav className="hidden md:flex items-center gap-6">
           <a href="#styles" className="text-xs text-[#6b6862] hover:text-[#1a1917] transition-colors">
@@ -223,7 +223,7 @@ export default async function RootPage() {
       <footer className="max-w-5xl mx-auto px-4 sm:px-8 py-8 border-t border-[#14120f1f] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full border-2 border-[#c1361f]" />
-          <span className="text-xs font-bold tracking-wide uppercase text-[#a39e96]">Hypecap</span>
+          <span className="text-xs font-bold tracking-wide uppercase text-[#a39e96]">Instacap</span>
         </div>
         <div className="flex items-center gap-4">
           <SupportTrigger className="text-xs text-[#a39e96] hover:text-[#c1361f] transition-colors" />

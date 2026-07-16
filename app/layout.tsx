@@ -37,7 +37,7 @@ const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
-  title: 'Hypecap — Word-by-word animated captions',
+  title: 'Instacap — Word-by-word animated captions',
   description: 'Upload your video, get beautiful animated captions powered by Remotion.',
   alternates: {
     canonical: '/',
@@ -47,15 +47,15 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: 'Hypecap — Word-by-word animated captions',
+    title: 'Instacap — Word-by-word animated captions',
     description: 'Upload your video, get beautiful animated captions powered by Remotion.',
     url: appUrl,
-    siteName: 'Hypecap',
+    siteName: 'Instacap',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Hypecap — Word-by-word animated captions',
+    title: 'Instacap — Word-by-word animated captions',
     description: 'Upload your video, get beautiful animated captions powered by Remotion.',
   },
 }

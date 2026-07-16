@@ -29,7 +29,7 @@ export default function OpengraphImage() {
             }}
           />
           <div style={{ fontSize: 64, fontWeight: 700, letterSpacing: -1, color: '#1a1917' }}>
-            Hypecap
+            Instacap
           </div>
         </div>
         <div style={{ fontSize: 28, color: '#6b6862', marginTop: 24 }}>

@@ -1,8 +1,8 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/Hypecap-000000?style=for-the-badge&logoColor=white">
-  <img alt="Hypecap" src="https://img.shields.io/badge/Hypecap-ffffff?style=for-the-badge&logoColor=black">
+  <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/Instacap-000000?style=for-the-badge&logoColor=white">
+  <img alt="Instacap" src="https://img.shields.io/badge/Instacap-ffffff?style=for-the-badge&logoColor=black">
 </picture>
 
 **Word-by-word animated captions for your videos**
@@ -206,7 +206,7 @@ All 11 styles are Remotion React components in `/remotion/compositions/`. Every 
 ## Project Structure
 
 ```
-hypecap/
+instacap/
 ├── app/                              # Next.js App Router — thin route files only
 │   ├── api/
 │   │   ├── upload/route.ts           # POST — presigned PUT URL + Job creation
@@ -370,7 +370,7 @@ Copy `.env.example` → `.env.local` and fill in all values.
 | `POLAR_PRODUCT_ID_MONTHLY` | Polar product ID for the monthly plan |
 | `POLAR_PRODUCT_ID_YEARLY` | Polar product ID for the yearly plan |
 | `POLAR_SERVER` | `sandbox` (default) or `production` |
-| `NEXT_PUBLIC_APP_URL` | Full app URL, e.g. `https://hypecap.com` (used for Polar redirect) |
+| `NEXT_PUBLIC_APP_URL` | Full app URL, e.g. `https://instacap.com` (used for Polar redirect) |
 | `NEXT_PUBLIC_POSTHOG_KEY` | PostHog project API key (`phc_...`) — optional, analytics disabled if absent |
 | `NEXT_PUBLIC_POSTHOG_HOST` | PostHog ingest host, defaults to `https://us.i.posthog.com` |
 

@@ -1,4 +1,4 @@
-# GCP VM Setup — Hypecap (Next.js app + worker, same VM)
+# GCP VM Setup — Instacap (Next.js app + worker, same VM)
 
 Both processes run here, not just the worker. Next.js is NOT deployed to
 Vercel — its SSE progress route (`app/api/jobs/[id]/stream/route.ts`) holds a
