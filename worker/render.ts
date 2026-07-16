@@ -1,3 +1,4 @@
+import os from 'os'
 import { rm, mkdir } from 'fs/promises'
 import path from 'path'
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
@@ -142,13 +143,11 @@ async function processRenderPhase(bullJob: Job<RenderJobPayload>): Promise<void>
       composition,
       serveUrl,
       codec: 'h264',
-      // Pinned explicitly rather than relying on Remotion's implicit default —
-      // crf 18 is x264's standard "visually lossless" setting (lower = larger
-      // file/higher quality, 18 is the accepted sweet spot; going lower has
-      // negligible visible gain for delivered captioned video but costs
-      // render time + file size). yuv420p is the broadly-compatible pixel
-      // format every player/platform expects.
-      crf: 18,
+      // Maximize parallel frame rendering by using all available CPU cores
+      concurrency: os.cpus().length,
+      // Adjusted CRF from 18 to 22. CRF 22 remains visually high quality for web/social,
+      // but generates the file much faster and produces a smaller MP4.
+      crf: 22,
       pixelFormat: 'yuv420p',
       outputLocation: outputPath,
       inputProps,
