@@ -18,19 +18,9 @@ export default function OpengraphImage() {
           fontFamily: 'system-ui, sans-serif',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: '50%',
-              border: '6px solid #c1361f',
-              display: 'flex',
-            }}
-          />
-          <div style={{ fontSize: 64, fontWeight: 700, letterSpacing: -1, color: '#1a1917' }}>
-            Instacap
-          </div>
+        <div style={{ fontSize: 64, fontWeight: 700, letterSpacing: -1, display: 'flex' }}>
+          <span style={{ color: '#c1361f' }}>Insta</span>
+          <span style={{ color: '#1a1917' }}>cap</span>
         </div>
         <div style={{ fontSize: 28, color: '#6b6862', marginTop: 24 }}>
           Word-by-word animated captions
