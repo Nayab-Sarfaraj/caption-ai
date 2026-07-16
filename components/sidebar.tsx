@@ -4,15 +4,17 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { UserButton, SignOutButton } from '@clerk/nextjs'
-import { LogOut } from 'lucide-react'
+import { LogOut, LifeBuoy } from 'lucide-react'
 import type { SubscriptionStatus } from '@/src/models/User'
 import { PaywallModal } from '@/components/paywall-modal'
+import { SupportModal } from '@/components/support-modal'
 import { NAV, PLAN_BADGE } from '@/src/helpers/dashboard-nav'
 
 export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: SubscriptionStatus }) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
   const [showPaywall, setShowPaywall] = useState(false)
+  const [showSupport, setShowSupport] = useState(false)
 
   return (
     <aside
@@ -67,6 +69,7 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
       </nav>
 
       {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
+      {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}
 
       {subscriptionStatus !== 'active' && (
         <div className={collapsed ? 'flex justify-center px-2 pb-2' : 'px-2 pb-2'}>
@@ -108,7 +111,19 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
             )
           )}
         </div>
-        <div className={['px-2 pb-2', collapsed ? 'flex justify-center' : ''].join(' ')}>
+        <div className={['px-2 pb-2 space-y-0.5', collapsed ? 'flex flex-col items-center' : ''].join(' ')}>
+          <button
+            type="button"
+            onClick={() => setShowSupport(true)}
+            title={collapsed ? 'Contact support' : undefined}
+            className={[
+              'flex items-center gap-2.5 px-2 py-2 text-xs tracking-wide text-[#a39e96] hover:text-[#c1361f] transition-colors',
+              collapsed ? 'justify-center' : 'w-full',
+            ].join(' ')}
+          >
+            <LifeBuoy className="w-[15px] h-[15px] shrink-0" />
+            {!collapsed && 'Contact support'}
+          </button>
           <SignOutButton redirectUrl="/sign-in">
             <button
               type="button"

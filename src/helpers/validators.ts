@@ -47,4 +47,10 @@ export const createCheckoutSchema = z.object({
   tier: billingTierSchema,
 })
 
+export const supportMessageSchema = z.object({
+  type: z.enum(['bug', 'feedback', 'other']),
+  message: z.string().min(10).max(5000),
+  email: z.string().email(),
+})
+
 export type UploadRequest = z.infer<typeof uploadRequestSchema>

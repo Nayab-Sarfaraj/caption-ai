@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import Link from 'next/link'
 import { CaptionStylePreview, STYLE_PREVIEW_META } from '@/components/caption-style-preview'
 import { ScrollToHash } from '@/components/scroll-to-hash'
+import { SupportTrigger } from '@/components/support-trigger'
 import type { CompositionId } from '@/remotion/compositions/CaptionRoot'
 import { PRICING_TIERS } from '@/src/helpers/pricing-tiers'
 
@@ -224,7 +225,10 @@ export default async function RootPage() {
           <span className="w-1.5 h-1.5 rounded-full border-2 border-[#c1361f]" />
           <span className="text-xs font-bold tracking-wide uppercase text-[#a39e96]">Hypecap</span>
         </div>
-        <p className="text-xs text-[#a39e96]">© {new Date().getFullYear()}</p>
+        <div className="flex items-center gap-4">
+          <SupportTrigger className="text-xs text-[#a39e96] hover:text-[#c1361f] transition-colors" />
+          <p className="text-xs text-[#a39e96]">© {new Date().getFullYear()}</p>
+        </div>
       </footer>
     </div>
   )

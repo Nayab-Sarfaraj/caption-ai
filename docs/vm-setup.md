@@ -56,7 +56,7 @@ pm2 startup systemd  # follow the printed command to enable pm2 on boot
 
 ```bash
 git clone <your-repo-url> /home/ubuntu/captions
-cd /home/ubuntu/captions
+cd /home/nayabsarfaraj/captions
 npm install
 ```
 
@@ -207,7 +207,7 @@ like when it isn't wired up).
 ## Deploying updates
 
 ```bash
-cd /home/ubuntu/captions
+cd /home/nayabsarfaraj/captions
 git pull origin main
 npm install
 npm run worker:build

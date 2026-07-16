@@ -4,14 +4,16 @@ import { useState } from 'react'
 import { UserButton, SignOutButton } from '@clerk/nextjs'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LogOut, Menu, X } from 'lucide-react'
+import { LogOut, LifeBuoy, Menu, X } from 'lucide-react'
 import type { SubscriptionStatus } from '@/src/models/User'
 import { PaywallModal } from '@/components/paywall-modal'
+import { SupportModal } from '@/components/support-modal'
 import { NAV, PLAN_BADGE } from '@/src/helpers/dashboard-nav'
 
 export function MobileHeader({ subscriptionStatus = 'none' }: { subscriptionStatus?: SubscriptionStatus }) {
   const pathname = usePathname()
   const [showPaywall, setShowPaywall] = useState(false)
+  const [showSupport, setShowSupport] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
@@ -33,6 +35,7 @@ export function MobileHeader({ subscriptionStatus = 'none' }: { subscriptionStat
         </div>
 
         {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
+        {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}
 
         <div className="flex items-center gap-3">
           {subscriptionStatus === 'active' ? (
@@ -109,19 +112,29 @@ export function MobileHeader({ subscriptionStatus = 'none' }: { subscriptionStat
           })}
         </div>
 
-        <div className="border-t border-[#14120f1f] px-2 py-2 flex items-center justify-between">
-          <span className="text-[10px] uppercase tracking-wide text-[#a39e96] px-2">
-            {PLAN_BADGE[subscriptionStatus]}
-          </span>
-          <SignOutButton redirectUrl="/sign-in">
-            <button
-              type="button"
-              className="flex items-center gap-1.5 px-2 py-2 text-xs tracking-wide text-[#a39e96] hover:text-[#c1361f] transition-colors"
-            >
-              <LogOut className="w-[14px] h-[14px] shrink-0" />
-              Log out
-            </button>
-          </SignOutButton>
+        <div className="border-t border-[#14120f1f] px-2 py-2">
+          <button
+            type="button"
+            onClick={() => { setMenuOpen(false); setShowSupport(true) }}
+            className="flex items-center gap-1.5 px-2 py-2 text-xs tracking-wide text-[#a39e96] hover:text-[#c1361f] transition-colors w-full"
+          >
+            <LifeBuoy className="w-[14px] h-[14px] shrink-0" />
+            Contact support
+          </button>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] uppercase tracking-wide text-[#a39e96] px-2">
+              {PLAN_BADGE[subscriptionStatus]}
+            </span>
+            <SignOutButton redirectUrl="/sign-in">
+              <button
+                type="button"
+                className="flex items-center gap-1.5 px-2 py-2 text-xs tracking-wide text-[#a39e96] hover:text-[#c1361f] transition-colors"
+              >
+                <LogOut className="w-[14px] h-[14px] shrink-0" />
+                Log out
+              </button>
+            </SignOutButton>
+          </div>
         </div>
       </nav>
     </header>
