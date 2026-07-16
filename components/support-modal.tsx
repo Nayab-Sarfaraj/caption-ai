@@ -1,8 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useUser } from '@clerk/nextjs'
 import { toast } from 'sonner'
+import { supportMessageSchema } from '@/src/helpers/validators'
+import type { z } from 'zod'
 
 const TYPES = [
   { id: 'bug', label: 'Report a bug' },
@@ -10,18 +14,35 @@ const TYPES = [
   { id: 'other', label: 'Something else' },
 ] as const
 
+type SupportFormValues = z.infer<typeof supportMessageSchema>
+
 export function SupportModal({ onClose }: { onClose: () => void }) {
   const { user } = useUser()
   const [visible, setVisible] = useState(false)
-  const [type, setType] = useState<(typeof TYPES)[number]['id']>('bug')
-  // Lazy init, not an effect — the modal only mounts after a click deep in
-  // an already-hydrated, already-authed tree, so Clerk's user is resolved
-  // by the time this runs. Landing-page visitors (user is null) just get ''.
-  const [email, setEmail] = useState(() => user?.primaryEmailAddress?.emailAddress ?? '')
-  const [message, setMessage] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [apiError, setApiError] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    getValues,
+    formState: { errors, isSubmitting },
+  } = useForm<SupportFormValues>({
+    resolver: zodResolver(supportMessageSchema),
+    defaultValues: {
+      type: 'bug',
+      // Lazy default, not an effect — the modal only mounts after a click
+      // deep in an already-hydrated, already-authed tree, so Clerk's user
+      // is resolved by the time this runs. Landing-page visitors (user is
+      // null) just get ''.
+      email: user?.primaryEmailAddress?.emailAddress ?? '',
+      message: '',
+    },
+  })
+
+  const type = watch('type')
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -33,24 +54,20 @@ export function SupportModal({ onClose }: { onClose: () => void }) {
     }
   }, [onClose])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
+  const onSubmit = async (values: SupportFormValues) => {
+    setApiError(null)
     try {
       const res = await fetch('/api/support', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, email, message }),
+        body: JSON.stringify(values),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(typeof data.error === 'string' ? data.error : 'Could not send — try again')
       setSent(true)
       toast.success("Got it — we'll get back to you.")
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not send — try again')
-    } finally {
-      setLoading(false)
+      setApiError(err instanceof Error ? err.message : 'Could not send — try again')
     }
   }
 
@@ -86,15 +103,15 @@ export function SupportModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {sent ? (
-          <p className="text-sm text-[#6b6862]">Thanks — we&rsquo;ll follow up at {email}.</p>
+          <p className="text-sm text-[#6b6862]">Thanks — we&rsquo;ll follow up at {getValues('email')}.</p>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
             <div className="grid grid-cols-3 gap-2">
               {TYPES.map((t) => (
                 <button
                   key={t.id}
                   type="button"
-                  onClick={() => setType(t.id)}
+                  onClick={() => setValue('type', t.id)}
                   className={[
                     'text-xs font-medium px-2 py-2 border transition-colors',
                     type === t.id
@@ -112,36 +129,33 @@ export function SupportModal({ onClose }: { onClose: () => void }) {
               <input
                 id="support-email"
                 type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
+                {...register('email')}
                 className="w-full text-sm text-[#1a1917] border border-[#14120f1f] px-3 py-2 focus:border-[#c1361f] outline-none transition-colors"
               />
+              {errors.email && <p className="text-xs text-[#c1361f] mt-1">{errors.email.message}</p>}
             </div>
 
             <div>
               <label htmlFor="support-message" className="text-xs text-[#6b6862] block mb-1">Message</label>
               <textarea
                 id="support-message"
-                required
-                minLength={10}
                 rows={4}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
                 placeholder={type === 'bug' ? 'What happened, and what did you expect instead?' : 'What’s on your mind?'}
+                {...register('message')}
                 className="w-full text-sm text-[#1a1917] border border-[#14120f1f] px-3 py-2 focus:border-[#c1361f] outline-none transition-colors resize-none"
               />
+              {errors.message && <p className="text-xs text-[#c1361f] mt-1">{errors.message.message}</p>}
             </div>
 
-            {error && <p className="text-xs text-[#c1361f]">{error}</p>}
+            {apiError && <p className="text-xs text-[#c1361f]">{apiError}</p>}
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={isSubmitting}
               className="w-full bg-[#c1361f] text-white text-sm font-bold px-5 py-2.5 hover:brightness-[1.08] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Sending…' : 'Send'}
+              {isSubmitting ? 'Sending…' : 'Send'}
             </button>
           </form>
         )}
