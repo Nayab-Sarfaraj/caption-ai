@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { BillingActions } from '@/components/billing-actions'
 import { PLAN_COMPARISON, daysUntilRenderReset } from '@/src/helpers/plan-comparison'
+import { PRICING_TIERS } from '@/src/helpers/pricing-tiers'
 
 export interface PaywallModalProps {
   onClose: () => void
@@ -90,9 +91,13 @@ export function PaywallModal({ onClose, onContinueFree }: PaywallModalProps) {
         <div className="border-t border-[#14120f1f]" />
 
         {/* Pricing — after value, not before */}
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-3xl font-bold text-[#1a1917]">$12–15</span>
-          <span className="text-sm text-[#a39e96]">/month flat</span>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          {PRICING_TIERS.map((t) => (
+            <div key={t.id}>
+              <p className="text-lg font-bold text-[#1a1917]">{t.price}</p>
+              <p className="text-[11px] text-[#a39e96]">{t.period}</p>
+            </div>
+          ))}
         </div>
 
         <BillingActions status="none" />

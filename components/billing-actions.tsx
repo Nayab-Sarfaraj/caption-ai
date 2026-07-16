@@ -3,31 +3,47 @@
 import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { SubscriptionStatus } from '@/src/models/User'
+import { PRICING_TIERS, type BillingTier } from '@/src/helpers/pricing-tiers'
 
 export function BillingActions({ status }: { status: SubscriptionStatus }) {
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState<BillingTier | 'cancel' | 'portal' | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const handleSubscribe = useCallback(async () => {
-    setLoading(true)
+  const handleSubscribe = useCallback(async (tier: BillingTier) => {
+    setLoading(tier)
     setError(null)
     try {
-      const res = await fetch('/api/billing/subscribe', { method: 'POST' })
+      const res = await fetch('/api/billing/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier }),
+      })
       const data = await res.json()
       if (!res.ok) throw new Error(typeof data.error === 'string' ? data.error : 'Subscribe failed')
-      // Same-tab redirect — Razorpay's hosted page has no callback_url, so the
-      // back button is how the user returns here; this page re-reads status
-      // fresh on every load once they do.
-      window.location.href = data.shortUrl
+      window.location.href = data.url
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Subscribe failed')
-      setLoading(false)
+      setLoading(null)
+    }
+  }, [])
+
+  const handlePortal = useCallback(async () => {
+    setLoading('portal')
+    setError(null)
+    try {
+      const res = await fetch('/api/billing/portal', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(typeof data.error === 'string' ? data.error : 'Could not open billing portal')
+      window.location.href = data.url
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not open billing portal')
+      setLoading(null)
     }
   }, [])
 
   const handleCancel = useCallback(async () => {
-    setLoading(true)
+    setLoading('cancel')
     setError(null)
     try {
       const res = await fetch('/api/billing/cancel', { method: 'POST' })
@@ -37,7 +53,7 @@ export function BillingActions({ status }: { status: SubscriptionStatus }) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Cancel failed')
     } finally {
-      setLoading(false)
+      setLoading(null)
     }
   }, [router])
 
@@ -46,23 +62,48 @@ export function BillingActions({ status }: { status: SubscriptionStatus }) {
       {error && <p className="text-xs text-[#c1361f]">{error}</p>}
 
       {status === 'active' ? (
-        <button
-          type="button"
-          onClick={handleCancel}
-          disabled={loading}
-          className="text-sm font-medium text-[#1a1917] border border-[#14120f1f] px-4 py-2 hover:border-[#c1361f] hover:text-[#c1361f] transition-colors disabled:opacity-50"
-        >
-          {loading ? 'Cancelling…' : 'Cancel subscription'}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={handlePortal}
+            disabled={loading !== null}
+            className="text-sm font-medium text-[#1a1917] border border-[#14120f1f] px-4 py-2 hover:border-[#c1361f] hover:text-[#c1361f] transition-colors disabled:opacity-50"
+          >
+            {loading === 'portal' ? 'Opening…' : 'Manage payment & invoices'}
+          </button>
+          <button
+            type="button"
+            onClick={handleCancel}
+            disabled={loading !== null}
+            className="text-sm font-medium text-[#1a1917] border border-[#14120f1f] px-4 py-2 hover:border-[#c1361f] hover:text-[#c1361f] transition-colors disabled:opacity-50"
+          >
+            {loading === 'cancel' ? 'Cancelling…' : 'Cancel subscription'}
+          </button>
+        </div>
       ) : (
-        <button
-          type="button"
-          onClick={handleSubscribe}
-          disabled={loading}
-          className="bg-[#c1361f] text-white text-sm font-bold px-5 py-2.5 hover:brightness-[1.08] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? 'Redirecting…' : status === 'halted' ? 'Fix payment — resubscribe' : 'Subscribe'}
-        </button>
+        <div className="grid grid-cols-3 gap-2">
+          {PRICING_TIERS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => handleSubscribe(t.id)}
+              disabled={loading !== null}
+              className="flex flex-col items-center gap-0.5 bg-[#c1361f] text-white text-sm font-bold px-3 py-2.5 hover:brightness-[1.08] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading === t.id ? (
+                'Redirecting…'
+              ) : (
+                <>
+                  <span>{t.label}</span>
+                  <span className="text-xs font-normal opacity-90">{t.price}{t.period}</span>
+                </>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+      {status === 'past_due' && (
+        <p className="text-xs text-[#c1361f]">Last payment failed — pick a plan below to resubscribe.</p>
       )}
     </div>
   )

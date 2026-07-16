@@ -46,7 +46,7 @@ const Watermark: React.FC = () => {
           letterSpacing: '0.01em',
         }}
       >
-        Made with Captions
+        Made with Hypecap
       </div>
     </AbsoluteFill>
   )

@@ -33,9 +33,31 @@ const PREVIEW_FONT_VARS = [bangers, anton, fredoka, montserrat, roboto, caveat]
   .map((f) => f.variable)
   .join(' ')
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+
 export const metadata: Metadata = {
-  title: 'Captions — Word-by-word animated captions',
+  metadataBase: new URL(appUrl),
+  title: 'Hypecap — Word-by-word animated captions',
   description: 'Upload your video, get beautiful animated captions powered by Remotion.',
+  alternates: {
+    canonical: '/',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    title: 'Hypecap — Word-by-word animated captions',
+    description: 'Upload your video, get beautiful animated captions powered by Remotion.',
+    url: appUrl,
+    siteName: 'Hypecap',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Hypecap — Word-by-word animated captions',
+    description: 'Upload your video, get beautiful animated captions powered by Remotion.',
+  },
 }
 
 export default function RootLayout({

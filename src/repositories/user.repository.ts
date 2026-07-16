@@ -6,11 +6,6 @@ export async function findByClerkId(clerkId: string): Promise<IUser | null> {
   return User.findOne({ clerkId })
 }
 
-export async function findByRazorpaySubscriptionId(subscriptionId: string): Promise<IUser | null> {
-  await connectDB()
-  return User.findOne({ razorpaySubscriptionId: subscriptionId })
-}
-
 export async function upsertFromClerk(data: {
   clerkId: string
   email: string
@@ -24,27 +19,29 @@ export async function upsertFromClerk(data: {
   ) as Promise<IUser>
 }
 
-// Called right after razorpay.subscriptions.create() succeeds — status stays
-// 'none' until the webhook confirms the authorization payment actually landed.
-export async function setPendingSubscription(clerkId: string, subscriptionId: string): Promise<IUser | null> {
+// Keyed on clerkId (Polar's externalCustomerId), not subscriptionId — Polar's
+// checkout-first flow never gives us a subscription id to store locally
+// before the first webhook fires, so every subscription.* event (first or
+// Nth) links/re-links polarSubscriptionId + syncs status in one call.
+// Idempotent — Polar can retry/resend webhook events.
+export async function syncSubscription(data: {
+  clerkId: string
+  subscriptionId: string
+  status: SubscriptionStatus
+  polarCustomerId?: string
+  billingTier?: 'weekly' | 'monthly' | 'yearly' | null
+}): Promise<IUser | null> {
   await connectDB()
   return User.findOneAndUpdate(
-    { clerkId },
-    { $set: { razorpaySubscriptionId: subscriptionId } },
-    { new: true }
-  )
-}
-
-// Idempotent upsert keyed on razorpaySubscriptionId — Razorpay can retry/resend
-// webhook events, re-processing the same event twice must be a no-op.
-export async function updateSubscriptionStatus(
-  subscriptionId: string,
-  data: { status: SubscriptionStatus; razorpayCustomerId?: string }
-): Promise<IUser | null> {
-  await connectDB()
-  return User.findOneAndUpdate(
-    { razorpaySubscriptionId: subscriptionId },
-    { $set: { subscriptionStatus: data.status, ...(data.razorpayCustomerId && { razorpayCustomerId: data.razorpayCustomerId }) } },
+    { clerkId: data.clerkId },
+    {
+      $set: {
+        polarSubscriptionId: data.subscriptionId,
+        subscriptionStatus: data.status,
+        ...(data.polarCustomerId && { polarCustomerId: data.polarCustomerId }),
+        ...(data.billingTier !== undefined && { billingTier: data.billingTier }),
+      },
+    },
     { new: true }
   )
 }

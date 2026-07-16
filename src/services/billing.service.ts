@@ -1,96 +1,132 @@
-import { getRazorpay } from '@/src/lib/razorpay'
+import { getPolar } from '@/src/lib/polar'
 import { env } from '@/config/env'
 import {
   findByClerkId,
-  setPendingSubscription,
-  updateSubscriptionStatus,
+  syncSubscription,
 } from '@/src/repositories/user.repository'
 import { countRendersThisMonth } from '@/src/repositories/job.repository'
-
-// Razorpay Subscriptions have no "infinite" option — total_count is mandatory.
-// 1200 monthly cycles = 100 years, the practical proxy for an unbounded flat-tier plan.
-const TOTAL_COUNT_MONTHLY = 1200
+import type { SubscriptionStatus } from '@/src/models/User'
+import type { BillingTier } from '@/src/helpers/pricing-tiers'
 
 // Single source of truth — usage page, billing page, and the render-trigger
 // gate all read this. Redeclaring it per-file lets it drift silently.
 export const FREE_TIER_MONTHLY_RENDERS = 3
 
-export interface RazorpaySubscriptionWebhookEntity {
-  id: string
-  status: string
-  customer_id: string | null
+// Maps each billing cadence to its Polar Product — three separate Products
+// since Polar checkout takes a product list, not a price/interval param.
+const TIER_PRODUCT_IDS: Record<BillingTier, string> = {
+  weekly: env.POLAR_PRODUCT_ID_WEEKLY,
+  monthly: env.POLAR_PRODUCT_ID_MONTHLY,
+  yearly: env.POLAR_PRODUCT_ID_YEARLY,
 }
 
-export async function createSubscription(clerkId: string): Promise<{ shortUrl: string }> {
+// Reverse lookup for webhook sync — Polar tells us the productId that was
+// purchased, not which of our three named tiers it maps to.
+function tierForProductId(productId: string): BillingTier | null {
+  const entry = (Object.entries(TIER_PRODUCT_IDS) as [BillingTier, string][])
+    .find(([, id]) => id === productId)
+  return entry ? entry[0] : null
+}
+
+// Minimal shape of the fields we actually read off a Polar subscription
+// webhook payload — not the full SDK type, matching this codebase's existing
+// pattern of hand-typing just what's consumed.
+export interface PolarSubscriptionEvent {
+  type: string
+  data?: {
+    id?: string
+    status?: string
+    customerId?: string | null
+    productId?: string | null
+    customer?: { externalId?: string | null }
+  }
+}
+
+export async function createCheckout(clerkId: string, tier: BillingTier): Promise<{ url: string }> {
   const user = await findByClerkId(clerkId)
   if (!user) throw new Error('User not found')
 
-  const subscription = await getRazorpay().subscriptions.create({
-    plan_id: env.RAZORPAY_PLAN_ID,
-    total_count: TOTAL_COUNT_MONTHLY,
-    customer_notify: true,
-    notes: { clerkId },
+  // No local DB write here — Polar's checkout-first flow means there's no
+  // subscription to reference until the customer actually completes payment
+  // on Polar's hosted page. The subscription.* webhook is what links
+  // polarSubscriptionId to this clerkId, via externalCustomerId set below.
+  const checkout = await getPolar().checkouts.create({
+    products: [TIER_PRODUCT_IDS[tier]],
+    externalCustomerId: clerkId,
+    successUrl: `${env.NEXT_PUBLIC_APP_URL}/dashboard/billing`,
   })
 
-  await setPendingSubscription(clerkId, subscription.id)
-
-  return { shortUrl: subscription.short_url }
+  return { url: checkout.url }
 }
 
 export async function cancelSubscription(clerkId: string): Promise<void> {
   const user = await findByClerkId(clerkId)
-  if (!user?.razorpaySubscriptionId) throw new Error('No active subscription')
+  if (!user?.polarSubscriptionId) throw new Error('No active subscription')
 
-  // cancelAtCycleEnd: true — let the user keep paid access through the cycle
+  // cancelAtPeriodEnd: true — let the user keep paid access through the cycle
   // they already paid for. Local status is NOT updated here — the
-  // subscription.cancelled webhook is the single source of truth, so a
-  // delayed webhook can't leave local/Razorpay state disagreeing.
-  await getRazorpay().subscriptions.cancel(user.razorpaySubscriptionId, true)
+  // subscription.updated webhook (still reporting status: 'active' until the
+  // period actually ends) is the single source of truth.
+  await getPolar().subscriptions.update({
+    id: user.polarSubscriptionId,
+    subscriptionUpdate: { cancelAtPeriodEnd: true },
+  })
 }
 
-export async function handleWebhookEvent(event: {
-  event: string
-  payload?: { subscription?: { entity?: RazorpaySubscriptionWebhookEntity } }
-}): Promise<void> {
-  const sub = event.payload?.subscription?.entity
-  if (!sub) return
+// One handler for every subscription.* event — Polar always sends the full
+// current subscription object (status, customer.externalId), so there's no
+// need to switch per event name like Razorpay's payload required. Idempotent:
+// re-processing the same event just re-syncs the same status.
+export async function handleWebhookEvent(event: PolarSubscriptionEvent): Promise<void> {
+  if (!event.type.startsWith('subscription.')) return
 
-  switch (event.event) {
-    case 'subscription.authenticated':
-      // Authorization payment succeeded but billing cycle hasn't started yet —
-      // capture the customer id as soon as it's available, don't flip status.
-      if (sub.customer_id) {
-        await updateSubscriptionStatus(sub.id, { status: 'none', razorpayCustomerId: sub.customer_id })
-      }
-      break
-    case 'subscription.activated':
-      await updateSubscriptionStatus(sub.id, {
-        status: 'active',
-        ...(sub.customer_id && { razorpayCustomerId: sub.customer_id }),
-      })
-      break
-    case 'subscription.charged':
-      // Renewal succeeded — already 'active', nothing to change.
-      break
-    case 'subscription.halted':
-      await updateSubscriptionStatus(sub.id, { status: 'halted' })
-      break
-    case 'subscription.cancelled':
-      await updateSubscriptionStatus(sub.id, { status: 'cancelled' })
-      break
-    default:
-      // subscription.updated / pending / paused / resumed / completed — no
-      // local state change needed for MVP. Explicit no-op, not an error.
-      break
+  const sub = event.data
+  const clerkId = sub?.customer?.externalId
+  if (!sub?.id || !sub?.status || !clerkId) return
+
+  await syncSubscription({
+    clerkId,
+    subscriptionId: sub.id,
+    status: sub.status as SubscriptionStatus,
+    polarCustomerId: sub.customerId ?? undefined,
+    billingTier: sub.productId ? tierForProductId(sub.productId) : undefined,
+  })
+}
+
+// Live period/renewal info — not cached locally, Polar is the source of
+// truth for billing periods (same reasoning as PLAN-PHASE2.md's optional
+// billing-cycle-usage note: don't duplicate what Polar already tracks).
+export async function getSubscriptionDetails(clerkId: string): Promise<{
+  currentPeriodEnd: Date
+  cancelAtPeriodEnd: boolean
+  startedAt: Date | null
+  amount: number // cents
+  currency: string
+} | null> {
+  const user = await findByClerkId(clerkId)
+  if (!user?.polarSubscriptionId) return null
+
+  const sub = await getPolar().subscriptions.get({ id: user.polarSubscriptionId })
+  return {
+    currentPeriodEnd: sub.currentPeriodEnd,
+    cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
+    startedAt: sub.startedAt,
+    amount: sub.amount,
+    currency: sub.currency,
   }
+}
+
+// Polar-hosted customer portal — real invoices + payment-method management,
+// not something we'd build ourselves for MVP. Session tokens are short-lived
+// by design, so this is generated on demand, never stored.
+export async function createCustomerPortalUrl(clerkId: string): Promise<string> {
+  const session = await getPolar().customerSessions.create({ externalCustomerId: clerkId })
+  return session.customerPortalUrl
 }
 
 export async function canRender(clerkId: string): Promise<{ allowed: boolean; watermark: boolean }> {
   const user = await findByClerkId(clerkId)
 
-  // Strict equality — 'halted' is Razorpay's dead-end after exhausting its own
-  // retry schedule, not a grace period like Stripe's 'past_due'. Treat it the
-  // same as 'cancelled'/'none': fall through to the free-tier check below.
   if (user?.subscriptionStatus === 'active') {
     return { allowed: true, watermark: false }
   }

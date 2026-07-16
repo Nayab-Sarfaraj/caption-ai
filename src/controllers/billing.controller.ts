@@ -1,18 +1,23 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyWebhookSignature } from '@/src/lib/razorpay'
-import { createSubscription, cancelSubscription, handleWebhookEvent } from '@/src/services/billing.service'
+import { validateEvent, WebhookVerificationError } from '@polar-sh/sdk/webhooks'
+import { env } from '@/config/env'
+import { createCheckout, cancelSubscription, handleWebhookEvent, createCustomerPortalUrl } from '@/src/services/billing.service'
+import { createCheckoutSchema } from '@/src/helpers/validators'
 
-export async function handleCreateSubscription(): Promise<NextResponse> {
+export async function handleCreateCheckout(req: NextRequest): Promise<NextResponse> {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const parsed = createCheckoutSchema.safeParse(await req.json().catch(() => null))
+  if (!parsed.success) return NextResponse.json({ error: 'Invalid or missing tier' }, { status: 400 })
+
   try {
-    const { shortUrl } = await createSubscription(userId)
-    return NextResponse.json({ shortUrl })
+    const { url } = await createCheckout(userId, parsed.data.tier)
+    return NextResponse.json({ url })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Subscription creation failed'
-    console.error('Razorpay subscription create error:', message)
+    const message = err instanceof Error ? err.message : 'Checkout creation failed'
+    console.error('Polar checkout create error:', message)
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
@@ -26,21 +31,43 @@ export async function handleCancelSubscription(): Promise<NextResponse> {
     return NextResponse.json({ ok: true })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Cancel failed'
-    console.error('Razorpay subscription cancel error:', message)
+    console.error('Polar subscription cancel error:', message)
     return NextResponse.json({ error: message }, { status: 400 })
   }
 }
 
-export async function handleRazorpayWebhook(req: NextRequest): Promise<NextResponse> {
-  const body = await req.text()
-  const signature = req.headers.get('x-razorpay-signature')
-  if (!signature) return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
+export async function handleCreatePortalSession(): Promise<NextResponse> {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  if (!verifyWebhookSignature(body, signature)) {
-    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+  try {
+    const url = await createCustomerPortalUrl(userId)
+    return NextResponse.json({ url })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Portal session creation failed'
+    console.error('Polar portal session error:', message)
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
+}
+
+export async function handlePolarWebhook(req: NextRequest): Promise<NextResponse> {
+  const body = await req.text()
+  const headers = {
+    'webhook-id': req.headers.get('webhook-id') ?? '',
+    'webhook-timestamp': req.headers.get('webhook-timestamp') ?? '',
+    'webhook-signature': req.headers.get('webhook-signature') ?? '',
   }
 
-  const event = JSON.parse(body)
+  let event
+  try {
+    event = validateEvent(body, headers, env.POLAR_WEBHOOK_SECRET)
+  } catch (err) {
+    if (err instanceof WebhookVerificationError) {
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 403 })
+    }
+    throw err
+  }
+
   await handleWebhookEvent(event)
 
   return NextResponse.json({ ok: true })

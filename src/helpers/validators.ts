@@ -41,4 +41,10 @@ export const brandKitSchema = z.object({
   defaultCompositionId: compositionIdSchema.nullable().optional(),
 })
 
+export const billingTierSchema = z.enum(['weekly', 'monthly', 'yearly'])
+
+export const createCheckoutSchema = z.object({
+  tier: billingTierSchema,
+})
+
 export type UploadRequest = z.infer<typeof uploadRequestSchema>

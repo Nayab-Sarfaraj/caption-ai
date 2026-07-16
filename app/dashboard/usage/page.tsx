@@ -9,8 +9,12 @@ import { BillingActions } from '@/components/billing-actions'
 
 const PLAN_LABEL: Record<string, string> = {
   active: 'Pro',
-  halted: 'Payment failed',
-  cancelled: 'Cancelled',
+  past_due: 'Payment failed',
+  unpaid: 'Payment failed',
+  canceled: 'Cancelled',
+  incomplete: 'Pending',
+  incomplete_expired: 'Free',
+  trialing: 'Trial',
   none: 'Free',
 }
 

@@ -18,7 +18,7 @@ Caption generator — word-by-word animated captions for uploaded video, rendere
 - Transcription: Deepgram (Nova-3 batch default, hosted Whisper as fallback/config flag)
 - Realtime updates: SSE (render/job progress)
 - Data fetching: TanStack Query (React Query v5)
-- Payments: Razorpay Subscriptions (not Stripe — see Product decisions)
+- Payments: Polar (merchant of record, Subscriptions API — not Stripe/Razorpay, see Product decisions)
 
 ## Architecture
 
@@ -59,7 +59,8 @@ Both Next.js and the worker connect to the same Redis instance — that's the on
 - **Deepgram SDK method:** `@deepgram/sdk` v5+ changed API. Correct call is `client.listen.v1.media.transcribeUrl({ url, model: 'nova-3', punctuate: true, smart_format: true })` — NOT the old `listen.prerecorded.transcribeUrl` pattern.
 - **Job rate-limit query:** `job.repository.ts` needs compound index `{ userId: 1, createdAt: 1 }` on the Job model — without it the daily upload-count query table-scans.
 - **SSE route runtime:** always `export const runtime = 'nodejs'` on SSE + webhook routes — ioredis is TCP and silently fails on Vercel Edge Runtime.
-- **Razorpay webhook signature:** verify using `crypto.createHmac('sha256', webhookSecret)` over the **raw** request body — same "don't let Next.js parse the JSON before verifying" trap as Stripe. Use `req.text()`, never `req.json()`, in the webhook route.
+- **Polar webhook signature:** verify using `validateEvent(rawBody, headers, webhookSecret)` from `@polar-sh/sdk/webhooks` (Standard Webhooks spec — needs the raw `webhook-id`/`webhook-timestamp`/`webhook-signature` headers, not just the body). Same "don't let Next.js parse the JSON before verifying" trap as Stripe/Razorpay — use `req.text()`, never `req.json()`, in the webhook route.
+- **Polar checkout is checkout-first, not subscription-first:** `checkouts.create()` returns a hosted URL before any subscription exists — there's no subscription ID to store locally until the customer actually completes payment. The `subscription.*` webhook (via `customer.externalId`, set to our `clerkId` at checkout creation) is what links and syncs in one step. Don't try to pre-create a "pending" subscription row like a Stripe/Razorpay-shaped flow would.
 
 ## Out of scope for now
 
@@ -77,7 +78,7 @@ Layered architecture — controllers/services/repositories pattern, not logic du
     /upload/route.ts           → calls controller, returns response
     /jobs/[id]/route.ts
     /jobs/[id]/stream/route.ts → SSE endpoint
-    /webhooks/razorpay/route.ts → Razorpay webhook handler
+    /webhooks/polar/route.ts    → Polar webhook handler
   /(dashboard)/...             → UI pages
   layout.tsx, page.tsx
 
@@ -85,18 +86,18 @@ Layered architecture — controllers/services/repositories pattern, not logic du
   /controllers                 → request/response handling only, calls services
     upload.controller.ts
     job.controller.ts
-    billing.controller.ts      → Razorpay checkout/webhook request handling
+    billing.controller.ts      → Polar checkout/webhook request handling
   /services                    → business logic, orchestration
     upload.service.ts
     transcription.service.ts   → Deepgram/Whisper abstraction lives here
     job.service.ts
     render.service.ts          → used by worker, not by Next directly
-    billing.service.ts         → Razorpay subscription creation, webhook event handling
+    billing.service.ts         → Polar checkout creation, webhook event handling
   /repositories                → DB access only, no business logic
     user.repository.ts
     job.repository.ts
   /models                      → Mongoose schemas
-    User.ts                    → includes razorpayCustomerId, razorpaySubscriptionId, subscriptionStatus
+    User.ts                    → includes polarCustomerId, polarSubscriptionId, subscriptionStatus
     Job.ts
   /lib                         → shared infra clients (singletons)
     mongo.ts
@@ -104,7 +105,7 @@ Layered architecture — controllers/services/repositories pattern, not logic du
     storage.ts                → S3/R2 client
     deepgram.ts
     queue.ts                  → BullMQ queue definition (shared with worker)
-    razorpay.ts                → Razorpay SDK client singleton
+    polar.ts                   → Polar SDK client singleton
   /helpers                     → pure utility functions (no side effects)
     srt-parser.ts
     validators.ts
@@ -145,9 +146,9 @@ Layered architecture — controllers/services/repositories pattern, not logic du
 - **Concurrency:** 1 render at a time on the VM for MVP (single worker instance). Revisit if queue wait becomes a problem.
 - **Content moderation:** none automated in MVP. ToS bans illegal/NSFW content; add a manual report mechanism (email or button). Revisit only if abuse occurs.
 - **Rate limiting:** free tier capped at 5 uploads/day (or 3 renders/month if using free-with-watermark model). Paid tier: soft flag for review if >20 uploads/day, no hard block.
-- **Pricing:** target $12–15/month flat, unlimited renders within upload limits above. Free tier: watermark + 3 renders/month, no card required.
+- **Pricing:** 3 paid billing cadences, all identical features (unlimited renders within upload limits above, no watermark, all caption styles) — only price/period differs. Weekly $6.99/wk (~$30/mo equivalent, priced high on purpose to nudge toward monthly), Monthly $14.99/mo (anchor plan), Yearly $119/yr (~$9.92/mo, ~34% off monthly). Free tier: watermark + 3 renders/month, no card required, universal regardless of which paid tier someone eventually picks. Single source of truth: `src/helpers/pricing-tiers.ts`.
 - **Legal:** template ToS/Privacy Policy at launch (e.g. Termly), swap for real legal review post-revenue.
-- **Payments — Razorpay, not Stripe:** Stripe is invite-only in India with no self-serve signup, so it's not usable for this project. Razorpay supports India-registered businesses directly, plus UPI/cards/eMandate payment methods relevant to an India-based and international customer base. Use Razorpay Subscriptions API (Plan + Subscription per customer, auto-charged on schedule) and Razorpay webhooks for lifecycle sync — architecturally the same shape as the original Stripe plan (create → webhook → sync `subscriptionStatus` on `User`), just different SDK/event names. RevenueCat is not used — no mobile app in this project yet.
+- **Payments — Polar, not Stripe/Razorpay:** Stripe is invite-only in India with no self-serve signup. Razorpay works but requires business KYC verification before going live, which the team wants to skip for MVP speed. Polar is a merchant of record — it handles global tax (VAT/GST) compliance and pays out to India via Stripe Connect Express (a different product than regular Stripe, not gated the same way), with no KYC step on our side to launch. Tradeoff accepted knowingly: Polar's checkout is card-only (via Stripe) — no UPI, which matters for India-based buyers specifically (Razorpay's UPI support was the original reason Stripe was rejected). Architecturally same shape as the Stripe/Razorpay plans before it (checkout/subscription → webhook → sync `subscriptionStatus` on `User`), just checkout-first instead of subscription-first (see gotcha above) and different SDK/event names. RevenueCat is not used — no mobile app in this project yet.
 
 ## Phases
 
@@ -165,14 +166,13 @@ Layered architecture — controllers/services/repositories pattern, not logic du
 
 **Phase 2 — Payments + polish**
 
-- Payment integration: Razorpay Subscriptions + webhooks. **Action items:**
-  - Create a Razorpay account, complete business KYC verification
-  - Create a Plan (amount + monthly billing cycle) in Razorpay dashboard/API, note the Plan ID
-  - Decide checkout UX: Razorpay Checkout (embedded JS modal) vs Subscription Link (simpler, hosted, no-code) before implementation
-  - `src/lib/razorpay.ts` — Razorpay Node SDK client singleton, same pattern as `mongo.ts`/`redis.ts`
-  - `User` model: add `razorpayCustomerId`, `razorpaySubscriptionId`, `subscriptionStatus` (`'none' | 'active' | 'halted' | 'cancelled'`)
-  - Webhook route `app/api/webhooks/razorpay/route.ts` — raw body + HMAC-SHA256 signature verification (see gotcha above), subscribe to `subscription.activated`, `subscription.charged`, `subscription.halted`, `subscription.cancelled`
-  - All webhook handlers must be idempotent upserts keyed on `razorpaySubscriptionId` — Razorpay can retry/resend events
+- Payment integration: Polar Subscriptions + webhooks. **Action items:**
+  - Create a Polar organization (sandbox first), no business KYC needed to start selling — payouts to India route through Stripe Connect Express once you're ready to go live
+  - Create a Product (subscription, monthly billing cycle) in the Polar dashboard, note the Product ID
+  - `src/lib/polar.ts` — Polar Node SDK (`@polar-sh/sdk`) client singleton, same pattern as `mongo.ts`/`redis.ts`
+  - `User` model: add `polarCustomerId`, `polarSubscriptionId`, `subscriptionStatus` (mirrors Polar's own `Subscription.status`: `'none' | 'incomplete' | 'incomplete_expired' | 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid'`)
+  - Webhook route `app/api/webhooks/polar/route.ts` — raw body + `validateEvent()` signature verification (see gotcha above), one handler for all `subscription.*` events (Polar always sends the full current subscription object, no per-event switch needed)
+  - All webhook handlers must be idempotent upserts keyed on `clerkId` (via `customer.externalId`) — Polar can retry/resend events, and there's no subscription ID to key on until the first webhook arrives
   - Access gate: `canRender(userId)` returns `{ allowed, watermark }` — paid+active → no watermark; free tier under monthly quota → watermark: true; free tier over quota → not allowed. Gate in service layer, not middleware (needs a DB read).
 - Brand kit: saved font/color/animation presets per user
 - Batch upload (multiple videos per job run)
@@ -190,13 +190,15 @@ Layered architecture — controllers/services/repositories pattern, not logic du
 
 ```
 # .env.local (Next.js — never commit)
-RAZORPAY_KEY_ID=
-RAZORPAY_KEY_SECRET=
-RAZORPAY_WEBHOOK_SECRET=
-RAZORPAY_PLAN_ID=
+POLAR_ACCESS_TOKEN=
+POLAR_WEBHOOK_SECRET=
+POLAR_PRODUCT_ID_WEEKLY=
+POLAR_PRODUCT_ID_MONTHLY=
+POLAR_PRODUCT_ID_YEARLY=
+POLAR_SERVER=sandbox
 ```
 
-No new worker env vars for billing — worker doesn't touch Razorpay directly.
+No new worker env vars for billing — worker doesn't touch Polar directly.
 
 ## Commands
 

@@ -4,13 +4,13 @@
 
 Builds on Phase 1 (see `PLAN.md`). Same layered rules apply: controllers → services → repositories, no lane-crossing. `proxy.ts` (repo root) is this project's Clerk middleware — route matcher gets new protected paths in Stage 1.
 
-Route matcher note: current `proxy.ts` protects `/dashboard(.*)`, `/api/upload(.*)`, `/api/jobs(.*)`, `/api/brand-kit(.*)`. Stage 1 adds `/api/billing(.*)` to that list — the webhook route lives under `/api/webhooks/razorpay`, not `/api/billing`, so it's outside the matcher automatically (Razorpay can't send a Clerk session), same pattern as the existing Clerk webhook.
+Route matcher note: current `proxy.ts` protects `/dashboard(.*)`, `/api/upload(.*)`, `/api/jobs(.*)`, `/api/brand-kit(.*)`. Stage 1 adds `/api/billing(.*)` to that list — the webhook route lives under `/api/webhooks/polar`, not `/api/billing`, so it's outside the matcher automatically (Polar can't send a Clerk session), same pattern as the existing Clerk webhook.
 
 ---
 
-## Stage 1 — Razorpay Subscriptions + Webhooks (implemented)
+## Stage 1 — Polar Subscriptions + Webhooks (implemented)
 
-Stripe was the original plan for this stage but was never built — Stripe is invite-only in India with no self-serve signup. Switched to Razorpay before writing any code; see `CLAUDE.md`'s "Payments — Razorpay, not Stripe" product decision. This section reflects what actually shipped.
+Stripe was the original plan but never built — invite-only in India, no self-serve signup. Razorpay was the second plan and was fully built (see git history) — works, but requires business KYC verification before going live, which the team wants to skip for MVP speed. Switched to Polar (merchant of record) before that KYC step; see `CLAUDE.md`'s "Payments — Polar, not Stripe/Razorpay" product decision. This section reflects what actually shipped.
 
 ### Ordering constraint
 Phase 1 complete (User model, Clerk auth, Mongo working).
@@ -18,16 +18,16 @@ Phase 1 complete (User model, Clerk auth, Mongo working).
 ### Files created
 
 ```
-src/lib/razorpay.ts                        (Razorpay SDK client singleton + verifyWebhookSignature helper)
-src/models/User.ts                         (extend — razorpaySubscriptionId, razorpayCustomerId, subscriptionStatus)
-src/repositories/user.repository.ts        (extend — findByRazorpaySubscriptionId, setPendingSubscription, updateSubscriptionStatus)
+src/lib/polar.ts                           (Polar SDK client singleton)
+src/models/User.ts                         (extend — polarSubscriptionId, polarCustomerId, subscriptionStatus)
+src/repositories/user.repository.ts        (extend — syncSubscription, keyed on clerkId not subscriptionId)
 src/repositories/job.repository.ts         (extend — countRendersThisMonth, free-tier gate)
-src/services/billing.service.ts            (createSubscription, cancelSubscription, handleWebhookEvent, canRender)
+src/services/billing.service.ts            (createCheckout, cancelSubscription, handleWebhookEvent, canRender)
 src/controllers/billing.controller.ts      (request/response only)
-app/api/billing/subscribe/route.ts         (POST — create Subscription, return short_url)
+app/api/billing/subscribe/route.ts         (POST — create Checkout session, return hosted url)
 app/api/billing/cancel/route.ts            (POST — cancel own subscription; the Customer Portal substitute)
-app/api/webhooks/razorpay/route.ts         (POST — HMAC-verified event handler)
-config/env.ts                              (extend — Razorpay env vars)
+app/api/webhooks/polar/route.ts            (POST — validateEvent-verified handler)
+config/env.ts                              (extend — Polar env vars)
 proxy.ts                                   (extend matcher — /api/billing protected, webhook stays public)
 app/dashboard/billing/page.tsx             (plan status, renders-this-month, subscribe/cancel — actual repo uses app/dashboard, not a (dashboard) route group)
 components/billing-actions.tsx             (client component — subscribe/cancel buttons)
@@ -41,96 +41,98 @@ worker/render.ts                           (extend — thread watermark into inp
 ### Packages
 
 ```bash
-razorpay    # v2.9.6 — server SDK, confirmed against actual package source, not docs/memory
+@polar-sh/sdk    # v0.48.1 — official TypeScript SDK, confirmed against actual package source (Speakeasy-generated), not docs/memory
 ```
 
-No client-side package — Subscription Link needs no embedded JS widget (`checkout.js`), just a redirect to the `short_url` the create call returns.
+No separate client-side package — Polar's checkout is a hosted redirect (`checkout.url`), no embedded JS widget.
 
 ### Key details
 
-**Razorpay dashboard setup (manual, before code):**
-1. Razorpay account, complete business KYC (required to go live; test mode works without full KYC for development).
-2. Create a Plan — `razorpay.plans.create({ item: { name, amount, currency: 'INR' }, period: 'monthly', interval: 1 })` — note the returned `id` into `RAZORPAY_PLAN_ID`.
-3. Webhook config: URL `https://<domain>/api/webhooks/razorpay`, subscribe to `subscription.authenticated`, `subscription.activated`, `subscription.charged`, `subscription.halted`, `subscription.cancelled`. Copy the webhook secret.
+**Polar dashboard setup (manual, before code):**
+1. Polar organization — sandbox first (`server: 'sandbox'`), no business KYC needed to start. Payouts to India route through Stripe Connect Express once switching to production, separate from regular Stripe's India-gated self-serve signup.
+2. Create **three** Products (all subscriptions, one per billing cadence — Polar checkout takes a product list, not a price/interval param, so three separate cadences need three separate Products) — Weekly ($6.99/wk), Monthly ($14.99/mo), Yearly ($119/yr) — note each returned `id` into `POLAR_PRODUCT_ID_WEEKLY`/`_MONTHLY`/`_YEARLY`.
+3. Webhook config: URL `https://<domain>/api/webhooks/polar`, subscribe to `subscription.created`, `subscription.active`, `subscription.updated`, `subscription.canceled`, `subscription.uncanceled`, `subscription.revoked`, `subscription.past_due`. Copy the webhook secret.
 
 **`config/env.ts` additions:**
 ```typescript
-RAZORPAY_KEY_ID: z.string().min(1),
-RAZORPAY_KEY_SECRET: z.string().min(1),
-RAZORPAY_WEBHOOK_SECRET: z.string().min(1),
-RAZORPAY_PLAN_ID: z.string().min(1),
+POLAR_ACCESS_TOKEN: z.string().min(1),
+POLAR_WEBHOOK_SECRET: z.string().min(1),
+POLAR_PRODUCT_ID_WEEKLY: z.string().min(1),
+POLAR_PRODUCT_ID_MONTHLY: z.string().min(1),
+POLAR_PRODUCT_ID_YEARLY: z.string().min(1),
+POLAR_SERVER: z.enum(['sandbox', 'production']).default('sandbox'),
 NEXT_PUBLIC_APP_URL: z.string().url(),
 ```
 
-**Razorpay client (`src/lib/razorpay.ts`):**
+**Polar client (`src/lib/polar.ts`):**
 ```typescript
-// export function getRazorpay(): Razorpay {
-//   if (global._razorpay) return global._razorpay
-//   global._razorpay = new Razorpay({ key_id: env.RAZORPAY_KEY_ID, key_secret: env.RAZORPAY_KEY_SECRET })
-//   return global._razorpay
-// }
-// export function verifyWebhookSignature(rawBody: string, signature: string): boolean {
-//   return Razorpay.validateWebhookSignature(rawBody, signature, env.RAZORPAY_WEBHOOK_SECRET)
+// export function getPolar(): Polar {
+//   if (global._polar) return global._polar
+//   global._polar = new Polar({ accessToken: env.POLAR_ACCESS_TOKEN, server: env.POLAR_SERVER })
+//   return global._polar
 // }
 ```
-Singleton, same pattern as `src/lib/mongo.ts` / `src/lib/redis.ts`. `validateWebhookSignature` is a static method on the `Razorpay` class (confirmed by reading the actual SDK source, `razorpay-utils.js` — HMAC-SHA256 over the raw body, not just trusted from type defs).
+Singleton, same pattern as `src/lib/mongo.ts` / `src/lib/redis.ts`. Signature verification lives in the controller instead, via `validateEvent()` imported directly from `@polar-sh/sdk/webhooks` — confirmed against the installed package's `webhooks.ts` source, not docs, since a prior mistake in this project (fabricating the Stripe/Razorpay client shape from memory) made that the standing rule.
 
 **`User` model additions:**
 ```typescript
-razorpaySubscriptionId: string | null   // indexed — webhook lookups go subscription-id → user
-razorpayCustomerId: string | null       // only populated after the webhook confirms the authorization payment; Razorpay has no customer_id param at creation time
-subscriptionStatus: 'none' | 'active' | 'halted' | 'cancelled'
+polarSubscriptionId: string | null      // indexed — webhook lookups go clerkId → user, this is just cached for cancel calls
+polarCustomerId: string | null          // only populated once the webhook confirms the first payment
+subscriptionStatus: 'none' | 'incomplete' | 'incomplete_expired' | 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid'
 ```
+Mirrors Polar's own `Subscription.status` field directly (confirmed against `subscription.ts` in the installed SDK) — no local remapping, `'none'` is the only value we add ourselves for a user who never subscribed.
 
-**Subscription creation (`billing.service.ts`):**
+**Checkout creation (`billing.service.ts`):**
 ```typescript
-// createSubscription(clerkId):
-//   razorpay.subscriptions.create({
-//     plan_id: env.RAZORPAY_PLAN_ID,
-//     total_count: 1200,        // Razorpay subscriptions are bounded, not infinite like Stripe — 1200 monthly cycles = 100yr, the practical "unlimited" proxy
-//     customer_notify: true,
-//     notes: { clerkId },
+// createCheckout(clerkId, tier):               // tier: 'weekly' | 'monthly' | 'yearly'
+//   polar.checkouts.create({
+//     products: [TIER_PRODUCT_IDS[tier]],       // one of the three Products created above
+//     externalCustomerId: clerkId,              // links the eventual subscription back to our User via webhook
+//     successUrl: `${env.NEXT_PUBLIC_APP_URL}/dashboard/billing`,
 //   })
-//   setPendingSubscription(clerkId, subscription.id)   // status stays 'none' until the webhook confirms
-//   return { shortUrl: subscription.short_url }        // controller redirects
+//   return { url: checkout.url }                // controller redirects, hosted Polar checkout page
 ```
 
-**No post-payment redirect.** Razorpay's Create Subscription API has no `callback_url`/`success_url` param — confirmed against official docs, not assumed from the Stripe-shaped mental model. The user lands on Razorpay's hosted confirmation page after paying with no automatic bounce back. Mitigated with a same-tab redirect (`window.location.href`, not a new tab) so the back button returns them to `/dashboard/billing`, which is a server component that reads `subscriptionStatus` fresh on every load.
+**No local write on checkout creation — this is the key structural difference from the Razorpay-shaped flow it replaced.** Polar's model is checkout-first: `checkouts.create()` returns a hosted URL before any subscription object exists, so there's no subscription ID to store as "pending." The `subscription.created`/`subscription.active` webhook (carrying `customer.externalId` = our `clerkId`) is what creates the polarSubscriptionId ↔ clerkId link for the first time. Unlike Razorpay, Polar's checkout does support `successUrl` — the user bounces straight back to `/dashboard/billing` after paying, no back-button workaround needed.
 
-**Webhook handler (`app/api/webhooks/razorpay/route.ts` → `billing.controller.ts` → `billing.service.ts`):**
+**Tier detection (`billingTier` on `User`):** the webhook payload carries `data.productId` (confirmed against the SDK's `subscription.ts`), not a named tier — `tierForProductId()` in `billing.service.ts` reverse-looks-up which of the three `POLAR_PRODUCT_ID_*` env vars matches, and `syncSubscription` stores the result as `billingTier: 'weekly' | 'monthly' | 'yearly' | null`. Purely informational (billing page display) — `canRender`'s gate only checks `subscriptionStatus === 'active'`, all three tiers grant identical access.
+
+**Webhook handler (`app/api/webhooks/polar/route.ts` → `billing.controller.ts` → `billing.service.ts`):**
 ```typescript
 export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
-  const body = await req.text()                          // RAW body — req.json() breaks signature verify, same trap as Stripe/Clerk
-  const signature = req.headers.get('x-razorpay-signature')
-  if (!signature) return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
-  if (!verifyWebhookSignature(body, signature)) return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+  const body = await req.text()   // RAW body — req.json() breaks signature verify, same trap as Stripe/Razorpay/Clerk
+  const headers = {
+    'webhook-id': req.headers.get('webhook-id') ?? '',
+    'webhook-timestamp': req.headers.get('webhook-timestamp') ?? '',
+    'webhook-signature': req.headers.get('webhook-signature') ?? '',
+  }
+  const event = validateEvent(body, headers, env.POLAR_WEBHOOK_SECRET)   // throws WebhookVerificationError on bad signature
 
-  const event = JSON.parse(body)
-  // subscription.authenticated → capture razorpayCustomerId opportunistically, no status change
-  // subscription.activated     → subscriptionStatus: 'active'
-  // subscription.charged       → no-op, already active
-  // subscription.halted        → subscriptionStatus: 'halted'
-  // subscription.cancelled     → subscriptionStatus: 'cancelled'
-  // anything else (updated/pending/paused/resumed/completed) → explicit no-op default, not a crash
+  // One handler for every subscription.* event type — Polar always sends the
+  // full current subscription object (id, status, customer.externalId), so
+  // there's no need to switch per event name the way Razorpay's payload
+  // required. Read event.data.status directly and sync it as-is.
 }
 ```
-All handlers are idempotent upserts keyed on `razorpaySubscriptionId` — Razorpay can retry/resend events, re-processing the same event twice must be a no-op.
+All handlers are idempotent upserts keyed on `clerkId` (via `customer.externalId`), not `subscriptionId` — Polar can retry/resend events, and there's no subscription ID to key on until the very first webhook arrives anyway.
 
-**Cancel flow — no Razorpay Customer Portal equivalent exists** (confirmed via research; Razorpay's subscription management is API/Dashboard-only for merchants). Built the one action that matters for MVP as our own route: `POST /api/billing/cancel` → `razorpay.subscriptions.cancel(subscriptionId, /* cancelAtCycleEnd */ true)`. Local `subscriptionStatus` is **not** updated optimistically here — the `subscription.cancelled` webhook is the single source of truth, so a delayed webhook can't leave local/Razorpay state disagreeing.
+**Cancel flow — no Polar Customer Portal wired up for MVP** (Polar does offer one, `customerPortal.*` endpoints, but the one action that matters for MVP is a single route). Built as our own route: `POST /api/billing/cancel` → `polar.subscriptions.update({ id: subscriptionId, subscriptionUpdate: { cancelAtPeriodEnd: true } })`. Local `subscriptionStatus` is **not** updated optimistically here — the subscription's `status` stays `'active'` until the period actually ends (confirmed against the SDK's `SubscriptionCancel` type and Polar's docs), so a webhook remains the single source of truth throughout the cancel-scheduled window.
 
 **Access gate (`canRender` in `billing.service.ts`), called from `handleTriggerRender` in `job.controller.ts`:**
 ```typescript
 // canRender(clerkId): { allowed: boolean; watermark: boolean }
-//   subscriptionStatus === 'active' (strict equality, not !== 'cancelled') → { allowed: true, watermark: false }
+//   subscriptionStatus === 'active' (strict equality) → { allowed: true, watermark: false }
 //   else → countRendersThisMonth(clerkId) < 3 ? { allowed: true, watermark: true } : { allowed: false, watermark: false }
 ```
-Strict `=== 'active'` matters more here than it would have for Stripe: Stripe's `past_due` auto-retries the card behind the scenes (dunning), so treating it as a soft grace period made sense in the original Stripe-shaped draft of this plan. Razorpay's `halted` means Razorpay already gave up retrying after exhausting its own retry schedule — it's a dead end, not a grace period. `halted` falls through to free-tier treatment (watermark + 3/month), matching Razorpay's own semantics rather than fighting them.
+Strict `=== 'active'` carries over unchanged from the Razorpay-era logic and reasoning: Polar's `past_due`/`unpaid` are dead-end-ish states, not Stripe-style auto-retrying dunning, so they fall through to free-tier treatment (watermark + 3/month) rather than being treated as a soft grace period.
 
-**Watermark plumbing:** `canRender`'s `watermark` flag threads through `RenderJobPayload` and into the worker's `inputProps`. No composition reads it yet — building the actual visual watermark across all 11 Remotion compositions is out of scope for this stage; threading the boolean now avoids a second pass through controller → payload → worker later.
+**Watermark plumbing:** `canRender`'s `watermark` flag threads through `RenderJobPayload` and into the worker's `inputProps`. Unchanged by this swap — payments provider has no bearing on the render pipeline.
 
 **Render-count semantics:** `countRendersThisMonth` counts `Job` docs with `status in ['rendering', 'done']` and `createdAt` in the current calendar month. No separate "render triggered at" timestamp exists on `Job` — using `createdAt` (upload time) as a proxy is good enough for MVP since upload and render-trigger happen close together in practice; a job that sits untouched across a month boundary before its first render would undercount, an acceptable edge case.
+
+**Known tradeoff carried into this stage:** Polar's checkout processes cards only (via Stripe under the hood) — no UPI. This is the exact capability Razorpay was chosen for over Stripe originally. Accepted knowingly for MVP launch speed (no KYC blocker); revisit if India-based conversion data shows this costing meaningful signups.
 
 ---
 
@@ -342,7 +344,7 @@ Backfill isn't needed for MVP — old jobs just show `null`/excluded from the su
 // Job.aggregate([{ $match: { userId } }, { $group: { _id: null, totalBytes: { $sum: '$fileSize' } } }])
 ```
 
-**Billing-cycle-relative usage (optional per CLAUDE.md — "if relevant to plan limits"):** Since MVP pricing is flat/unlimited-within-upload-limits (CLAUDE.md — no per-render metering), billing-cycle usage is informational only, not a gate. If shown, derive cycle start from `User.razorpaySubscriptionId` via a `razorpay.subscriptions.fetch()` call (`current_start`) rather than storing it redundantly in Mongo — Razorpay is the source of truth for billing periods. Skip this sub-feature entirely if it adds more complexity than the "informational only" value justifies; the count/storage stats above are the actual deliverable.
+**Billing-cycle-relative usage (optional per CLAUDE.md — "if relevant to plan limits"):** Since MVP pricing is flat/unlimited-within-upload-limits (CLAUDE.md — no per-render metering), billing-cycle usage is informational only, not a gate. If shown, derive cycle start from `User.polarSubscriptionId` via a `polar.subscriptions.get({ id })` call (`currentPeriodStart`) rather than storing it redundantly in Mongo — Polar is the source of truth for billing periods. Skip this sub-feature entirely if it adds more complexity than the "informational only" value justifies; the count/storage stats above are the actual deliverable.
 
 **UI (`app/(dashboard)/usage/page.tsx`):** Server component, same pattern as existing `app/dashboard/page.tsx` — fetch via `connectDB()` + service call directly (no client-side fetch needed, it's not realtime data). `Card` per stat: renders done, renders failed, storage used (human-readable via a `formatBytes` helper in `src/helpers/`), current plan (`subscriptionStatus` from Stage 1). Label the storage stat "Total processed" (not "Storage used") and add a tooltip/caption on that Card explicitly stating it counts all uploads ever, including ones auto-deleted after 7 days — otherwise a user watches the number climb but never drop, notices files are gone after a week, and assumes the dashboard is broken.
 
@@ -353,13 +355,13 @@ Backfill isn't needed for MVP — old jobs just show `null`/excluded from the su
 ## Dependency Order
 
 ```
-Stage 1 (Razorpay) ─┬── Stage 2 (Brand Kit)
-                    │
-                    ├── Stage 3 (Batch Upload) ── independent of 1/2, can run parallel
-                    │
-                    ├── Stage 4 (Retry UI) ── independent of 1/2/3, can run parallel
-                    │
-                    └── Stage 5 (Usage Dashboard) ── needs Stage 1 only if showing billing-cycle data; otherwise independent
+Stage 1 (Polar) ─┬── Stage 2 (Brand Kit)
+                  │
+                  ├── Stage 3 (Batch Upload) ── independent of 1/2, can run parallel
+                  │
+                  ├── Stage 4 (Retry UI) ── independent of 1/2/3, can run parallel
+                  │
+                  └── Stage 5 (Usage Dashboard) ── needs Stage 1 only if showing billing-cycle data; otherwise independent
 ```
 
 Only hard dependency: Stage 1 must land first if `subscriptionStatus` gates anything the other stages touch (it doesn't, directly — Stages 2–5 all read/write Job and BrandKit data, not billing state). Stages 2–5 can be built in any order or in parallel.
@@ -370,14 +372,16 @@ Only hard dependency: Stage 1 must land first if `subscriptionStatus` gates anyt
 
 ```
 # .env.local (Next.js — never commit)
-RAZORPAY_KEY_ID=
-RAZORPAY_KEY_SECRET=
-RAZORPAY_WEBHOOK_SECRET=
-RAZORPAY_PLAN_ID=
+POLAR_ACCESS_TOKEN=
+POLAR_WEBHOOK_SECRET=
+POLAR_PRODUCT_ID_WEEKLY=
+POLAR_PRODUCT_ID_MONTHLY=
+POLAR_PRODUCT_ID_YEARLY=
+POLAR_SERVER=sandbox
 NEXT_PUBLIC_APP_URL=
 ```
 
-No new worker env vars this phase — worker doesn't touch Razorpay, brand kit, batch, retry, or usage logic directly (all Next-side except retry's re-enqueue, which reuses the existing `RenderJobPayload` shape worker already consumes, and the `watermark` flag which is threaded through but not yet rendered).
+No new worker env vars this phase — worker doesn't touch Polar, brand kit, batch, retry, or usage logic directly (all Next-side except retry's re-enqueue, which reuses the existing `RenderJobPayload` shape worker already consumes, and the `watermark` flag which is threaded through but not yet rendered).
 
 ---
 
@@ -385,7 +389,7 @@ No new worker env vars this phase — worker doesn't touch Razorpay, brand kit, 
 
 | File | Why critical |
 |------|-------------|
-| `app/api/webhooks/razorpay/route.ts` | Raw-body HMAC verification — a `req.json()` mistake here silently breaks all billing sync |
+| `app/api/webhooks/polar/route.ts` | Raw-body `validateEvent()` verification — a `req.json()` mistake here silently breaks all billing sync |
 | `src/models/User.ts` | `subscriptionStatus` gates render access — schema drift here = users locked out or getting free access incorrectly |
 | `src/helpers/validators.ts` (extracted `HEX_COLOR` + compositionId enum) | Shared between job trigger-render and brand-kit — must stay single source of truth as composition count grows |
 | `src/types/job.types.ts` (`RenderJobPayload`) | Retry's `skipTranscription` flag and batch's `batchId` both extend this — worker and Next must agree on shape |
@@ -395,12 +399,13 @@ No new worker env vars this phase — worker doesn't touch Razorpay, brand kit, 
 
 ## Cross-Stage Gotchas
 
-1. **Razorpay webhook raw body:** `req.text()` not `req.json()` — signature verification breaks silently otherwise.
-2. **Webhook idempotency:** All Razorpay event handlers must be upserts keyed on `razorpaySubscriptionId` — Razorpay can retry/resend events.
+1. **Polar webhook raw body:** `req.text()` not `req.json()` — signature verification breaks silently otherwise.
+2. **Webhook idempotency:** All Polar event handlers must be upserts keyed on `clerkId` (not `polarSubscriptionId` — that doesn't exist locally until the first webhook arrives) — Polar can retry/resend events.
 3. **`job.repository.ts` contention:** Stages 2–5 all add fields/methods to this file — if built in parallel, expect merge conflicts here specifically. Land Stage 3's `batchId` index and Stage 5's `fileSize` field additions to `Job.ts` in the same PR if possible to avoid two separate schema-touching merges.
 4. **Manual vs automatic retry count:** Don't reuse Phase 1's `retryCount` (BullMQ automatic) for the Stage 4 manual retry cap — separate field, separate semantics.
 5. **Brand kit color precedence:** request body override > brand kit default > composition hardcoded default — implement as a shallow merge in `handleTriggerRender`, not a new render path.
 6. **Batch rate limit:** check `todayCount + files.length` against the cap before creating *any* Job docs in a batch — don't let a batch partially succeed mid-loop.
 7. **Storage-used semantics:** Stage 5's usage dashboard shows "total processed" (sum of `fileSize` ever recorded), not "currently stored" — Phase 1's 7-day retention deletes the R2 objects but not the Mongo field.
-8. **`proxy.ts` webhook exclusion:** `/api/billing(.*)` gets added to the protected matcher in Stage 1, but `/api/webhooks/razorpay` must NOT be protected — same as the existing Clerk webhook, Razorpay can't present a Clerk session.
-9. **`halted` is not a grace period:** unlike Stripe's `past_due` (auto-retries), Razorpay's `halted` fires only after Razorpay exhausts its own retry schedule — `canRender` must check `subscriptionStatus === 'active'` strictly, not `!== 'cancelled'`, or a halted user keeps paid-tier access indefinitely.
+8. **`proxy.ts` webhook exclusion:** `/api/billing(.*)` gets added to the protected matcher in Stage 1, but `/api/webhooks/polar` must NOT be protected — same as the existing Clerk webhook, Polar can't present a Clerk session.
+9. **`past_due`/`unpaid` are not a grace period:** unlike Stripe's `past_due` (auto-retries via dunning), Polar's failed-payment states don't get special soft-grace treatment here — `canRender` must check `subscriptionStatus === 'active'` strictly, not `!== 'canceled'`, or a payment-failed user keeps paid-tier access indefinitely.
+10. **Cancel-at-period-end keeps `status: 'active'`:** when a user cancels, Polar doesn't flip `status` immediately — it stays `'active'` (with `cancelAtPeriodEnd: true` internally) until the period actually ends, then the webhook reports `'canceled'`. Don't build UI or gate logic that expects an immediate status flip on cancel.

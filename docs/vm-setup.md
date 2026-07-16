@@ -1,4 +1,4 @@
-# GCP VM Setup — Captions (Next.js app + worker, same VM)
+# GCP VM Setup — Hypecap (Next.js app + worker, same VM)
 
 Both processes run here, not just the worker. Next.js is NOT deployed to
 Vercel — its SSE progress route (`app/api/jobs/[id]/stream/route.ts`) holds a
@@ -67,7 +67,7 @@ cp worker/.env.example worker/.env
 nano worker/.env  # fill in all values
 ```
 
-Required vars (worker only touches these — no Clerk/Razorpay, that's Next.js-side):
+Required vars (worker only touches these — no Clerk/Polar, that's Next.js-side):
 ```
 MONGO_URI=
 UPSTASH_REDIS_URL=
@@ -86,9 +86,9 @@ cp .env.example .env.local
 nano .env.local  # fill in all values
 ```
 
-Every var in `.env.example` — Clerk, Mongo, Redis, R2, Deepgram, Razorpay, and
+Every var in `.env.example` — Clerk, Mongo, Redis, R2, Deepgram, Polar, and
 `NEXT_PUBLIC_APP_URL` (set this to the real public domain, not localhost —
-it's used for Razorpay redirect handling and other absolute-URL construction).
+it's used for the Polar checkout `successUrl` and other absolute-URL construction).
 
 ## 8. Build worker TypeScript
 
@@ -178,7 +178,7 @@ curl -I https://your-domain.com
 
 ## 14. Reconfigure webhooks for the real domain
 
-Clerk and Razorpay both send webhooks to a public URL — neither could reach
+Clerk and Polar both send webhooks to a public URL — neither could reach
 `localhost` during dev, which is why user sync and billing sync never worked
 locally. This step is what actually turns them on for the first time.
 
@@ -189,13 +189,14 @@ locally. This step is what actually turns them on for the first time.
   — replace the `whsec_FIXME_placeholder...` value if it's still there from
   local dev, then `pm2 restart caption-web`.
 
-**Razorpay** (dashboard → Settings → Webhooks):
-- URL: `https://your-domain.com/api/webhooks/razorpay`
-- Events: `subscription.authenticated`, `subscription.activated`, `subscription.charged`, `subscription.halted`, `subscription.cancelled`
-- Copy the signing secret into `RAZORPAY_WEBHOOK_SECRET`, switch
-  `RAZORPAY_KEY_ID`/`RAZORPAY_KEY_SECRET` to live-mode keys (not test), confirm
-  `RAZORPAY_PLAN_ID` refers to a Plan created in live mode — test-mode and
-  live-mode Plans are separate in Razorpay, the test Plan ID won't work here.
+**Polar** (dashboard → Settings → Webhooks):
+- URL: `https://your-domain.com/api/webhooks/polar`
+- Events: `subscription.created`, `subscription.active`, `subscription.updated`, `subscription.canceled`, `subscription.uncanceled`, `subscription.revoked`, `subscription.past_due`
+- Copy the signing secret into `POLAR_WEBHOOK_SECRET`, switch `POLAR_SERVER` to
+  `production` and `POLAR_ACCESS_TOKEN` to a production organization token
+  (not sandbox), confirm `POLAR_PRODUCT_ID` refers to a Product created in the
+  production org — sandbox and production orgs are entirely separate in
+  Polar, the sandbox Product ID won't work here.
 - `pm2 restart caption-web` after updating.
 
 Verify both: sign up a fresh test account and confirm a `User` document

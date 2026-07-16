@@ -230,6 +230,7 @@ export function UploadDropzone({ isPaid, rendersRemaining }: { isPaid: boolean; 
       {/* Mode toggle */}
       <div className="flex items-center justify-between">
         <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96]">{'// Upload'}</p>
+        {/* Bulk upload disabled for now — commented out, not removed.
         <button
           type="button"
           onClick={toggleBatchMode}
@@ -238,6 +239,7 @@ export function UploadDropzone({ isPaid, rendersRemaining }: { isPaid: boolean; 
         >
           {batchMode ? '← Single video upload' : `Upload multiple videos (up to ${MAX_BATCH_FILES})`}
         </button>
+        */}
       </div>
 
       {/* Drop zone */}

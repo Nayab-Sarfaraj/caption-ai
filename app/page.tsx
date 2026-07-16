@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import Link from 'next/link'
 import { CaptionStylePreview, STYLE_PREVIEW_META } from '@/components/caption-style-preview'
 import type { CompositionId } from '@/remotion/compositions/CaptionRoot'
+import { PRICING_TIERS } from '@/src/helpers/pricing-tiers'
 
 const STYLE_LABELS: Record<CompositionId, string> = {
   WordByWord: 'Word by Word',
@@ -25,17 +26,36 @@ const STEPS = [
   { n: '04', title: 'Export', desc: 'Rendered by Remotion, downloaded straight to you.' },
 ]
 
+const JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Hypecap',
+  applicationCategory: 'MultimediaApplication',
+  operatingSystem: 'Web',
+  description: 'Word-by-word animated captions for uploaded video, rendered via Remotion. No credit system, real caption styles instead of a black-box config.',
+  offers: [
+    { '@type': 'Offer', name: 'Free', price: '0', priceCurrency: 'USD' },
+    { '@type': 'Offer', name: 'Weekly', price: '6.99', priceCurrency: 'USD' },
+    { '@type': 'Offer', name: 'Monthly', price: '14.99', priceCurrency: 'USD' },
+    { '@type': 'Offer', name: 'Yearly', price: '119', priceCurrency: 'USD' },
+  ],
+}
+
 export default async function RootPage() {
   const { userId } = await auth()
   if (userId) redirect('/dashboard')
 
   return (
     <div className="min-h-screen bg-[#faf9f6] font-[family-name:var(--font-cc)] text-[#1a1917]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+      />
       {/* Nav */}
       <header className="max-w-5xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full border-2 border-[#c1361f]" />
-          <span className="text-[13px] font-bold tracking-[0.08em] uppercase">Captions</span>
+          <span className="text-[13px] font-bold tracking-[0.08em] uppercase">Hypecap</span>
         </div>
         <div className="flex items-center gap-5">
           <Link href="/sign-in" className="text-xs text-[#6b6862] hover:text-[#1a1917] transition-colors">
@@ -81,7 +101,7 @@ export default async function RootPage() {
       {/* Style showcase */}
       <section id="styles" className="max-w-5xl mx-auto px-4 sm:px-8 py-14 border-t border-[#14120f1f]">
         <div className="flex items-baseline justify-between mb-5">
-          <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96]">{'// Caption Styles'}</p>
+          <h2 className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96]">{'// Caption Styles'}</h2>
           <span className="text-[11px] text-[#a39e96]">{Object.keys(STYLE_PREVIEW_META).length} real styles, not mockups</span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -98,7 +118,7 @@ export default async function RootPage() {
 
       {/* How it works */}
       <section className="max-w-5xl mx-auto px-4 sm:px-8 py-14 border-t border-[#14120f1f]">
-        <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96] mb-5">{'// How it works'}</p>
+        <h2 className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96] mb-5">{'// How it works'}</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[#14120f1f] border border-[#14120f1f]">
           {STEPS.map((s) => (
             <div key={s.n} className="bg-white p-5">
@@ -112,7 +132,7 @@ export default async function RootPage() {
 
       {/* Why not a black box */}
       <section className="max-w-5xl mx-auto px-4 sm:px-8 py-14 border-t border-[#14120f1f]">
-        <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96] mb-5">{'// Why this, not veed / captions.ai'}</p>
+        <h2 className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96] mb-5">{'// Why this, not veed / captions.ai'}</h2>
         <div className="grid sm:grid-cols-3 gap-6">
           <div>
             <h3 className="text-sm font-bold">Real components, not a config file</h3>
@@ -140,8 +160,8 @@ export default async function RootPage() {
 
       {/* Pricing */}
       <section className="max-w-5xl mx-auto px-4 sm:px-8 py-14 border-t border-[#14120f1f]">
-        <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96] mb-5">{'// Pricing'}</p>
-        <div className="grid sm:grid-cols-2 gap-4 max-w-2xl">
+        <h2 className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96] mb-5">{'// Pricing'}</h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl">
           <div className="border border-[#14120f1f] bg-white p-6">
             <p className="text-xs text-[#a39e96] uppercase tracking-wide">Free</p>
             <p className="text-3xl font-bold mt-2">$0</p>
@@ -157,26 +177,31 @@ export default async function RootPage() {
               Start free
             </Link>
           </div>
-          <div className="border-2 border-[#c1361f] bg-white p-6 relative">
-            <span className="absolute top-0 right-0 bg-[#c1361f] text-white text-[10px] font-bold px-2 py-1 uppercase tracking-wide">
-              Pro
-            </span>
-            <p className="text-xs text-[#a39e96] uppercase tracking-wide">Pro</p>
-            <p className="text-3xl font-bold mt-2">
-              $14<span className="text-sm font-normal text-[#6b6862]">/mo</span>
-            </p>
-            <ul className="text-xs text-[#6b6862] mt-4 space-y-2">
-              <li>· Unlimited renders</li>
-              <li>· No watermark</li>
-              <li>· All caption styles</li>
-            </ul>
-            <Link
-              href="/sign-up"
-              className="mt-6 inline-block text-xs font-bold bg-[#c1361f] text-white px-4 py-2.5 hover:brightness-[1.08] transition-all"
-            >
-              Get Pro
-            </Link>
-          </div>
+          {PRICING_TIERS.map((t) => (
+            <div key={t.id} className="border-2 border-[#c1361f] bg-white p-6 relative">
+              {t.badge && (
+                <span className="absolute top-0 right-0 bg-[#c1361f] text-white text-[10px] font-bold px-2 py-1 uppercase tracking-wide">
+                  {t.badge}
+                </span>
+              )}
+              <p className="text-xs text-[#a39e96] uppercase tracking-wide">{t.label}</p>
+              <p className="text-3xl font-bold mt-2">
+                {t.price}<span className="text-sm font-normal text-[#6b6862]">{t.period}</span>
+              </p>
+              {t.note && <p className="text-[11px] text-[#a39e96] mt-1">{t.note}</p>}
+              <ul className="text-xs text-[#6b6862] mt-4 space-y-2">
+                <li>· Unlimited renders</li>
+                <li>· No watermark</li>
+                <li>· All caption styles</li>
+              </ul>
+              <Link
+                href="/sign-up"
+                className="mt-6 inline-block text-xs font-bold bg-[#c1361f] text-white px-4 py-2.5 hover:brightness-[1.08] transition-all"
+              >
+                Get {t.label}
+              </Link>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -184,7 +209,7 @@ export default async function RootPage() {
       <footer className="max-w-5xl mx-auto px-4 sm:px-8 py-8 border-t border-[#14120f1f] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full border-2 border-[#c1361f]" />
-          <span className="text-xs font-bold tracking-wide uppercase text-[#a39e96]">Captions</span>
+          <span className="text-xs font-bold tracking-wide uppercase text-[#a39e96]">Hypecap</span>
         </div>
         <p className="text-xs text-[#a39e96]">© {new Date().getFullYear()}</p>
       </footer>

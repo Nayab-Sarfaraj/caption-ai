@@ -1,8 +1,8 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/Captions-000000?style=for-the-badge&logoColor=white">
-  <img alt="Captions" src="https://img.shields.io/badge/Captions-ffffff?style=for-the-badge&logoColor=black">
+  <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/Hypecap-000000?style=for-the-badge&logoColor=white">
+  <img alt="Hypecap" src="https://img.shields.io/badge/Hypecap-ffffff?style=for-the-badge&logoColor=black">
 </picture>
 
 **Word-by-word animated captions for your videos**
@@ -527,7 +527,7 @@ npm run remotion:studio  # Remotion Studio for composition development
 ## Roadmap
 
 **Phase 2 — Payments + polish**
-- Razorpay Subscriptions + webhooks (flat monthly tier, no credit system)
+- Polar Subscriptions + webhooks (flat monthly tier, no credit system)
 - Brand kit: saved font / color / animation presets per user
 - Batch upload (multiple videos per job)
 - Better retry UI for failed renders

@@ -21,11 +21,13 @@ const envSchema = z.object({
   DEEPGRAM_API_KEY: z.string().min(1),
   TRANSCRIPTION_PROVIDER: z.enum(['deepgram', 'whisper']).default('deepgram'),
 
-  // Razorpay
-  RAZORPAY_KEY_ID: z.string().min(1),
-  RAZORPAY_KEY_SECRET: z.string().min(1),
-  RAZORPAY_WEBHOOK_SECRET: z.string().min(1),
-  RAZORPAY_PLAN_ID: z.string().min(1),
+  // Polar
+  POLAR_ACCESS_TOKEN: z.string().min(1),
+  POLAR_WEBHOOK_SECRET: z.string().min(1),
+  POLAR_PRODUCT_ID_WEEKLY: z.string().min(1),
+  POLAR_PRODUCT_ID_MONTHLY: z.string().min(1),
+  POLAR_PRODUCT_ID_YEARLY: z.string().min(1),
+  POLAR_SERVER: z.enum(['sandbox', 'production']).default('sandbox'),
   NEXT_PUBLIC_APP_URL: z.string().url(),
 })
 

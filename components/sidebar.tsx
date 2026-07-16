@@ -18,8 +18,12 @@ const NAV = [
 
 const PLAN_BADGE: Record<SubscriptionStatus, string> = {
   active: 'Pro plan',
-  halted: 'Payment failed',
-  cancelled: 'Cancelled',
+  past_due: 'Payment failed',
+  unpaid: 'Payment failed',
+  canceled: 'Cancelled',
+  incomplete: 'Pending',
+  incomplete_expired: 'Free plan',
+  trialing: 'Trial',
   none: 'Free plan',
 }
 
@@ -39,7 +43,7 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
         {!collapsed && (
           <Link href="/dashboard" className="flex items-center gap-2 overflow-hidden whitespace-nowrap">
             <span className="w-2 h-2 rounded-full border-2 border-[#c1361f]" />
-            <span className="text-[13px] font-bold tracking-[0.08em] uppercase text-[#1a1917]">Captions</span>
+            <span className="text-[13px] font-bold tracking-[0.08em] uppercase text-[#1a1917]">Hypecap</span>
           </Link>
         )}
         <button
