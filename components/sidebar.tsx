@@ -136,6 +136,13 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
               {!collapsed && 'Log out'}
             </button>
           </SignOutButton>
+          {!collapsed && (
+            <div className="flex items-center gap-2 px-2 pt-1">
+              <Link href="/terms" className="text-[10px] text-[#a39e96] hover:text-[#c1361f] transition-colors">Terms</Link>
+              <span className="text-[10px] text-[#c7c2b8]">·</span>
+              <Link href="/privacy" className="text-[10px] text-[#a39e96] hover:text-[#c1361f] transition-colors">Privacy</Link>
+            </div>
+          )}
         </div>
       </div>
     </aside>

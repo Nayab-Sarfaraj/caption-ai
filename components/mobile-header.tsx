@@ -134,6 +134,11 @@ export function MobileHeader({ subscriptionStatus = 'none' }: { subscriptionStat
               </button>
             </SignOutButton>
           </div>
+          <div className="flex items-center gap-2 px-2 pt-1">
+            <Link href="/terms" onClick={() => setMenuOpen(false)} className="text-[10px] text-[#a39e96] hover:text-[#c1361f] transition-colors">Terms</Link>
+            <span className="text-[10px] text-[#c7c2b8]">·</span>
+            <Link href="/privacy" onClick={() => setMenuOpen(false)} className="text-[10px] text-[#a39e96] hover:text-[#c1361f] transition-colors">Privacy</Link>
+          </div>
         </div>
       </nav>
     </header>
