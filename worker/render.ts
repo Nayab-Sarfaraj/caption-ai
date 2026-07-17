@@ -148,6 +148,12 @@ async function processRenderPhase(bullJob: Job<RenderJobPayload>): Promise<void>
       // Adjusted CRF from 18 to 22. CRF 22 remains visually high quality for web/social,
       // but generates the file much faster and produces a smaller MP4.
       crf: 22,
+      // No GPU on this VM — swangle (SwiftShader via ANGLE) benchmarks faster than
+      // the default autodetect for headless software rendering on Linux servers.
+      chromiumOptions: { gl: 'swangle' },
+      // Default x264 preset is 'medium'; 'veryfast' trades a bit of file size
+      // for meaningfully faster encode with crf22 quality held constant.
+      x264Preset: 'veryfast',
       pixelFormat: 'yuv420p',
       outputLocation: outputPath,
       inputProps,
