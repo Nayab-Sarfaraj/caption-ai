@@ -224,6 +224,8 @@ export default async function RootPage() {
           <span className="text-xs font-bold tracking-wide uppercase text-[#a39e96]"><span className="text-[#c1361f]">Insta</span>cap</span>
         </div>
         <div className="flex items-center gap-4">
+          <Link href="/terms" className="text-xs text-[#a39e96] hover:text-[#c1361f] transition-colors">Terms</Link>
+          <Link href="/privacy" className="text-xs text-[#a39e96] hover:text-[#c1361f] transition-colors">Privacy</Link>
           <SupportTrigger className="text-xs text-[#a39e96] hover:text-[#c1361f] transition-colors" />
           <p className="text-xs text-[#a39e96]">© {new Date().getFullYear()}</p>
         </div>
