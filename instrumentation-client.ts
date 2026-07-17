@@ -2,13 +2,12 @@ import posthog from 'posthog-js'
 
 if (process.env.NEXT_PUBLIC_POSTHOG_KEY) {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
-    // Routed through next.config.ts rewrites (/ingest/*), not i.posthog.com
-    // directly — ad-blockers (Brave shields, uBlock, etc.) pattern-match
-    // known analytics domains, this keeps requests on our own origin so
-    // they get through. ui_host stays the real PostHog domain since that's
-    // only used for links back to the dashboard, not data collection.
-    api_host: '/ingest',
-    ui_host: 'https://us.posthog.com',
+    // Direct, not proxied through /ingest — the reverse proxy traded
+    // ad-blocker resilience for a real, recurring failure mode: it made the
+    // VM's own outbound reachability to PostHog a server-side dependency,
+    // and it wasn't reliable. Simpler and more robust to just eat the
+    // ad-blocker loss than have analytics 500 through your own server logs.
+    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com',
     defaults: '2026-06-25',
   })
 }
