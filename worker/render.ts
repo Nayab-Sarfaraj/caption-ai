@@ -18,6 +18,8 @@ import {
 import { getBundle } from '../src/services/render.service'
 import { getTranscriptionProvider } from '../src/services/transcription.service'
 import { getRedis } from '../src/lib/redis'
+import { findByClerkId } from '../src/repositories/user.repository'
+import { notifyDiscord, DISCORD_COLOR } from '../src/lib/discord'
 
 function getS3(): S3Client {
   return new S3Client({
@@ -179,6 +181,24 @@ async function processRenderPhase(bullJob: Job<RenderJobPayload>): Promise<void>
     await uploadToR2(outputPath, outputKey)
     await updateJobDone(jobId, outputKey)
     console.log(`[worker] job ${jobId} done → ${outputKey}`)
+
+    const renderedUser = await findByClerkId(userId).catch(() => null)
+    // 7-day expiry matches the storage retention window (CLAUDE.md: original +
+    // rendered output auto-deleted 7 days after creation) — link stays valid
+    // for exactly as long as the file itself still exists.
+    const videoUrl = await getPresignedUrl(outputKey, 60 * 60 * 24 * 7).catch(() => null)
+    notifyDiscord({
+      title: '✅ Video rendered successfully',
+      color: DISCORD_COLOR.success,
+      fields: [
+        { name: 'User Name', value: renderedUser?.name ?? 'Unknown', inline: true },
+        { name: 'Email', value: renderedUser?.email ?? 'Unknown', inline: true },
+        { name: 'User ID', value: userId, inline: true },
+        { name: 'Job ID', value: jobId, inline: true },
+        { name: 'Style', value: compositionId, inline: true },
+        ...(videoUrl ? [{ name: 'Video URL', value: videoUrl }] : []),
+      ],
+    })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     console.error(`[worker] render failed for job ${jobId}:`, message)

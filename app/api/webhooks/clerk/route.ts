@@ -3,6 +3,7 @@ export const runtime = 'nodejs'
 import { headers } from 'next/headers'
 import { Webhook } from 'svix'
 import { upsertFromClerk } from '@/src/repositories/user.repository'
+import { notifyDiscord, DISCORD_COLOR } from '@/src/lib/discord'
 
 interface ClerkUserEvent {
   type: string
@@ -50,6 +51,18 @@ export async function POST(req: Request) {
     const name = [first_name, last_name].filter(Boolean).join(' ') || 'User'
 
     await upsertFromClerk({ clerkId: id, email, name })
+
+    if (event.type === 'user.created') {
+      notifyDiscord({
+        title: '🆕 New user signup',
+        color: DISCORD_COLOR.success,
+        fields: [
+          { name: 'Name', value: name, inline: true },
+          { name: 'Email', value: email, inline: true },
+          { name: 'User ID', value: id, inline: true },
+        ],
+      })
+    }
   }
 
   return new Response('OK', { status: 200 })

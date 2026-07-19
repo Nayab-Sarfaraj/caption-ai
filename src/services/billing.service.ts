@@ -1,5 +1,6 @@
 import { getPolar } from '@/src/lib/polar'
 import { getPostHog } from '@/src/lib/posthog'
+import { notifyDiscord, DISCORD_COLOR } from '@/src/lib/discord'
 import { env } from '@/config/env'
 import {
   findByClerkId,
@@ -85,7 +86,7 @@ export async function handleWebhookEvent(event: PolarSubscriptionEvent): Promise
   const clerkId = sub?.customer?.externalId
   if (!sub?.id || !sub?.status || !clerkId) return
 
-  await syncSubscription({
+  const updatedUser = await syncSubscription({
     clerkId,
     subscriptionId: sub.id,
     status: sub.status as SubscriptionStatus,
@@ -94,10 +95,31 @@ export async function handleWebhookEvent(event: PolarSubscriptionEvent): Promise
   })
 
   if (sub.status === 'active') {
+    const tier = sub.productId ? tierForProductId(sub.productId) : null
     getPostHog()?.capture({
       distinctId: clerkId,
       event: 'subscription_active',
-      properties: { tier: sub.productId ? tierForProductId(sub.productId) : null },
+      properties: { tier },
+    })
+
+    // Best-effort — a failed price lookup shouldn't block the alert itself,
+    // just post without the Price field.
+    const details = await getSubscriptionDetails(clerkId).catch(() => null)
+    const priceField = details
+      ? [{ name: 'Price', value: `${(details.amount / 100).toFixed(2)} ${details.currency.toUpperCase()}`, inline: true }]
+      : []
+
+    notifyDiscord({
+      title: '💰 Subscription sold',
+      color: DISCORD_COLOR.money,
+      fields: [
+        { name: 'Name', value: updatedUser?.name ?? 'Unknown', inline: true },
+        { name: 'Email', value: updatedUser?.email ?? 'Unknown', inline: true },
+        { name: 'User ID', value: clerkId, inline: true },
+        { name: 'Tier', value: tier ?? 'unknown', inline: true },
+        { name: 'Product ID', value: sub.productId ?? 'unknown', inline: true },
+        ...priceField,
+      ],
     })
   }
 }

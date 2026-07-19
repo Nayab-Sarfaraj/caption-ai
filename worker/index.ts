@@ -12,6 +12,8 @@ import { QUEUE_NAME } from '../src/lib/queue'
 import type { RenderJobPayload } from '../src/types/job.types'
 import { processRenderJob } from './render'
 import { updateJobFailed, updateJobStatus } from '../src/repositories/job.repository'
+import { findByClerkId } from '../src/repositories/user.repository'
+import { notifyDiscord, DISCORD_COLOR } from '../src/lib/discord'
 
 async function main() {
   await connectDB()
@@ -34,11 +36,21 @@ async function main() {
 
   worker.on('failed', async (job, err) => {
     if (!job) return
-    const { jobId } = job.data
+    const { jobId, userId } = job.data
     const isLastAttempt = job.attemptsMade >= (job.opts.attempts ?? 1)
     if (isLastAttempt) {
       await updateJobFailed(jobId, err.message).catch(console.error)
       console.error(`[worker] job ${jobId} permanently failed after ${job.attemptsMade} attempts:`, err.message)
+      const user = await findByClerkId(userId).catch(() => null)
+      notifyDiscord({
+        title: '🔴 Render failed',
+        color: DISCORD_COLOR.error,
+        fields: [
+          { name: 'Job', value: jobId, inline: true },
+          { name: 'User', value: user?.email ?? userId, inline: true },
+          { name: 'Error', value: err.message },
+        ],
+      })
     } else {
       await updateJobStatus(jobId, 'pending').catch(console.error)
       console.warn(`[worker] job ${jobId} failed attempt ${job.attemptsMade}, will retry`)
@@ -47,6 +59,11 @@ async function main() {
 
   worker.on('error', (err) => {
     console.error('[worker] worker error:', err)
+    notifyDiscord({
+      title: '🔴 Worker infrastructure error',
+      color: DISCORD_COLOR.error,
+      fields: [{ name: 'Error', value: err.message }],
+    })
   })
 
   console.log(`[worker] listening on queue "${QUEUE_NAME}", concurrency=1`)
@@ -60,5 +77,10 @@ async function main() {
 
 main().catch((err) => {
   console.error('[worker] fatal startup error:', err)
+  notifyDiscord({
+    title: '🔴 Worker failed to start',
+    color: DISCORD_COLOR.error,
+    fields: [{ name: 'Error', value: err instanceof Error ? err.message : String(err) }],
+  })
   process.exit(1)
 })
