@@ -1,5 +1,6 @@
 import React from 'react'
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo, spring } from 'remotion'
+import { withScriptFallback } from '../lib/fonts'
 import type { Transcript } from '../types'
 
 export interface WordByWordProps {
@@ -92,7 +93,7 @@ export const WordByWord: React.FC<WordByWordProps> = ({
                   style={{
                     fontSize,
                     fontWeight: 900,
-                    fontFamily,
+                    fontFamily: withScriptFallback(fontFamily),
                     color: isCurrent ? activeColor : `${textColor}e6`,
                     textShadow: isCurrent
                       ? `0 0 40px ${activeColor}80, 0 3px 24px rgba(0,0,0,0.9)`

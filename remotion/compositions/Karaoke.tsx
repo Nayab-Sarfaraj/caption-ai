@@ -1,5 +1,6 @@
 import React from 'react'
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo } from 'remotion'
+import { withScriptFallback } from '../lib/fonts'
 import type { Transcript, TranscriptSegment } from '../types'
 
 export interface KaraokeProps {
@@ -91,7 +92,7 @@ export const Karaoke: React.FC<KaraokeProps> = ({
                 style={{
                   fontSize,
                   fontWeight: 800,
-                  fontFamily,
+                  fontFamily: withScriptFallback(fontFamily),
                   color: isCurrent
                     ? activeColor
                     : isPast

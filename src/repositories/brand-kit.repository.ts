@@ -19,6 +19,6 @@ export async function upsertBrandKit(userId: string, data: BrandKitInput): Promi
   return BrandKit.findOneAndUpdate(
     { userId },
     { $set: data },
-    { new: true, upsert: true, setDefaultsOnInsert: true }
+    { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true }
   )
 }

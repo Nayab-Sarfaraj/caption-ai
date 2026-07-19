@@ -2,6 +2,7 @@ import React from 'react'
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo, spring } from 'remotion'
 import { loadFont as loadBaseFont } from '@remotion/google-fonts/Inter'
 import { loadFont as loadScriptFont } from '@remotion/google-fonts/Caveat'
+import { withScriptFallback } from '../lib/fonts'
 import type { Transcript, TranscriptSegment } from '../types'
 
 const { fontFamily: INTER } = loadBaseFont('normal', { weights: ['500'], subsets: ['latin'] })
@@ -100,7 +101,7 @@ export const Script: React.FC<ScriptProps> = ({
                   style={{
                     fontSize: isCurrent ? Math.round(fontSize * 1.15) : fontSize,
                     fontWeight: isCurrent ? 700 : 500,
-                    fontFamily: isCurrent ? CAVEAT : fontFamily,
+                    fontFamily: isCurrent ? withScriptFallback(CAVEAT) : withScriptFallback(fontFamily),
                     fontStyle: isCurrent ? 'italic' : 'normal',
                     color: isCurrent ? activeColor : textColor,
                     display: 'inline-block',

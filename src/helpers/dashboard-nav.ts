@@ -7,7 +7,7 @@ export const NAV = [
   { href: '/dashboard', index: '01', label: 'HOME', exact: true },
   { href: '/dashboard/jobs', index: '02', label: 'VIDEOS', exact: false },
   { href: '/dashboard/usage', index: '03', label: 'USAGE', exact: false },
-  { href: '/dashboard/settings', index: '04', label: 'SETTINGS', exact: false },
+  { href: '/dashboard/settings', index: '04', label: 'BRAND KIT', exact: false },
   { href: '/dashboard/billing', index: '05', label: 'BILLING', exact: false },
 ]
 

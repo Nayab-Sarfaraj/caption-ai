@@ -210,8 +210,11 @@ export function PreviewPlayer({
         )}
       </div>
 
-      {/* Right: info + controls */}
-      <div className="w-full lg:w-80 shrink-0 border border-[#14120f1f] bg-white p-5 space-y-4">
+      {/* Right: info + controls — pinned to the viewport independently of
+          the player's height, only the middle (job info + style picker)
+          scrolls, Export stays visible without scrolling the page. */}
+      <div className="w-full lg:w-80 shrink-0 border border-[#14120f1f] bg-white flex flex-col lg:sticky lg:top-6 lg:max-h-[calc(100vh-6rem)]">
+      <div className="flex-1 overflow-y-auto p-5 space-y-4">
         {/* Job info */}
         <div className="space-y-1.5">
           <h1 className="text-sm font-bold text-[#1a1917] truncate">{filename}</h1>
@@ -254,7 +257,7 @@ export function PreviewPlayer({
                 Edit colors & font
               </button>
             </div>
-            <div className="space-y-4 max-h-[480px] overflow-y-auto pr-0.5">
+            <div className="space-y-4 pr-0.5">
               {CATEGORY_ORDER.map((cat) => (
                 <div key={cat} className="space-y-2">
                   <p className="text-[10px] font-bold uppercase tracking-wide text-[#1a1917]">{cat}</p>
@@ -387,9 +390,9 @@ export function PreviewPlayer({
             </div>
           </>
         )}
+      </div>
 
-        <div className="border-t border-[#14120f1f]" />
-
+      <div className="shrink-0 border-t border-[#14120f1f] p-5 pt-4 space-y-3">
         {!isPaid && (
           <p className="text-xs text-[#a39e96]">
             {willWatermark
@@ -411,6 +414,7 @@ export function PreviewPlayer({
               ? 'Upgrade to export'
               : `Export · ${STYLES.find((s) => s.id === style)?.label ?? style}`}
         </button>
+      </div>
       </div>
     </div>
   )

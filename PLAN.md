@@ -15,6 +15,7 @@ Three structural rules drive every decision:
 ## Stage 1 — Scaffold
 
 ### Ordering constraint
+
 None. Foundation for everything.
 
 ### Files to create
@@ -104,6 +105,7 @@ mkdir -p scripts/fixtures
 ## Stage 2 — Auth + DB
 
 ### Ordering constraint
+
 Stage 1 complete.
 
 ### Files to create
@@ -133,6 +135,7 @@ svix              # Clerk webhook signature verification
 ### Key details
 
 **Clerk env vars (`.env.local`):**
+
 ```
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_SECRET_KEY=sk_test_...
@@ -144,29 +147,39 @@ NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard
 ```
 
 **`middleware.ts` (repo root, not inside `/app`):**
-```typescript
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
-const isProtectedRoute = createRouteMatcher(['/dashboard(.*)', '/api/upload(.*)', '/api/jobs(.*)'])
+```typescript
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+
+const isProtectedRoute = createRouteMatcher([
+  "/dashboard(.*)",
+  "/api/upload(.*)",
+  "/api/jobs(.*)",
+]);
 
 export default clerkMiddleware((auth, req) => {
-  if (isProtectedRoute(req)) auth().protect()
-})
+  if (isProtectedRoute(req)) auth().protect();
+});
 
 export const config = {
-  matcher: ['/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)', '/(api|trpc)(.*)'],
-}
+  matcher: [
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/(api|trpc)(.*)",
+  ],
+};
 ```
 
 **Mongoose singleton (`src/lib/mongo.ts`):**
 
 Store connection promise on `global` so it survives Next hot-reload:
+
 ```typescript
 // declare global { var _mongoose: { conn: Mongoose | null; promise: Promise<Mongoose> | null } }
 // if cached.promise → return it
 // else: mongoose.connect(env.MONGO_URI, { bufferCommands: false })
 // store on global._mongoose
 ```
+
 `bufferCommands: false` — fail fast when connection isn't up.
 
 **User model (`src/models/User.ts`):**
@@ -178,6 +191,7 @@ Fires `user.created`. Verify `svix-signature`, then upsert User doc via `user.re
 Add `export const runtime = 'nodejs'` — webhook needs full Node, not Edge.
 
 **`config/env.ts`** — Zod validates all vars at import time, fails loudly:
+
 ```typescript
 const schema = z.object({ MONGO_URI: z.string().url(), CLERK_SECRET_KEY: z.string(), ... })
 export const env = schema.parse(process.env)
@@ -190,6 +204,7 @@ export const env = schema.parse(process.env)
 ## Stage 3 — Upload Flow
 
 ### Ordering constraint
+
 Stage 2 complete (auth working, Mongo connected, User model exists).
 
 ### Files to create
@@ -221,6 +236,7 @@ react-dropzone
 ### Key details
 
 **R2 client (`src/lib/storage.ts`):**
+
 ```typescript
 // new S3Client({
 //   region: 'auto',
@@ -231,6 +247,7 @@ react-dropzone
 ```
 
 **Presigned PUT (`src/helpers/presigned-url.ts`):**
+
 ```typescript
 // PutObjectCommand + getSignedUrl, expiry: 300s
 // Key pattern: uploads/{userId}/{jobId}/{sanitized-filename}
@@ -238,6 +255,7 @@ react-dropzone
 ```
 
 **Job model (`src/models/Job.ts`):**
+
 ```typescript
 // Fields:
 // userId: string (Clerk userId, indexed)
@@ -260,20 +278,24 @@ react-dropzone
 3. `POST /api/jobs` with `{ jobId }` — confirms upload done. (Deepgram or SRT path triggered in Stage 5.)
 
 **Validation (`src/helpers/validators.ts`):**
+
 ```typescript
 const uploadSchema = z.object({
   filename: z.string().max(255),
-  contentType: z.enum(['video/mp4', 'video/quicktime']),
+  contentType: z.enum(["video/mp4", "video/quicktime"]),
   fileSize: z.number().max(500 * 1024 * 1024), // 500MB
-})
+});
 ```
+
 Validate server-side. Reinforce in dropzone client-side.
 
 **Rate limit in `upload.service.ts`:**
+
 ```typescript
 // const todayCount = await job.repository.countTodayUploads(userId)
 // if (todayCount >= 5) throw new Error('RATE_LIMIT')
 ```
+
 Returns HTTP 429 from controller.
 
 **Upload dropzone (`components/upload-dropzone.tsx`):**
@@ -287,6 +309,7 @@ Use TanStack Query `useMutation` for each step (presign → PUT → confirm).
 ## Stage 4 — Optional Caption Upload
 
 ### Ordering constraint
+
 Stage 3 complete (Job model exists, upload flow works).
 
 ### Files to create
@@ -308,32 +331,34 @@ subtitle    # SRT/VTT parsing — handles edge cases better than custom regex
 ### Key details
 
 **`src/types/transcript.types.ts` — THE CENTRAL CONTRACT:**
+
 ```typescript
 interface TranscriptWord {
-  word: string
-  start: number   // seconds (float)
-  end: number     // seconds (float)
-  confidence?: number
+  word: string;
+  start: number; // seconds (float)
+  end: number; // seconds (float)
+  confidence?: number;
 }
 
 interface TranscriptSegment {
-  text: string
-  start: number
-  end: number
-  words: TranscriptWord[]
+  text: string;
+  start: number;
+  end: number;
+  words: TranscriptWord[];
 }
 
 interface Transcript {
-  source: 'deepgram' | 'user'
-  language?: string
-  segments: TranscriptSegment[]
-  words: TranscriptWord[]  // flat list for word-by-word rendering
+  source: "deepgram" | "user";
+  language?: string;
+  segments: TranscriptSegment[];
+  words: TranscriptWord[]; // flat list for word-by-word rendering
 }
 ```
 
 **Lock this type before Stage 5 begins.** Deepgram adapter and SRT parser both produce this shape. Remotion compositions consume it.
 
 **SRT/VTT parser (`src/helpers/srt-parser.ts`):**
+
 - SRT has block-level timing, no word-level. Map each block to one `TranscriptWord` with `word = full line text`.
 - VTT with inline cue tags (`<00:00:01.000>word`) — parse into proper word-level entries.
 - Use `subtitle` npm package, not custom regex. SRT uses comma as decimal separator (`00:00:01,500`) — custom regex will break this.
@@ -347,6 +372,7 @@ interface Transcript {
 ## Stage 5 — Transcription
 
 ### Ordering constraint
+
 Stage 4 complete (TranscriptWord type is locked and stable).
 
 ### Files to create
@@ -367,27 +393,31 @@ worker/services/transcription.ts           (worker calls transcription.service.t
 ### Key details
 
 **Provider interface (`src/services/transcription.service.ts`):**
+
 ```typescript
 interface TranscriptionProvider {
-  transcribe(audioUrl: string): Promise<Transcript>
+  transcribe(audioUrl: string): Promise<Transcript>;
 }
 ```
 
 Two implementations:
+
 - `DeepgramProvider` — full implementation
 - `WhisperProvider` — stub throwing `new Error('Not implemented')`
 
 Factory reads `env.TRANSCRIPTION_PROVIDER`:
+
 ```typescript
 export function getTranscriptionProvider(): TranscriptionProvider {
-  if (env.TRANSCRIPTION_PROVIDER === 'whisper') return new WhisperProvider()
-  return new DeepgramProvider()
+  if (env.TRANSCRIPTION_PROVIDER === "whisper") return new WhisperProvider();
+  return new DeepgramProvider();
 }
 ```
 
 Never call `@deepgram/sdk` anywhere except this service.
 
 **Deepgram call:**
+
 ```typescript
 // deepgramClient.listen.v1.media.transcribeUrl({   // @deepgram/sdk v5+ API
 //   url: presignedGetUrl,                          // generate fresh 15-min expiry presigned GET URL
@@ -411,6 +441,7 @@ Never call `@deepgram/sdk` anywhere except this service.
 ## Stage 6 — Remotion Compositions
 
 ### Ordering constraint
+
 Stage 5 complete (Transcript type stable). Compositions can be developed in parallel with Stages 4–5 using hardcoded sample data in Remotion Studio.
 
 ### Files to create
@@ -442,6 +473,7 @@ react-dom@19
 ### Key details
 
 **`remotion/Root.tsx`:**
+
 ```typescript
 // registerRoot(() => (
 //   <>
@@ -455,6 +487,7 @@ react-dom@19
 ```
 
 **`WordByWord.tsx` (hero feature):**
+
 ```typescript
 // const frame = useCurrentFrame()
 // const { fps } = useVideoConfig()
@@ -470,6 +503,7 @@ react-dom@19
 **Type sharing gotcha:** Remotion's bundler runs independently from Next's. Do NOT import from `../src/types/` inside Remotion compositions — bundler path resolution fails. Duplicate the `Transcript`/`TranscriptWord` types in `remotion/types.ts`. Small duplication beats bundler misconfiguration.
 
 **Remotion Studio scripts (`remotion/package.json`):**
+
 ```json
 {
   "scripts": {
@@ -484,6 +518,7 @@ Test all 4 compositions in Studio with sample transcript data before wiring to t
 **`durationInFrames` calculation:** `Math.ceil(lastWordEnd * fps) + 30` — the +30 frame buffer prevents the last caption cutting off abruptly.
 
 **`components/video-preview.tsx`:** Client component wrapping `@remotion/player`:
+
 ```typescript
 // dynamic(() => import('@remotion/player'), { ssr: false })
 // or: 'use client' + typeof window !== 'undefined' guard
@@ -497,6 +532,7 @@ Test all 4 compositions in Studio with sample transcript data before wiring to t
 ## Stage 7 — Queue + Worker
 
 ### Ordering constraint
+
 Stages 2–5 complete. Worker imports from `src/` — all models, repos, services must exist.
 
 ### Files to create
@@ -524,35 +560,41 @@ ioredis    # BullMQ requires native Redis protocol — NOT @upstash/redis (HTTP 
 ### Key details
 
 **ioredis client (`src/lib/redis.ts`):**
+
 ```typescript
 // new Redis(env.UPSTASH_REDIS_URL, {
 //   maxRetriesPerRequest: null,   // REQUIRED by BullMQ
 //   enableReadyCheck: false       // REQUIRED by BullMQ
 // })
 ```
+
 Both flags are mandatory. Without them BullMQ throws `ReplyError` on job operations.
 
 **Queue (`src/lib/queue.ts`):**
+
 ```typescript
 // export const QUEUE_NAME = 'render'
 // export const renderQueue = new Queue(QUEUE_NAME, { connection })
 ```
+
 Both Next API routes and worker import `QUEUE_NAME` from here. Never hardcode the string.
 
 **RenderJobPayload (`src/types/job.types.ts`):**
+
 ```typescript
 interface RenderJobPayload {
-  jobId: string          // Mongo ObjectId as string
-  userId: string         // Clerk userId
-  videoKey: string       // R2 object key
-  transcriptKey?: string // R2 key if transcript stored externally
-  compositionId: string  // 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring'
-  fps: number            // default 30
-  outputFormat: 'mp4'
+  jobId: string; // Mongo ObjectId as string
+  userId: string; // Clerk userId
+  videoKey: string; // R2 object key
+  transcriptKey?: string; // R2 key if transcript stored externally
+  compositionId: string; // 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring'
+  fps: number; // default 30
+  outputFormat: "mp4";
 }
 ```
 
 **Enqueue route (`app/api/jobs/[id]/enqueue/route.ts`):**
+
 ```typescript
 // Verify job belongs to authenticated user
 // Wrap renderQueue.add() in Promise.race with 10s timeout
@@ -564,6 +606,7 @@ interface RenderJobPayload {
 **Gotcha from CLAUDE.md:** `queue.add()` hangs if Redis is unreachable. The `Promise.race` timeout is mandatory.
 
 **Worker (`worker/index.ts`):**
+
 ```typescript
 // new Worker(QUEUE_NAME, processRenderJob, {
 //   connection,
@@ -573,21 +616,26 @@ interface RenderJobPayload {
 ```
 
 **pm2 config (`ecosystem.config.js`):**
+
 ```javascript
 module.exports = {
-  apps: [{
-    name: 'caption-worker',
-    script: './worker/dist/index.js',   // compile to JS, more stable than ts-node in pm2
-    env: { NODE_ENV: 'production' },
-    max_restarts: 10,
-    restart_delay: 3000,
-    log_date_format: 'YYYY-MM-DD HH:mm:ss'
-  }]
-}
+  apps: [
+    {
+      name: "caption-worker",
+      script: "./worker/dist/index.js", // compile to JS, more stable than ts-node in pm2
+      env: { NODE_ENV: "production" },
+      max_restarts: 10,
+      restart_delay: 3000,
+      log_date_format: "YYYY-MM-DD HH:mm:ss",
+    },
+  ],
+};
 ```
+
 Compile worker with `tsc` first. Using `ts-node` with pm2 in production is less reliable.
 
 **GCP VM apt packages (`docs/vm-setup.md`):**
+
 ```bash
 sudo apt-get update
 sudo apt-get install -y \
@@ -598,6 +646,7 @@ sudo apt-get install -y \
   libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 \
   lsb-release wget xdg-utils ffmpeg
 ```
+
 These are shared libs for Remotion's bundled Chromium, not the system Chromium itself.
 
 ---
@@ -605,6 +654,7 @@ These are shared libs for Remotion's bundled Chromium, not the system Chromium i
 ## Stage 8 — Render Pipeline
 
 ### Ordering constraint
+
 Stages 6 + 7 complete (Remotion compositions tested in Studio; worker connects to Redis).
 
 ### Files to create
@@ -623,6 +673,7 @@ No new packages. `@remotion/renderer` and `@aws-sdk/lib-storage` already install
 ### Key details
 
 **`worker/render.ts` — full flow:**
+
 ```typescript
 // async function processRenderJob(job: Job<RenderJobPayload>) {
 //   const { jobId, videoKey, transcriptKey, compositionId } = job.data
@@ -655,6 +706,7 @@ No new packages. `@remotion/renderer` and `@aws-sdk/lib-storage` already install
 ```
 
 **Bundle caching in `src/services/render.service.ts`:**
+
 ```typescript
 // module-level: let bundleCache: string | null = null
 // getBundle(): if cached → return; else bundle() → store → return
@@ -672,6 +724,7 @@ No new packages. `@remotion/renderer` and `@aws-sdk/lib-storage` already install
 ## Stage 9 — Progress + Delivery
 
 ### Ordering constraint
+
 Stage 8 complete (worker publishes progress to Redis; Job reaches 'done'/'failed').
 
 ### Files to create
@@ -689,37 +742,45 @@ components/download-button.tsx         (triggers presigned GET URL)
 ### Key details
 
 **SSE endpoint (`app/api/jobs/[id]/stream/route.ts`):**
+
 ```typescript
-export const runtime = 'nodejs'  // REQUIRED — ioredis needs Node runtime, not Edge
+export const runtime = "nodejs"; // REQUIRED — ioredis needs Node runtime, not Edge
 
 export async function GET(req, { params }) {
-  const { userId } = await auth()
+  const { userId } = await auth();
   // verify job belongs to user
-  const stream = new TransformStream()
-  const writer = stream.writable.getWriter()
-  const encoder = new TextEncoder()
-  const sendEvent = (data) => writer.write(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
+  const stream = new TransformStream();
+  const writer = stream.writable.getWriter();
+  const encoder = new TextEncoder();
+  const sendEvent = (data) =>
+    writer.write(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
 
   // 1. Subscribe to Redis pub/sub: job:{jobId}:progress → send frame progress
   // 2. Poll Mongo every 2s for terminal status (done/failed)
   // 3. On terminal status → sendEvent(finalEvent) → writer.close()
 
   return new Response(stream.readable, {
-    headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' }
-  })
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
 }
 ```
 
 Use a separate ioredis connection for pub/sub — connections in `SUBSCRIBE` mode cannot execute other commands.
 
 **`components/job-progress.tsx`:**
+
 ```typescript
-'use client'
+"use client";
 // useEffect → const sse = new EventSource(`/api/jobs/${jobId}/stream`)
 // sse.onmessage → update local state (progress %, status)
 // on 'done' event → queryClient.invalidateQueries(['job', jobId])
 // cleanup: sse.close() on unmount
 ```
+
 Use native `EventSource` API, not TanStack Query. SSE is push-based — TanStack Query is for REST/polling.
 
 **Download URL:** `GET /api/jobs/{id}` returns job metadata + presigned GET URL (1-hour expiry) when `status === 'done'`. Use `GetObjectCommand` + `getSignedUrl`. Never embed in SSE event — fetch separately so URL has fresh expiry.
@@ -731,6 +792,7 @@ Use native `EventSource` API, not TanStack Query. SSE is push-based — TanStack
 ## Stage 10 — End-to-End Test
 
 ### Ordering constraint
+
 All Stages 1–9 complete.
 
 ### Files to create
@@ -841,13 +903,13 @@ TRANSCRIPTION_PROVIDER=deepgram
 
 ## Critical Files
 
-| File | Why critical |
-|------|-------------|
-| `src/types/transcript.types.ts` | Central contract between all pipeline stages — lock before Stage 5 |
-| `src/services/transcription.service.ts` | Deepgram/Whisper swap boundary — never call SDK directly outside here |
-| `src/lib/queue.ts` | Shared BullMQ queue — if Next and worker import different definitions, jobs never process |
-| `worker/render.ts` | try/finally cleanup + bundle caching — wrong implementation fills VM disk |
-| `src/models/Job.ts` | Read/written by Next, worker, SSE endpoint, repositories — schema drift = silent runtime failures |
+| File                                    | Why critical                                                                                      |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `src/types/transcript.types.ts`         | Central contract between all pipeline stages — lock before Stage 5                                |
+| `src/services/transcription.service.ts` | Deepgram/Whisper swap boundary — never call SDK directly outside here                             |
+| `src/lib/queue.ts`                      | Shared BullMQ queue — if Next and worker import different definitions, jobs never process         |
+| `worker/render.ts`                      | try/finally cleanup + bundle caching — wrong implementation fills VM disk                         |
+| `src/models/Job.ts`                     | Read/written by Next, worker, SSE endpoint, repositories — schema drift = silent runtime failures |
 
 ---
 
@@ -863,3 +925,63 @@ TRANSCRIPTION_PROVIDER=deepgram
 8. **Transcript Mixed type:** `Schema.Types.Mixed` not `Map` for transcript field. Serialize with `JSON.parse(JSON.stringify(...))` before write.
 9. **SSE Node runtime:** `export const runtime = 'nodejs'` on SSE route — ioredis is TCP, fails on Vercel Edge.
 10. **BullMQ enqueue timeout:** Wrap `queue.add()` in `Promise.race` with 10s timeout — hangs silently on Redis disconnect.
+
+Origin Certificate
+
+-----BEGIN CERTIFICATE-----
+MIIEqjCCA5KgAwIBAgIUM/oYLpswLaMKrP32ed+ckJDOAtwwDQYJKoZIhvcNAQEL
+BQAwgYsxCzAJBgNVBAYTAlVTMRkwFwYDVQQKExBDbG91ZEZsYXJlLCBJbmMuMTQw
+MgYDVQQLEytDbG91ZEZsYXJlIE9yaWdpbiBTU0wgQ2VydGlmaWNhdGUgQXV0aG9y
+aXR5MRYwFAYDVQQHEw1TYW4gRnJhbmNpc2NvMRMwEQYDVQQIEwpDYWxpZm9ybmlh
+MB4XDTI2MDcxNjE5MDUwMFoXDTQxMDcxMjE5MDUwMFowYjEZMBcGA1UEChMQQ2xv
+dWRGbGFyZSwgSW5jLjEdMBsGA1UECxMUQ2xvdWRGbGFyZSBPcmlnaW4gQ0ExJjAk
+BgNVBAMTHUNsb3VkRmxhcmUgT3JpZ2luIENlcnRpZmljYXRlMIIBIjANBgkqhkiG
+9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxRlAFNwgpXXZqQFUwIIXy0ahaZxcjNXSPI7G
+nFZdy9KXhSe92jqCASmumO1/6xm8RSH63FHZqJpCTtHZGauodb74wfKS3PsmSaur
+xK0mfK6gcqrVchkIUBlI4ESql+cr7hWDJA1WinPIT2StaC79dKwHDnfiamvBBIcB
+rqUCiXcg9eLQ+KvbcsCl6PaoK+WhD6diI3wT/KEXjoYBLjnu0TJa9O6vckUZveV5
+pvonKHXKsyaJUW+SYdW/Fp35JFPNk0nfVseApx1Sk5CBZnlpuC+rVpyEaIFYdspl
+KS6so/iI6TH+IgtCjXdGhIH8cCnoxpAjK/StuF4U12tqpM8l6wIDAQABo4IBLDCC
+ASgwDgYDVR0PAQH/BAQDAgWgMB0GA1UdJQQWMBQGCCsGAQUFBwMCBggrBgEFBQcD
+ATAMBgNVHRMBAf8EAjAAMB0GA1UdDgQWBBQN0Rb32jRdoM6X7ZraB6TciHTZJjAf
+BgNVHSMEGDAWgBQk6FNXXXw0QIep65TbuuEWePwppDBABggrBgEFBQcBAQQ0MDIw
+MAYIKwYBBQUHMAGGJGh0dHA6Ly9vY3NwLmNsb3VkZmxhcmUuY29tL29yaWdpbl9j
+YTAtBgNVHREEJjAkghEqLmdldGluc3RhY2FwLmNvbYIPZ2V0aW5zdGFjYXAuY29t
+MDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2xvdWRmbGFyZS5jb20vb3Jp
+Z2luX2NhLmNybDANBgkqhkiG9w0BAQsFAAOCAQEAVWvkFI8dVhRA+Pj9XFo8MTlr
+Z3pRcb2ArwNSsinMAjoXm0Gab1Yabr/pVhWy4l+yzyM81wPFfHRFH/Ie5/GtASP+
+8WTaG36ryV0pbm9+IhKWSSccbul63r5SYZUnuniiWbmPcDtGjD5eddRvrMxfxQsb
+/wn1SrEGTkfwvWY9o9lAxWO7IJg76DLGvQA+bVOYH/uw4vr5YutU/ozNlBJ1fTGL
+Rh6zqwN7kWHIcGD/9505/vQTn5Zyc21r1DUGGmGDjEwQaL7wkaVgAyRlBII2pUkz
+UKmVnrdCCqcK5FKvN7SFC3Yy1CZXZR/RpFpoSwVvU2rM5UavzBvRvfboL+LTNg==
+-----END CERTIFICATE-----
+
+Private Key
+-----BEGIN PRIVATE KEY-----
+MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDFGUAU3CClddmp
+AVTAghfLRqFpnFyM1dI8jsacVl3L0peFJ73aOoIBKa6Y7X/rGbxFIfrcUdmomkJO
+0dkZq6h1vvjB8pLc+yZJq6vErSZ8rqByqtVyGQhQGUjgRKqX5yvuFYMkDVaKc8hP
+ZK1oLv10rAcOd+Jqa8EEhwGupQKJdyD14tD4q9tywKXo9qgr5aEPp2IjfBP8oReO
+hgEuOe7RMlr07q9yRRm95Xmm+icodcqzJolRb5Jh1b8WnfkkU82TSd9Wx4CnHVKT
+kIFmeWm4L6tWnIRogVh2ymUpLqyj+IjpMf4iC0KNd0aEgfxwKejGkCMr9K24XhTX
+a2qkzyXrAgMBAAECggEARXhqbU/PU/KPdvHIqRfRgi0RfJOHzX4aHY0ndPg+FDbU
+gDLrSG2B4B4Mc8uWYEvQX7+j158j7Dj+8SAm+NTXyjS3Ikk5OZluO94961Mqcxzr
+4a7UD+TB2NWoqZ+aT3NEOSUs9XqcC63WpyExu7yASmzOCev4ipETVeCuF5wComeS
+8Hcfc40nJYNkPAUKELwx0xiaXB/5fv/YaMz1seA0Scv3FXgP27P81TKkgI61rSsx
+jy3WI+hYcqnKJM9O7omRgjz3CMKnAkNpB2YhzWaJ1k0Quu1Mul7bAvUbJda//rmv
+rI4BfQefpedKaD5XH34sX0SQ4s0tkzTNUjAOQaFZjQKBgQD8e4iOpTiY9WubA9bp
+HJTAv7FrBmOrNphBdMw16OjNcDmp4kxX15t5/eqbzxJpxEA+DdRSncsFAynlpfdD
+7RwLX8aq03khIuIBSMcbIYGmq9S6IIDK0y28jCO4GausrqMfnEhSJoLuTyA3iAOs
+pOUxk22rcxVRRWYzGi1aqu4Y3QKBgQDH2DFgb2eX3JjMVG2Po+3jAflfpvrg7iNl
+gwh1JR+W/0x0WNWmh9zkJ5AOjeNyw2dXKyvMWIznXuEUqe0RY/ae6UKXWBUVsQLr
+yirGCGjIt/8UQRikbMkyEd7m4Ok1v1q3JY/5pfPJ2cGNYyRpeVfmoipOi/AWApOa
+AJvU/MrpZwKBgQCmY+sMxsnT0/lEQXWCTvmhRTNxKtbIYMRabtSduo6hxRHbaW2S
+fl7SOIpCgGbMGS+VNZv1jlPbS8hytbuMolhXDplovtEXC1wSKJo+wQgmhRs+Rmla
+QW3k0h5AF3rR5I1QKbhnm0WyM6cxsYtqXYlF8LjXwpIL60Z86wV0uS0MaQKBgD12
+ZFlAah/unJ/bJ4cR58v1g3jDpk0fcIt77VH6BOkvw5fU6oC5MFqLQGb5hIZ7SoEo
+qePDKDLQn3D3gg3jLKpbGzvovzNYqYlTOCyH0ZJJ5I2aJ7YKLybTEDb53T/GhmPl
+jY4+V+gwrLKLV1uJElvAbDqUF1btm++1WDf9N3rpAoGBAO3/ImxlhO4VyIwR/xQe
+cLujndfulz6v7xLIRvnyqJw7ze1NXSkGYGBSW+yixSUGScU7uTXVeQY6/+pFMIgA
+MrSuayGwPPdO0QuawaRP91jJvEGP+3ZcbRI01An2PMQD6zw5Wxxt1QWMIreyqkiV
+hGCVCF9bTL84Urgqqbx8O7+I
+-----END PRIVATE KEY-----

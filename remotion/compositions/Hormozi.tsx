@@ -1,6 +1,7 @@
 import React from 'react'
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo, spring, interpolate } from 'remotion'
 import { loadFont } from '@remotion/google-fonts/Anton'
+import { withScriptFallback } from '../lib/fonts'
 import type { Transcript } from '../types'
 
 const { fontFamily: ANTON } = loadFont()
@@ -101,7 +102,7 @@ export const Hormozi: React.FC<HormoziProps> = ({
                   style={{
                     fontSize,
                     fontWeight: 400,
-                    fontFamily,
+                    fontFamily: withScriptFallback(fontFamily),
                     textTransform: 'uppercase',
                     color: isCurrent ? activeColor : textColor,
                     WebkitTextStroke: `${strokeWidth}px #000000`,

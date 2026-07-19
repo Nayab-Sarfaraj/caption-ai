@@ -1,6 +1,7 @@
 import React from 'react'
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo } from 'remotion'
 import { loadFont } from '@remotion/google-fonts/Fredoka'
+import { withScriptFallback } from '../lib/fonts'
 import type { Transcript, TranscriptSegment } from '../types'
 
 const { fontFamily: FREDOKA } = loadFont('normal', { weights: ['700'], subsets: ['latin'] })
@@ -90,7 +91,7 @@ export const Comic: React.FC<ComicProps> = ({
                   style={{
                     fontSize,
                     fontWeight: 700,
-                    fontFamily,
+                    fontFamily: withScriptFallback(fontFamily),
                     textTransform: 'uppercase',
                     color: isCurrent ? activeColor : isPast ? `${textColor}b3` : textColor,
                     WebkitTextStroke: `${strokeWidth}px #000000`,

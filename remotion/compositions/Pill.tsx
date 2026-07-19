@@ -1,6 +1,7 @@
 import React from 'react'
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo, interpolate } from 'remotion'
 import { loadFont } from '@remotion/google-fonts/Roboto'
+import { withScriptFallback } from '../lib/fonts'
 import type { Transcript, TranscriptSegment } from '../types'
 
 const { fontFamily: ROBOTO } = loadFont('normal', { weights: ['700'], subsets: ['latin'] })
@@ -94,7 +95,7 @@ export const Pill: React.FC<PillProps> = ({
               style={{
                 fontSize,
                 fontWeight: 700,
-                fontFamily,
+                fontFamily: withScriptFallback(fontFamily),
                 color: textColor,
                 textAlign: 'center',
                 margin: 0,

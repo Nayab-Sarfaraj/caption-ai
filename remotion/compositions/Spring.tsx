@@ -1,5 +1,6 @@
 import React from 'react'
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo, spring, interpolate } from 'remotion'
+import { withScriptFallback } from '../lib/fonts'
 import type { Transcript } from '../types'
 
 export interface SpringProps {
@@ -102,7 +103,7 @@ export const Spring: React.FC<SpringProps> = ({
                   style={{
                     fontSize,
                     fontWeight: 900,
-                    fontFamily,
+                    fontFamily: withScriptFallback(fontFamily),
                     color: isCurrent ? activeColor : textColor,
                     textShadow: '0 3px 24px rgba(0,0,0,0.9)',
                     display: 'inline-block',

@@ -15,7 +15,7 @@ export async function upsertFromClerk(data: {
   return User.findOneAndUpdate(
     { clerkId: data.clerkId },
     { $set: { email: data.email, name: data.name } },
-    { upsert: true, new: true, runValidators: true }
+    { upsert: true, returnDocument: 'after', runValidators: true }
   ) as Promise<IUser>
 }
 
@@ -42,6 +42,6 @@ export async function syncSubscription(data: {
         ...(data.billingTier !== undefined && { billingTier: data.billingTier }),
       },
     },
-    { new: true }
+    { returnDocument: 'after' }
   )
 }

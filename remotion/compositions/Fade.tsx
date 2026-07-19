@@ -1,5 +1,6 @@
 import React from 'react'
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo, interpolate } from 'remotion'
+import { withScriptFallback } from '../lib/fonts'
 import type { Transcript, TranscriptSegment } from '../types'
 
 export interface FadeProps {
@@ -79,7 +80,7 @@ export const Fade: React.FC<FadeProps> = ({
             style={{
               fontSize,
               fontWeight: 700,
-              fontFamily,
+              fontFamily: withScriptFallback(fontFamily),
               color: textColor,
               textShadow: '0 3px 20px rgba(0,0,0,0.9)',
               textAlign: 'center',

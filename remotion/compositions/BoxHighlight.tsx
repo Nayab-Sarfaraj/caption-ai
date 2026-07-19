@@ -1,6 +1,7 @@
 import React from 'react'
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo, spring } from 'remotion'
 import { loadFont } from '@remotion/google-fonts/Montserrat'
+import { withScriptFallback } from '../lib/fonts'
 import type { Transcript } from '../types'
 
 const { fontFamily: MONTSERRAT } = loadFont('normal', { weights: ['900'], subsets: ['latin'] })
@@ -97,7 +98,7 @@ export const BoxHighlight: React.FC<BoxHighlightProps> = ({
                   style={{
                     fontSize,
                     fontWeight: 900,
-                    fontFamily,
+                    fontFamily: withScriptFallback(fontFamily),
                     textTransform: 'uppercase',
                     display: 'inline-block',
                     lineHeight: 1.15,

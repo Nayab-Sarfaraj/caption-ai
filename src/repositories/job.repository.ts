@@ -74,7 +74,7 @@ export async function updateJobStatus(
   extra?: Partial<Pick<IJob, 'errorMessage' | 'outputKey' | 'retryCount'>>
 ): Promise<IJob | null> {
   await connectDB()
-  return Job.findByIdAndUpdate(id, { $set: { status, ...extra } }, { new: true })
+  return Job.findByIdAndUpdate(id, { $set: { status, ...extra } }, { returnDocument: 'after' })
 }
 
 export async function updateJobTranscript(
@@ -92,12 +92,12 @@ export async function updateJobTranscript(
     update.transcript = JSON.parse(JSON.stringify(transcript))
   }
 
-  return Job.findByIdAndUpdate(id, { $set: update }, { new: true })
+  return Job.findByIdAndUpdate(id, { $set: update }, { returnDocument: 'after' })
 }
 
 export async function updateJobDone(id: string, outputKey: string): Promise<IJob | null> {
   await connectDB()
-  return Job.findByIdAndUpdate(id, { $set: { status: 'done', outputKey } }, { new: true })
+  return Job.findByIdAndUpdate(id, { $set: { status: 'done', outputKey } }, { returnDocument: 'after' })
 }
 
 export async function updateJobDimensions(id: string, width: number, height: number): Promise<void> {
@@ -110,7 +110,7 @@ export async function updateJobFailed(id: string, errorMessage: string): Promise
   return Job.findByIdAndUpdate(
     id,
     { $set: { status: 'failed', errorMessage }, $inc: { retryCount: 1 } },
-    { new: true }
+    { returnDocument: 'after' }
   )
 }
 
@@ -131,7 +131,7 @@ export async function incrementManualRetryIfUnderCap(id: string, cap: number): P
   return Job.findOneAndUpdate(
     { _id: id, status: 'failed', manualRetryCount: { $lt: cap } },
     { $inc: { manualRetryCount: 1 }, $set: { errorMessage: null } },
-    { new: true }
+    { returnDocument: 'after' }
   )
 }
 

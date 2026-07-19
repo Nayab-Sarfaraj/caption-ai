@@ -1,6 +1,7 @@
 import React from 'react'
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo, interpolate } from 'remotion'
 import { loadFont } from '@remotion/google-fonts/Inter'
+import { withScriptFallback } from '../lib/fonts'
 import type { Transcript, TranscriptSegment } from '../types'
 
 const { fontFamily: INTER } = loadFont('normal', { weights: ['500'], subsets: ['latin'] })
@@ -84,7 +85,7 @@ export const Minimal: React.FC<MinimalProps> = ({
             style={{
               fontSize,
               fontWeight: 500,
-              fontFamily,
+              fontFamily: withScriptFallback(fontFamily),
               color: textColor,
               textShadow: '0 2px 10px rgba(0,0,0,0.7)',
               textAlign: 'center',
