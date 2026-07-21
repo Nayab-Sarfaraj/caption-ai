@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { UserButton, SignOutButton } from '@clerk/nextjs'
-import { LogOut, LifeBuoy } from 'lucide-react'
+import { LogOut, LifeBuoy, Zap } from 'lucide-react'
 import type { SubscriptionStatus } from '@/src/models/User'
 import { PaywallModal } from '@/components/paywall-modal'
 import { SupportModal } from '@/components/support-modal'
@@ -43,7 +43,7 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
       </div>
 
       <nav className="flex-1 px-2 py-3">
-        {NAV.map(({ href, index, label, exact }) => {
+        {NAV.map(({ href, label, icon: Icon, exact }) => {
           const active = exact ? pathname === href : pathname === href || pathname.startsWith(href + '/')
           return (
             <Link
@@ -51,16 +51,17 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
               href={href}
               title={collapsed ? label : undefined}
               className={[
-                'flex items-center gap-2.5 px-2 py-2 text-xs tracking-wide rounded-md border-l-2 transition-colors',
+                'flex items-center gap-2.5 px-2.5 py-2 text-sm rounded-lg transition-colors',
                 collapsed ? 'justify-center' : '',
                 active
-                  ? 'text-[var(--ink)] border-[var(--brand)] bg-[var(--brand-soft)]'
-                  : 'text-[var(--mute)] border-transparent hover:text-[var(--ink)]',
+                  ? 'text-[var(--ink)] bg-[var(--brand-soft)] font-medium'
+                  : 'text-[var(--mute)] hover:text-[var(--ink)] hover:bg-[var(--panel-2)]',
               ].join(' ')}
             >
-              <span className={['text-[10px]', active ? 'text-[var(--brand)]' : 'text-[var(--faint)]'].join(' ')}>
-                {index}
-              </span>
+              <Icon
+                className={['w-[18px] h-[18px] shrink-0', active ? 'text-[var(--brand)]' : ''].join(' ')}
+                strokeWidth={2}
+              />
               {!collapsed && label}
             </Link>
           )
@@ -81,7 +82,8 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
               collapsed ? 'w-8 h-8 shrink-0' : 'w-full',
             ].join(' ')}
           >
-            {collapsed ? '⚡' : '⚡ Upgrade to Pro'}
+            <Zap className="w-3.5 h-3.5 shrink-0" fill="currentColor" strokeWidth={0} />
+            {!collapsed && 'Upgrade to Pro'}
           </button>
         </div>
       )}

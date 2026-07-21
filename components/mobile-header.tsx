@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { UserButton, SignOutButton } from '@clerk/nextjs'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LogOut, LifeBuoy, Menu, X } from 'lucide-react'
+import { LogOut, LifeBuoy, Menu, X, Zap } from 'lucide-react'
 import type { SubscriptionStatus } from '@/src/models/User'
 import { PaywallModal } from '@/components/paywall-modal'
 import { SupportModal } from '@/components/support-modal'
@@ -48,9 +48,10 @@ export function MobileHeader({ subscriptionStatus = 'none' }: { subscriptionStat
             <button
               type="button"
               onClick={() => setShowPaywall(true)}
-              className="flex items-center gap-1 bg-[var(--brand)] text-white text-xs font-bold rounded-lg px-2.5 py-1.5 hover:brightness-[1.08] transition-all"
+              className="flex items-center gap-1.5 bg-[var(--brand)] text-white text-xs font-bold rounded-lg px-2.5 py-1.5 hover:brightness-[1.08] transition-all"
             >
-              ⚡ Upgrade
+              <Zap className="w-3.5 h-3.5 shrink-0" fill="currentColor" strokeWidth={0} />
+              Upgrade
             </button>
           )}
           <UserButton />
@@ -88,7 +89,7 @@ export function MobileHeader({ subscriptionStatus = 'none' }: { subscriptionStat
         </div>
 
         <div className="flex-1 px-2 py-3">
-          {NAV.map(({ href, index, label, exact }) => {
+          {NAV.map(({ href, label, icon: Icon, exact }) => {
             const active = exact ? pathname === href : pathname === href || pathname.startsWith(href + '/')
             return (
               <Link
@@ -96,15 +97,16 @@ export function MobileHeader({ subscriptionStatus = 'none' }: { subscriptionStat
                 href={href}
                 onClick={() => setMenuOpen(false)}
                 className={[
-                  'flex items-center gap-2.5 px-2 py-2.5 text-xs tracking-wide border-l-2 transition-colors',
+                  'flex items-center gap-2.5 px-2.5 py-2.5 text-sm rounded-lg transition-colors',
                   active
-                    ? 'text-[var(--ink)] border-[var(--brand)] bg-[var(--brand-soft)]'
-                    : 'text-[var(--mute)] border-transparent hover:text-[var(--ink)]',
+                    ? 'text-[var(--ink)] bg-[var(--brand-soft)] font-medium'
+                    : 'text-[var(--mute)] hover:text-[var(--ink)] hover:bg-[var(--panel-2)]',
                 ].join(' ')}
               >
-                <span className={['text-[10px]', active ? 'text-[var(--brand)]' : 'text-[var(--faint)]'].join(' ')}>
-                  {index}
-                </span>
+                <Icon
+                  className={['w-[18px] h-[18px] shrink-0', active ? 'text-[var(--brand)]' : ''].join(' ')}
+                  strokeWidth={2}
+                />
                 {label}
               </Link>
             )

@@ -1,9 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { BillingActions } from '@/components/billing-actions'
+import { PlanCards } from '@/components/plan-cards'
 import { PLAN_COMPARISON, daysUntilRenderReset } from '@/src/helpers/plan-comparison'
-import { PRICING_TIERS } from '@/src/helpers/pricing-tiers'
 
 export interface PaywallModalProps {
   onClose: () => void
@@ -90,17 +89,8 @@ export function PaywallModal({ onClose, onContinueFree }: PaywallModalProps) {
 
         <div className="border-t border-[var(--hair)]" />
 
-        {/* Pricing — after value, not before */}
-        <div className="grid grid-cols-3 gap-2 text-center">
-          {PRICING_TIERS.map((t) => (
-            <div key={t.id}>
-              <p className="text-lg font-bold text-[var(--ink)]">{t.price}</p>
-              <p className="text-[11px] text-[var(--mute)]">{t.period}</p>
-            </div>
-          ))}
-        </div>
-
-        <BillingActions status="none" />
+        {/* Pricing — compact plan cards, after value */}
+        <PlanCards status="none" compact />
 
         {onContinueFree && (
           <button
