@@ -34,7 +34,7 @@ export function DownloadButton({ jobId, filename = 'captioned-video.mp4' }: Down
   }
 
   return (
-    <div className="space-y-2 font-[family-name:var(--font-cc)]">
+    <div className="space-y-2">
       <button
         onClick={handleDownload}
         disabled={loading}

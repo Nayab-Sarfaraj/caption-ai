@@ -184,7 +184,7 @@ export function PreviewPlayer({
   }, [width, height])
 
   return (
-    <div className="flex flex-col lg:flex-row gap-5 items-start font-[family-name:var(--font-cc)]">
+    <div className="flex flex-col lg:flex-row gap-5 items-start">
       {showPaywall && (
         <PaywallModal
           onClose={() => setShowPaywall(false)}

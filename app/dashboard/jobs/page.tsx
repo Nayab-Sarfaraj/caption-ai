@@ -26,7 +26,7 @@ export default async function AllJobsPage({
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-8 py-7 sm:py-10 font-[family-name:var(--font-cc)]">
+    <div className="max-w-4xl mx-auto px-4 sm:px-8 py-7 sm:py-10">
       <Link
         href="/dashboard"
         className="inline-flex items-center gap-1 text-sm text-[var(--ink-dim)] hover:text-[var(--ink)] transition-colors"

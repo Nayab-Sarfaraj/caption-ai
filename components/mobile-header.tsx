@@ -17,7 +17,7 @@ export function MobileHeader({ subscriptionStatus = 'none' }: { subscriptionStat
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <header className="border-b border-[var(--hair)] bg-[var(--panel)] font-[family-name:var(--font-cc)]">
+    <header className="border-b border-[var(--hair)] bg-[var(--panel)]">
       <div className="h-14 flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <button

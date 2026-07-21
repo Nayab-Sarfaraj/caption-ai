@@ -87,12 +87,17 @@ export function BrandKitForm({ initial }: BrandKitFormProps) {
             type="button"
             onClick={() => setDefaultCompositionId(null)}
             className={[
-              'flex items-center justify-center border text-xs text-center px-3 py-6 transition-colors rounded-xl',
+              'relative flex items-center justify-center text-xs text-center px-3 py-6 transition-all rounded-xl ring-2 ring-inset',
               defaultCompositionId === null
-                ? 'border-[var(--brand)] bg-[var(--brand-soft)] text-[var(--ink)]'
-                : 'border-[var(--hair)] text-[var(--mute)] hover:border-[var(--faint)] hover:text-[var(--ink)]',
+                ? 'ring-[var(--brand)] bg-[var(--brand-soft)] text-[var(--ink)] font-semibold'
+                : 'ring-[var(--hair)] text-[var(--mute)] hover:ring-[var(--faint)] hover:text-[var(--ink)]',
             ].join(' ')}
           >
+            {defaultCompositionId === null && (
+              <span className="absolute top-1.5 right-1.5 flex items-center justify-center w-5 h-5 rounded-full bg-[var(--brand)] text-white shadow">
+                <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 10l4 4 8-9" /></svg>
+              </span>
+            )}
             No default
             <br />
             (Word by Word)
@@ -103,15 +108,23 @@ export function BrandKitForm({ initial }: BrandKitFormProps) {
               <button
                 key={s.id}
                 type="button"
+                aria-pressed={active}
                 onClick={() => setDefaultCompositionId(s.id)}
                 className={[
-                  'relative text-left transition-all overflow-hidden rounded-xl',
-                  active ? 'ring-2 ring-inset ring-[var(--brand)]' : 'ring-1 ring-inset ring-[var(--hair)] hover:ring-[var(--faint)]',
+                  'relative text-left transition-all overflow-hidden rounded-xl ring-2 ring-inset',
+                  active
+                    ? 'ring-[var(--brand)] shadow-[0_0_0_3px_var(--brand-soft)]'
+                    : 'ring-1 ring-[var(--hair)] hover:ring-[var(--faint)]',
                 ].join(' ')}
               >
                 <CaptionStylePreview id={s.id} />
-                <div className="px-2.5 py-2 bg-[var(--panel)]">
-                  <p className="text-xs text-[var(--ink)] font-medium">{s.label}</p>
+                {active && (
+                  <span className="absolute top-1.5 right-1.5 z-10 flex items-center justify-center w-5 h-5 rounded-full bg-[var(--brand)] text-white shadow">
+                    <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 10l4 4 8-9" /></svg>
+                  </span>
+                )}
+                <div className={['px-2.5 py-2', active ? 'bg-[var(--brand)]' : 'bg-[var(--panel)]'].join(' ')}>
+                  <p className={['text-xs font-medium', active ? 'text-white' : 'text-[var(--ink)]'].join(' ')}>{s.label}</p>
                 </div>
               </button>
             )
@@ -141,12 +154,14 @@ export function BrandKitForm({ initial }: BrandKitFormProps) {
               type="button"
               onClick={() => setFontFamily(f.value)}
               className={[
-                'border rounded-lg p-3 text-left transition-all space-y-1',
-                fontFamily === f.value ? 'border-[var(--brand)] bg-[var(--brand-soft)]' : 'border-[var(--hair)] hover:border-[var(--faint)]',
+                'rounded-lg p-3 text-left transition-all space-y-1 ring-1 ring-inset',
+                fontFamily === f.value
+                  ? 'ring-2 ring-[var(--brand)] bg-[color-mix(in_srgb,var(--brand)_18%,transparent)]'
+                  : 'ring-[var(--hair)] hover:ring-[var(--faint)]',
               ].join(' ')}
             >
               <p className="text-lg leading-none text-[var(--ink)]" style={{ fontFamily: f.value }}>Aa</p>
-              <p className="text-[10px] text-[var(--mute)]">{f.label}</p>
+              <p className={['text-[10px]', fontFamily === f.value ? 'text-[var(--ink)] font-semibold' : 'text-[var(--mute)]'].join(' ')}>{f.label}</p>
             </button>
           ))}
         </div>

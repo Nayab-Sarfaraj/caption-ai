@@ -64,7 +64,7 @@ export function JobCard({ job }: { job: JobListItem }) {
     >
       <div
         className="relative aspect-video flex items-center justify-center"
-        style={{ background: 'radial-gradient(130% 100% at 25% 10%, #302f2c 0%, var(--ink) 55%, #0a0a09 100%)' }}
+        style={{ background: 'radial-gradient(130% 100% at 25% 10%, #302f2c 0%, #1a1917 55%, #0a0a09 100%)' }}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-white/25 group-hover:text-white/40 transition-colors">
           <path d="M8 5.5v13l11-6.5-11-6.5z" fill="currentColor" />

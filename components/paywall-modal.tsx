@@ -31,7 +31,7 @@ export function PaywallModal({ onClose, onContinueFree }: PaywallModalProps) {
   return (
     <div
       className={[
-        'fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 font-[family-name:var(--font-cc)] transition-opacity duration-150',
+        'fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 transition-opacity duration-150',
         visible ? 'opacity-100' : 'opacity-0',
       ].join(' ')}
       onClick={onClose}

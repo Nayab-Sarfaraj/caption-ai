@@ -59,7 +59,7 @@ export function JobProgress({ jobId, initialStatus, onDone, onFailed }: JobProgr
   if (isTerminal) return null
 
   return (
-    <div className="space-y-2 font-[family-name:var(--font-cc)]">
+    <div className="space-y-2">
       <div className="flex items-center justify-between text-xs text-[var(--ink-dim)]">
         <span>{statusLabel}</span>
         <span className="tabular-nums">{percent}%</span>

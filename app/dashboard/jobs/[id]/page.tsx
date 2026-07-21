@@ -71,7 +71,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   const videoHeight = job.height ?? 1080
 
   return (
-    <div className="px-4 sm:px-6 py-6 sm:py-8 space-y-5 min-h-full font-[family-name:var(--font-cc)]">
+    <div className="px-4 sm:px-6 py-6 sm:py-8 space-y-5 min-h-full">
       <Link
         href="/dashboard"
         className="inline-flex items-center gap-1 text-sm text-[var(--ink-dim)] hover:text-[var(--ink)] transition-colors"
