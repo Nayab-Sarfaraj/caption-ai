@@ -58,6 +58,10 @@ export default async function DashboardPage() {
           />
         </section>
       )}
+
+      {jobs.length === 0 && (
+        <p className="mt-12 text-sm text-[var(--mute)] text-center">Your rendered videos will show up here.</p>
+      )}
     </div>
   )
 }

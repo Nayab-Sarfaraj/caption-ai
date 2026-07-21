@@ -4,6 +4,7 @@ import { connectDB } from '@/src/lib/mongo'
 import { findJobsByUserId } from '@/src/repositories/job.repository'
 import { JobCard, type JobListItem } from '@/components/jobs-table'
 import { BatchProgress } from '@/components/batch-progress'
+import { EmptyState } from '@/components/empty-state'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 
@@ -44,7 +45,13 @@ export default async function AllJobsPage({
       </div>
 
       {jobs.length === 0 ? (
-        <p className="text-sm text-[var(--mute)] mt-6">No videos yet.</p>
+        <div className="mt-6">
+          <EmptyState
+            title="No videos yet"
+            description="Upload your first clip to get word-by-word animated captions."
+            action={{ href: '/dashboard', label: 'Upload a video' }}
+          />
+        </div>
       ) : (
         <>
           <JobsWithBatches

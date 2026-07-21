@@ -185,6 +185,30 @@
 .footLink:hover, .links a:hover, .links button:hover { color: var(--brand); }
 .cr { font-size: 13px; color: var(--mute); font-family: var(--font-geist-mono), monospace; }
 
+/* ---------- comparison table ---------- */
+.cmpWrap { overflow-x: auto; border: 1px solid var(--hair); border-radius: var(--r-lg); }
+.cmp { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 660px; }
+.cmp th, .cmp td { padding: 15px 18px; text-align: left; border-bottom: 1px solid var(--hair); }
+.cmp thead th { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--mute); font-weight: 600; font-family: var(--font-geist-mono), monospace; }
+.cmp tbody tr:last-child td { border-bottom: 0; }
+.cmp .feat { color: var(--ink); font-weight: 500; }
+.cmp td.val { text-align: center; color: var(--mute); }
+.cmp th.center { text-align: center; }
+.cmpUsHead { color: var(--brand); font-weight: 800; font-family: var(--font-geist-sans), sans-serif; font-size: 14px; letter-spacing: -.01em; }
+.cmp .usCol { background: color-mix(in srgb, var(--brand) 9%, transparent); }
+.yes { color: var(--pop-green); font-weight: 700; }
+.no { color: var(--faint); }
+
+/* ---------- faq ---------- */
+.faq { display: grid; gap: 10px; max-width: 760px; }
+.faqItem { border: 1px solid var(--hair); border-radius: var(--r-md); background: var(--panel); overflow: hidden; }
+.faqItem summary { list-style: none; cursor: pointer; padding: 18px 20px; font-weight: 600; font-size: 15px; color: var(--ink); display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.faqItem summary::-webkit-details-marker { display: none; }
+.faqItem summary::after { content: "+"; color: var(--brand); font-size: 22px; font-weight: 400; line-height: 1; }
+.faqItem[open] summary::after { content: "\2212"; }
+.faqItem summary:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; border-radius: var(--r-md); }
+.faqAns { margin: 0; padding: 0 20px 18px; color: var(--mute); font-size: 14px; line-height: 1.6; }
+
 @media (prefers-reduced-motion: reduce) {
   .mqRow { animation: none; }
   .gcard:hover { transform: none; }

@@ -193,7 +193,7 @@ export function PreviewPlayer({
       )}
 
       {/* Left: player */}
-      <div ref={playerContainerRef} className="flex-1 min-w-0 overflow-hidden border border-[#14120f1f] bg-black flex items-center justify-center">
+      <div ref={playerContainerRef} className="flex-1 min-w-0 overflow-hidden rounded-2xl border border-[var(--hair)] bg-black flex items-center justify-center">
         {playerSize.width > 0 && (
           <Player
             component={CaptionRoot as unknown as React.FC<Record<string, unknown>>}
@@ -213,11 +213,11 @@ export function PreviewPlayer({
       {/* Right: info + controls — pinned to the viewport independently of
           the player's height, only the middle (job info + style picker)
           scrolls, Export stays visible without scrolling the page. */}
-      <div className="w-full lg:w-80 shrink-0 border border-[#14120f1f] bg-white flex flex-col lg:sticky lg:top-6 lg:max-h-[calc(100vh-6rem)]">
+      <div className="w-full lg:w-80 shrink-0 rounded-2xl border border-[var(--hair)] bg-[var(--panel)] flex flex-col lg:sticky lg:top-6 lg:max-h-[calc(100vh-6rem)]">
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
         {/* Job info */}
         <div className="space-y-1.5">
-          <h1 className="text-sm font-bold text-[#1a1917] truncate">{filename}</h1>
+          <h1 className="text-sm font-bold text-[var(--ink)] truncate">{filename}</h1>
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: statusColor }} />
             <span className="text-sm" style={{ color: statusColor }}>{statusLabel}</span>
@@ -226,30 +226,30 @@ export function PreviewPlayer({
 
         {transcriptSource && (
           <div className="flex items-center justify-between text-sm">
-            <span className="text-[#a39e96]">Transcript</span>
-            <span className="text-[#6b6862] text-xs">
+            <span className="text-[var(--mute)]">Transcript</span>
+            <span className="text-[var(--ink-dim)] text-xs">
               {transcriptSource === 'user' ? 'Uploaded SRT/VTT' : 'AI · Deepgram'}
             </span>
           </div>
         )}
         {createdAt && (
           <div className="flex items-center justify-between text-sm">
-            <span className="text-[#a39e96]">Created</span>
-            <span className="text-[#6b6862] text-xs">{createdAt}</span>
+            <span className="text-[var(--mute)]">Created</span>
+            <span className="text-[var(--ink-dim)] text-xs">{createdAt}</span>
           </div>
         )}
 
-        <div className="border-t border-[#14120f1f]" />
+        <div className="border-t border-[var(--hair)]" />
 
         {view === 'styles' && (
           /* ── Style selection (categorized) ── */
           <>
             <div className="flex items-center justify-between">
-              <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96]">Caption Style</p>
+              <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)]">Caption Style</p>
               <button
                 type="button"
                 onClick={() => setView('appearance')}
-                className="flex items-center gap-1.5 text-xs font-medium text-[#1a1917] border border-[#14120f1f] px-2.5 py-1 hover:border-[#c1361f] hover:text-[#c1361f] transition-colors"
+                className="flex items-center gap-1.5 text-xs font-medium text-[var(--ink)] rounded-lg border border-[var(--hair)] px-2.5 py-1 hover:border-[var(--brand)] hover:text-[var(--brand)] transition-colors"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
@@ -260,7 +260,7 @@ export function PreviewPlayer({
             <div className="space-y-4 pr-0.5">
               {CATEGORY_ORDER.map((cat) => (
                 <div key={cat} className="space-y-2">
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-[#1a1917]">{cat}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--ink)]">{cat}</p>
                   <div className="grid grid-cols-2 gap-2">
                     {STYLES.filter((s) => s.category === cat).map((s) => {
                       const active = style === s.id
@@ -271,20 +271,20 @@ export function PreviewPlayer({
                           onClick={() => setStyle(s.id)}
                           className={[
                             'relative text-left transition-all overflow-hidden rounded-xl',
-                            active ? 'ring-2 ring-inset ring-[#c1361f]' : 'ring-1 ring-inset ring-[#14120f1f] hover:ring-[#14120f3d]',
+                            active ? 'ring-2 ring-inset ring-[var(--brand)]' : 'ring-1 ring-inset ring-[var(--hair)] hover:ring-[var(--faint)]',
                           ].join(' ')}
                         >
                           <CaptionStylePreview id={s.id} />
                           {active && (
-                            <span className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-[#c1361f] flex items-center justify-center">
+                            <span className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-[var(--brand)] flex items-center justify-center">
                               <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                               </svg>
                             </span>
                           )}
-                          <div className="px-2.5 py-2 bg-white">
-                            <p className="text-xs text-[#1a1917] font-medium">{s.label}</p>
-                            <p className="text-[10px] text-[#a39e96] leading-tight mt-0.5">{s.desc}</p>
+                          <div className="px-2.5 py-2 bg-[var(--panel)]">
+                            <p className="text-xs text-[var(--ink)] font-medium">{s.label}</p>
+                            <p className="text-[10px] text-[var(--mute)] leading-tight mt-0.5">{s.desc}</p>
                           </div>
                         </button>
                       )
@@ -300,11 +300,11 @@ export function PreviewPlayer({
           /* ── Appearance (per-style) ── */
           <>
             <div className="flex items-center gap-2">
-              <button type="button" onClick={() => setView('styles')} className="flex items-center gap-1 text-xs text-[#6b6862] hover:text-[#1a1917] transition-colors">
+              <button type="button" onClick={() => setView('styles')} className="flex items-center gap-1 text-xs text-[var(--ink-dim)] hover:text-[var(--ink)] transition-colors">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
                 Back
               </button>
-              <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96]">
+              <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)]">
                 {STYLES.find(s => s.id === style)?.label}
               </p>
             </div>
@@ -322,8 +322,8 @@ export function PreviewPlayer({
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-xs text-[#a39e96]">Font</p>
-                <button type="button" onClick={() => setView('fonts')} className="flex items-center gap-0.5 text-[10px] text-[#a39e96] hover:text-[#6b6862] transition-colors">
+                <p className="text-xs text-[var(--mute)]">Font</p>
+                <button type="button" onClick={() => setView('fonts')} className="flex items-center gap-0.5 text-[10px] text-[var(--mute)] hover:text-[var(--ink-dim)] transition-colors">
                   More
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
                 </button>
@@ -335,8 +335,8 @@ export function PreviewPlayer({
                     type="button"
                     onClick={() => update('fontFamily', f.value)}
                     className={[
-                      'px-2.5 py-1 border text-xs transition-all',
-                      cur.fontFamily === f.value ? 'border-[#c1361f] bg-[#c1361f08] text-[#1a1917]' : 'border-[#14120f1f] text-[#6b6862] hover:border-[#14120f3d] hover:text-[#1a1917]',
+                      'px-2.5 py-1 rounded-lg border text-xs transition-all',
+                      cur.fontFamily === f.value ? 'border-[var(--brand)] bg-[var(--brand-soft)] text-[var(--ink)]' : 'border-[var(--hair)] text-[var(--ink-dim)] hover:border-[var(--faint)] hover:text-[var(--ink)]',
                     ].join(' ')}
                     style={{ fontFamily: f.value }}
                   >
@@ -348,14 +348,14 @@ export function PreviewPlayer({
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-xs text-[#a39e96]">Size</p>
-                <p className="text-xs text-[#6b6862] tabular-nums">{cur.fontSizeMultiplier.toFixed(2)}×</p>
+                <p className="text-xs text-[var(--mute)]">Size</p>
+                <p className="text-xs text-[var(--ink-dim)] tabular-nums">{cur.fontSizeMultiplier.toFixed(2)}×</p>
               </div>
               <input type="range" min={0.5} max={2.0} step={0.05} value={cur.fontSizeMultiplier}
                 onChange={(e) => update('fontSizeMultiplier', parseFloat(e.target.value))}
-                className="w-full accent-[#c1361f] cursor-pointer"
+                className="w-full accent-[var(--brand)] cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] text-[#a39e96]"><span>Small</span><span>Large</span></div>
+              <div className="flex justify-between text-[10px] text-[var(--mute)]"><span>Small</span><span>Large</span></div>
             </div>
           </>
         )}
@@ -364,11 +364,11 @@ export function PreviewPlayer({
           /* ── Font browser (full panel) ── */
           <>
             <div className="flex items-center gap-2">
-              <button type="button" onClick={() => setView('appearance')} className="flex items-center gap-1 text-xs text-[#6b6862] hover:text-[#1a1917] transition-colors">
+              <button type="button" onClick={() => setView('appearance')} className="flex items-center gap-1 text-xs text-[var(--ink-dim)] hover:text-[var(--ink)] transition-colors">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
                 Back
               </button>
-              <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96]">Font Family</p>
+              <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)]">Font Family</p>
             </div>
             <div className="overflow-y-auto max-h-64 pr-0.5">
               <div className="grid grid-cols-2 gap-2">
@@ -378,12 +378,12 @@ export function PreviewPlayer({
                     type="button"
                     onClick={() => update('fontFamily', f.value)}
                     className={[
-                      'border p-3 text-left transition-all space-y-1',
-                      cur.fontFamily === f.value ? 'border-[#c1361f] bg-[#c1361f08]' : 'border-[#14120f1f] hover:border-[#14120f3d]',
+                      'rounded-lg border p-3 text-left transition-all space-y-1',
+                      cur.fontFamily === f.value ? 'border-[var(--brand)] bg-[var(--brand-soft)]' : 'border-[var(--hair)] hover:border-[var(--faint)]',
                     ].join(' ')}
                   >
-                    <p className="text-lg leading-none text-[#1a1917]" style={{ fontFamily: f.value }}>Aa</p>
-                    <p className="text-[10px] text-[#a39e96]">{f.label}</p>
+                    <p className="text-lg leading-none text-[var(--ink)]" style={{ fontFamily: f.value }}>Aa</p>
+                    <p className="text-[10px] text-[var(--mute)]">{f.label}</p>
                   </button>
                 ))}
               </div>
@@ -392,21 +392,21 @@ export function PreviewPlayer({
         )}
       </div>
 
-      <div className="shrink-0 border-t border-[#14120f1f] p-5 pt-4 space-y-3">
+      <div className="shrink-0 border-t border-[var(--hair)] p-5 pt-4 space-y-3">
         {!isPaid && (
-          <p className="text-xs text-[#a39e96]">
+          <p className="text-xs text-[var(--mute)]">
             {willWatermark
               ? `${rendersRemaining} free render${rendersRemaining === 1 ? '' : 's'} left this month · watermarked`
               : 'Free limit reached this month'}
           </p>
         )}
 
-        {error && <p className="text-xs text-[#c1361f]">{error}</p>}
+        {error && <p className="text-xs text-[var(--brand)]">{error}</p>}
         <button
           type="button"
           onClick={handleExportClick}
           disabled={exporting}
-          className="w-full bg-[#c1361f] text-white text-sm font-bold py-2.5 hover:brightness-[1.08] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full rounded-lg bg-[var(--brand)] text-white text-sm font-bold py-2.5 hover:brightness-[1.08] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {exporting
             ? 'Starting export…'

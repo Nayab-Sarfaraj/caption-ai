@@ -42,6 +42,29 @@ const PROOF = [
   { av: 'SL', color: 'var(--pop-cyan)', name: 'Sam L.', handle: '@sledits · 54K', quote: 'Hormozi style that actually looks like Hormozi style. The stroke and pop are dead on.' },
 ]
 
+const COMPETITORS = ['veed.io', 'captions.ai', 'submagic']
+const COMPARE: { feature: string; us: boolean; them: [boolean, boolean, boolean] }[] = [
+  { feature: 'No credit system', us: true, them: [false, false, false] },
+  { feature: 'Preview = final render, pixel-for-pixel', us: true, them: [false, false, false] },
+  { feature: 'Real editable caption components', us: true, them: [false, false, false] },
+  { feature: 'No watermark on paid plans', us: true, them: [true, true, true] },
+  { feature: 'Flat price, no per-export fee', us: true, them: [false, false, false] },
+  { feature: 'Upload limits shown up front', us: true, them: [false, false, false] },
+]
+
+const FAQS = [
+  { q: 'Do I need credits or a balance?', a: 'No. One flat price, unlimited renders within the upload limits — no per-export fee, no meter to watch.' },
+  { q: 'Will the export match the preview?', a: 'Exactly. The style you preview is the same Remotion composition that renders your final video — no surprise output.' },
+  { q: 'What formats and limits are supported?', a: 'MP4 or MOV, up to 500MB and 10 minutes per video.' },
+  { q: 'Can I bring my own captions?', a: 'Yes. Drop an SRT or VTT and Instacap skips AI transcription, going straight to styling.' },
+  { q: 'Is there a free tier?', a: 'Yes — 3 watermarked renders a month, no card required. Upgrade any time for unlimited, watermark-free exports.' },
+  { q: 'How long are my files kept?', a: 'Uploaded source and rendered output auto-delete 7 days after creation. Transcripts are kept longer so you can re-render.' },
+]
+
+function YesNo({ on }: { on: boolean }) {
+  return on ? <span className={s.yes}>✓</span> : <span className={s.no}>—</span>
+}
+
 function Check() {
   return (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={2.2} aria-hidden="true">
@@ -219,6 +242,37 @@ export default async function RootPage() {
         </div>
       </section>
 
+      {/* Comparison */}
+      <section className={s.blk}>
+        <div className={s.wrap}>
+          <div className={s.secHead}>
+            <span className={s.eyebrow}>How it compares</span>
+            <h2>Same job. Fewer surprises.</h2>
+          </div>
+          <div className={s.cmpWrap}>
+            <table className={s.cmp}>
+              <thead>
+                <tr>
+                  <th aria-hidden="true" />
+                  <th className={`${s.center} ${s.cmpUsHead} ${s.usCol}`}>Instacap</th>
+                  {COMPETITORS.map((c) => <th key={c} className={s.center}>{c}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {COMPARE.map((row) => (
+                  <tr key={row.feature}>
+                    <td className={s.feat}>{row.feature}</td>
+                    <td className={`${s.val} ${s.usCol}`}><YesNo on={row.us} /></td>
+                    {row.them.map((t, i) => <td key={i} className={s.val}><YesNo on={t} /></td>)}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className={s.slotNote}>{'// Competitor capabilities as of 2026 — verify before launch'}</p>
+        </div>
+      </section>
+
       {/* How it works */}
       <section id="how" className={s.blk}>
         <div className={s.wrap}>
@@ -303,6 +357,24 @@ export default async function RootPage() {
                 </div>
               )
             })}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className={`${s.blk} ${s.alt}`}>
+        <div className={s.wrap}>
+          <div className={s.secHead}>
+            <span className={s.eyebrow}>FAQ</span>
+            <h2>Questions, answered.</h2>
+          </div>
+          <div className={s.faq}>
+            {FAQS.map((f) => (
+              <details key={f.q} className={s.faqItem}>
+                <summary>{f.q}</summary>
+                <p className={s.faqAns}>{f.a}</p>
+              </details>
+            ))}
           </div>
         </div>
       </section>

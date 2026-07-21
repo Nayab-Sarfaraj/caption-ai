@@ -246,8 +246,10 @@ export function UploadDropzone({ isPaid, rendersRemaining }: { isPaid: boolean; 
       <div
         {...videoDropzone.getRootProps()}
         className={[
-          'border rounded-2xl min-h-[200px] flex items-center justify-center text-center cursor-pointer transition-colors duration-150 bg-[var(--panel)]',
-          videoDropzone.isDragActive ? 'border-[var(--brand)] bg-[var(--brand-soft)]' : 'border-[var(--hair)] hover:border-[var(--faint)]',
+          'border rounded-2xl min-h-[200px] flex items-center justify-center text-center cursor-pointer transition-all duration-150 bg-[var(--panel)]',
+          videoDropzone.isDragActive
+            ? 'border-[var(--brand)] bg-[var(--brand-soft)] shadow-[0_0_50px_-12px_var(--brand)] scale-[1.008]'
+            : 'border-[var(--hair)] hover:border-[var(--faint)]',
           isUploading ? 'pointer-events-none opacity-50' : '',
         ].join(' ')}
       >
@@ -274,15 +276,34 @@ export function UploadDropzone({ isPaid, rendersRemaining }: { isPaid: boolean; 
             </div>
           )
         ) : videoFile ? (
-          <div className="space-y-1.5 py-8">
-            <p className="text-sm text-[var(--ink)]">{videoFile.name}</p>
-            <p className="text-xs text-[var(--ink-dim)]">
-              {(videoFile.size / 1024 / 1024).toFixed(1)} MB · {videoFile.type === 'video/mp4' ? 'MP4' : 'MOV'}
-            </p>
+          <div className="flex items-center gap-3 w-full px-5 py-6 text-left">
+            <div className="w-11 h-11 rounded-lg bg-[var(--brand-soft)] text-[var(--brand)] flex items-center justify-center shrink-0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+                <rect x="3" y="5" width="14" height="14" rx="3" />
+                <path d="M17 10l4-2v8l-4-2z" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm text-[var(--ink)] truncate font-medium">{videoFile.name}</p>
+              <p className="text-xs text-[var(--ink-dim)] mt-0.5">
+                {(videoFile.size / 1024 / 1024).toFixed(1)} MB · {videoFile.type === 'video/mp4' ? 'MP4' : 'MOV'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setVideoFile(null) }}
+              disabled={isUploading}
+              aria-label="Remove video"
+              className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[var(--mute)] hover:text-[var(--ink)] hover:bg-[var(--panel-2)] transition-colors disabled:opacity-40"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
           </div>
         ) : (
           <div className="py-8">
-            <div className="w-9 h-9 mx-auto mb-3.5 border border-[var(--hair)] flex items-center justify-center text-[var(--ink-dim)]">
+            <div className="w-9 h-9 mx-auto mb-3.5 rounded-lg border border-[var(--hair)] flex items-center justify-center text-[var(--ink-dim)]">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
               </svg>
