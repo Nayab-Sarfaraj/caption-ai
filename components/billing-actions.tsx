@@ -59,7 +59,7 @@ export function BillingActions({ status }: { status: SubscriptionStatus }) {
 
   return (
     <div className="space-y-3">
-      {error && <p className="text-xs text-[#c1361f]">{error}</p>}
+      {error && <p className="text-xs text-[var(--brand)]">{error}</p>}
 
       {status === 'active' ? (
         <div className="flex flex-wrap gap-2">
@@ -67,7 +67,7 @@ export function BillingActions({ status }: { status: SubscriptionStatus }) {
             type="button"
             onClick={handlePortal}
             disabled={loading !== null}
-            className="text-sm font-medium text-[#1a1917] border border-[#14120f1f] px-4 py-2 hover:border-[#c1361f] hover:text-[#c1361f] transition-colors disabled:opacity-50"
+            className="text-sm font-medium text-[var(--ink)] border border-[var(--hair)] rounded-lg px-4 py-2 hover:border-[var(--brand)] hover:text-[var(--brand)] transition-colors disabled:opacity-50"
           >
             {loading === 'portal' ? 'Opening…' : 'Manage payment & invoices'}
           </button>
@@ -75,7 +75,7 @@ export function BillingActions({ status }: { status: SubscriptionStatus }) {
             type="button"
             onClick={handleCancel}
             disabled={loading !== null}
-            className="text-sm font-medium text-[#1a1917] border border-[#14120f1f] px-4 py-2 hover:border-[#c1361f] hover:text-[#c1361f] transition-colors disabled:opacity-50"
+            className="text-sm font-medium text-[var(--ink)] border border-[var(--hair)] rounded-lg px-4 py-2 hover:border-[var(--brand)] hover:text-[var(--brand)] transition-colors disabled:opacity-50"
           >
             {loading === 'cancel' ? 'Cancelling…' : 'Cancel subscription'}
           </button>
@@ -88,7 +88,7 @@ export function BillingActions({ status }: { status: SubscriptionStatus }) {
               type="button"
               onClick={() => handleSubscribe(t.id)}
               disabled={loading !== null}
-              className="flex flex-col items-center gap-0.5 bg-[#c1361f] text-white text-sm font-bold px-3 py-2.5 hover:brightness-[1.08] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex flex-col items-center gap-0.5 bg-[var(--brand)] rounded-lg text-white text-sm font-bold px-3 py-2.5 hover:brightness-[1.08] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading === t.id ? (
                 'Redirecting…'
@@ -103,7 +103,7 @@ export function BillingActions({ status }: { status: SubscriptionStatus }) {
         </div>
       )}
       {status === 'past_due' && (
-        <p className="text-xs text-[#c1361f]">Last payment failed — pick a plan below to resubscribe.</p>
+        <p className="text-xs text-[var(--brand)]">Last payment failed — pick a plan below to resubscribe.</p>
       )}
     </div>
   )

@@ -78,8 +78,8 @@ export function BrandKitForm({ initial }: BrandKitFormProps) {
     <div className="space-y-8 max-w-2xl">
       {/* Default caption style */}
       <section className="space-y-3">
-        <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96]">{'// Default Style'}</p>
-        <p className="text-xs text-[#6b6862]">
+        <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)]">{'// Default Style'}</p>
+        <p className="text-xs text-[var(--ink-dim)]">
           Pre-selected every time you export a new video. You can still change it per-export.
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -89,8 +89,8 @@ export function BrandKitForm({ initial }: BrandKitFormProps) {
             className={[
               'flex items-center justify-center border text-xs text-center px-3 py-6 transition-colors rounded-xl',
               defaultCompositionId === null
-                ? 'border-[#c1361f] bg-[#c1361f08] text-[#1a1917]'
-                : 'border-[#14120f1f] text-[#a39e96] hover:border-[#14120f3d] hover:text-[#1a1917]',
+                ? 'border-[var(--brand)] bg-[var(--brand-soft)] text-[var(--ink)]'
+                : 'border-[var(--hair)] text-[var(--mute)] hover:border-[var(--faint)] hover:text-[var(--ink)]',
             ].join(' ')}
           >
             No default
@@ -106,12 +106,12 @@ export function BrandKitForm({ initial }: BrandKitFormProps) {
                 onClick={() => setDefaultCompositionId(s.id)}
                 className={[
                   'relative text-left transition-all overflow-hidden rounded-xl',
-                  active ? 'ring-2 ring-inset ring-[#c1361f]' : 'ring-1 ring-inset ring-[#14120f1f] hover:ring-[#14120f3d]',
+                  active ? 'ring-2 ring-inset ring-[var(--brand)]' : 'ring-1 ring-inset ring-[var(--hair)] hover:ring-[var(--faint)]',
                 ].join(' ')}
               >
                 <CaptionStylePreview id={s.id} />
-                <div className="px-2.5 py-2 bg-white">
-                  <p className="text-xs text-[#1a1917] font-medium">{s.label}</p>
+                <div className="px-2.5 py-2 bg-[var(--panel)]">
+                  <p className="text-xs text-[var(--ink)] font-medium">{s.label}</p>
                 </div>
               </button>
             )
@@ -119,21 +119,21 @@ export function BrandKitForm({ initial }: BrandKitFormProps) {
         </div>
       </section>
 
-      <div className="border-t border-[#14120f1f]" />
+      <div className="border-t border-[var(--hair)]" />
 
       {/* Colors */}
       <section className="space-y-4">
-        <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96]">{'// Colors'}</p>
+        <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)]">{'// Colors'}</p>
         <ColorSwatch label="Highlight" value={activeColor} onChange={setActiveColor} presets={HIGHLIGHT_PRESETS} />
         <ColorSwatch label="Text" value={textColor} onChange={setTextColor} presets={TEXT_PRESETS} />
         <ColorSwatch label="Accent (Box Highlight only)" value={accentColor} onChange={setAccentColor} presets={HIGHLIGHT_PRESETS} />
       </section>
 
-      <div className="border-t border-[#14120f1f]" />
+      <div className="border-t border-[var(--hair)]" />
 
       {/* Font */}
       <section className="space-y-3">
-        <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96]">{'// Font'}</p>
+        <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)]">{'// Font'}</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {FONTS.map((f) => (
             <button
@@ -141,27 +141,27 @@ export function BrandKitForm({ initial }: BrandKitFormProps) {
               type="button"
               onClick={() => setFontFamily(f.value)}
               className={[
-                'border p-3 text-left transition-all space-y-1',
-                fontFamily === f.value ? 'border-[#c1361f] bg-[#c1361f08]' : 'border-[#14120f1f] hover:border-[#14120f3d]',
+                'border rounded-lg p-3 text-left transition-all space-y-1',
+                fontFamily === f.value ? 'border-[var(--brand)] bg-[var(--brand-soft)]' : 'border-[var(--hair)] hover:border-[var(--faint)]',
               ].join(' ')}
             >
-              <p className="text-lg leading-none text-[#1a1917]" style={{ fontFamily: f.value }}>Aa</p>
-              <p className="text-[10px] text-[#a39e96]">{f.label}</p>
+              <p className="text-lg leading-none text-[var(--ink)]" style={{ fontFamily: f.value }}>Aa</p>
+              <p className="text-[10px] text-[var(--mute)]">{f.label}</p>
             </button>
           ))}
         </div>
       </section>
 
-      <div className="border-t border-[#14120f1f]" />
+      <div className="border-t border-[var(--hair)]" />
 
-      {error && <p className="text-xs text-[#c1361f]">{error}</p>}
+      {error && <p className="text-xs text-[var(--brand)]">{error}</p>}
 
       <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="bg-[#c1361f] text-white text-sm font-bold px-5 py-2.5 hover:brightness-[1.08] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-[var(--brand)] text-white text-sm font-bold rounded-lg px-5 py-2.5 hover:brightness-[1.08] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? 'Saving…' : saved ? 'Saved' : 'Save brand kit'}
         </button>
@@ -169,7 +169,7 @@ export function BrandKitForm({ initial }: BrandKitFormProps) {
           type="button"
           onClick={handleReset}
           disabled={saving}
-          className="text-sm text-[#6b6862] hover:text-[#1a1917] transition-colors disabled:opacity-50"
+          className="text-sm text-[var(--ink-dim)] hover:text-[var(--ink)] transition-colors disabled:opacity-50"
         >
           Reset to defaults
         </button>

@@ -18,7 +18,7 @@ export default async function DashboardLayout({
   const user = await findByClerkId(userId)
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#faf9f6] font-[family-name:var(--font-cc)]">
+    <div className="flex h-screen overflow-hidden bg-[var(--stage)] text-[var(--ink)] font-[family-name:var(--font-geist-sans)]">
       {user && <PostHogIdentify userId={userId} email={user.email} />}
       {/* Desktop sidebar */}
       <div className="hidden lg:flex">

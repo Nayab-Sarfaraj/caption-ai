@@ -17,19 +17,19 @@ export function MobileHeader({ subscriptionStatus = 'none' }: { subscriptionStat
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <header className="border-b border-[#14120f1f] bg-white font-[family-name:var(--font-cc)]">
+    <header className="border-b border-[var(--hair)] bg-[var(--panel)] font-[family-name:var(--font-cc)]">
       <div className="h-14 flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
             aria-label="Open menu"
-            className="w-7 h-7 flex items-center justify-center text-[#1a1917] shrink-0"
+            className="w-7 h-7 flex items-center justify-center text-[var(--ink)] shrink-0"
           >
             <Menu className="w-[18px] h-[18px]" />
           </button>
           <Link href="/dashboard" className="flex items-center gap-2">
-            <span className="text-[13px] font-bold tracking-[0.08em] uppercase text-[#1a1917]"><span className="text-[#c1361f]">Insta</span>cap</span>
+            <span className="text-[13px] font-bold tracking-[0.08em] uppercase text-[var(--ink)]"><span className="text-[var(--brand)]">Insta</span>cap</span>
           </Link>
         </div>
 
@@ -40,7 +40,7 @@ export function MobileHeader({ subscriptionStatus = 'none' }: { subscriptionStat
           {subscriptionStatus === 'active' ? (
             <Link
               href="/dashboard/billing"
-              className="text-[10px] uppercase tracking-wide text-[#a39e96] hover:text-[#c1361f] border border-[#14120f1f] px-1.5 py-0.5 transition-colors"
+              className="text-[10px] uppercase tracking-wide text-[var(--mute)] hover:text-[var(--brand)] border border-[var(--hair)] rounded-full px-1.5 py-0.5 transition-colors"
             >
               Pro plan
             </Link>
@@ -48,7 +48,7 @@ export function MobileHeader({ subscriptionStatus = 'none' }: { subscriptionStat
             <button
               type="button"
               onClick={() => setShowPaywall(true)}
-              className="flex items-center gap-1 bg-[#c1361f] text-white text-xs font-bold px-2.5 py-1.5 hover:brightness-[1.08] transition-all"
+              className="flex items-center gap-1 bg-[var(--brand)] text-white text-xs font-bold rounded-lg px-2.5 py-1.5 hover:brightness-[1.08] transition-all"
             >
               ⚡ Upgrade
             </button>
@@ -71,17 +71,17 @@ export function MobileHeader({ subscriptionStatus = 'none' }: { subscriptionStat
       {/* Drawer — slides in from the left, matching the desktop Sidebar's position. */}
       <nav
         className={[
-          'fixed inset-y-0 left-0 z-50 w-[240px] bg-white border-r border-[#14120f1f] flex flex-col transition-transform duration-200',
+          'fixed inset-y-0 left-0 z-50 w-[240px] bg-[var(--panel)] border-r border-[var(--hair)] rounded-r-2xl flex flex-col transition-transform duration-200',
           menuOpen ? 'translate-x-0' : '-translate-x-full',
         ].join(' ')}
       >
-        <div className="h-14 flex items-center justify-between px-4 border-b border-[#14120f1f]">
-          <span className="text-[13px] font-bold tracking-[0.08em] uppercase text-[#1a1917]"><span className="text-[#c1361f]">Insta</span>cap</span>
+        <div className="h-14 flex items-center justify-between px-4 border-b border-[var(--hair)]">
+          <span className="text-[13px] font-bold tracking-[0.08em] uppercase text-[var(--ink)]"><span className="text-[var(--brand)]">Insta</span>cap</span>
           <button
             type="button"
             onClick={() => setMenuOpen(false)}
             aria-label="Close menu"
-            className="w-7 h-7 flex items-center justify-center text-[#1a1917] shrink-0"
+            className="w-7 h-7 flex items-center justify-center text-[var(--ink)] shrink-0"
           >
             <X className="w-[18px] h-[18px]" />
           </button>
@@ -98,11 +98,11 @@ export function MobileHeader({ subscriptionStatus = 'none' }: { subscriptionStat
                 className={[
                   'flex items-center gap-2.5 px-2 py-2.5 text-xs tracking-wide border-l-2 transition-colors',
                   active
-                    ? 'text-[#1a1917] border-[#c1361f] bg-[#c1361f08]'
-                    : 'text-[#a39e96] border-transparent hover:text-[#1a1917]',
+                    ? 'text-[var(--ink)] border-[var(--brand)] bg-[var(--brand-soft)]'
+                    : 'text-[var(--mute)] border-transparent hover:text-[var(--ink)]',
                 ].join(' ')}
               >
-                <span className={['text-[10px]', active ? 'text-[#c1361f]' : 'text-[#c7c2b8]'].join(' ')}>
+                <span className={['text-[10px]', active ? 'text-[var(--brand)]' : 'text-[var(--faint)]'].join(' ')}>
                   {index}
                 </span>
                 {label}
@@ -111,23 +111,23 @@ export function MobileHeader({ subscriptionStatus = 'none' }: { subscriptionStat
           })}
         </div>
 
-        <div className="border-t border-[#14120f1f] px-2 py-2">
+        <div className="border-t border-[var(--hair)] px-2 py-2">
           <button
             type="button"
             onClick={() => { setMenuOpen(false); setShowSupport(true) }}
-            className="flex items-center gap-1.5 px-2 py-2 text-xs tracking-wide text-[#a39e96] hover:text-[#c1361f] transition-colors w-full"
+            className="flex items-center gap-1.5 px-2 py-2 text-xs tracking-wide text-[var(--mute)] hover:text-[var(--brand)] transition-colors w-full"
           >
             <LifeBuoy className="w-[14px] h-[14px] shrink-0" />
             Contact support
           </button>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-wide text-[#a39e96] px-2">
+            <span className="text-[10px] uppercase tracking-wide text-[var(--mute)] px-2">
               {PLAN_BADGE[subscriptionStatus]}
             </span>
             <SignOutButton redirectUrl="/sign-in">
               <button
                 type="button"
-                className="flex items-center gap-1.5 px-2 py-2 text-xs tracking-wide text-[#a39e96] hover:text-[#c1361f] transition-colors"
+                className="flex items-center gap-1.5 px-2 py-2 text-xs tracking-wide text-[var(--mute)] hover:text-[var(--brand)] transition-colors"
               >
                 <LogOut className="w-[14px] h-[14px] shrink-0" />
                 Log out
@@ -135,9 +135,9 @@ export function MobileHeader({ subscriptionStatus = 'none' }: { subscriptionStat
             </SignOutButton>
           </div>
           <div className="flex items-center gap-2 px-2 pt-1">
-            <Link href="/terms" onClick={() => setMenuOpen(false)} className="text-[10px] text-[#a39e96] hover:text-[#c1361f] transition-colors">Terms</Link>
-            <span className="text-[10px] text-[#c7c2b8]">·</span>
-            <Link href="/privacy" onClick={() => setMenuOpen(false)} className="text-[10px] text-[#a39e96] hover:text-[#c1361f] transition-colors">Privacy</Link>
+            <Link href="/terms" onClick={() => setMenuOpen(false)} className="text-[10px] text-[var(--mute)] hover:text-[var(--brand)] transition-colors">Terms</Link>
+            <span className="text-[10px] text-[var(--faint)]">·</span>
+            <Link href="/privacy" onClick={() => setMenuOpen(false)} className="text-[10px] text-[var(--mute)] hover:text-[var(--brand)] transition-colors">Privacy</Link>
           </div>
         </div>
       </nav>

@@ -1,0 +1,740 @@
+<title>Instacap — Redesign Direction</title>
+<style>
+  /* ============ TOKENS ============ */
+  :root {
+    --stage: #0b0b0a;          /* cinematic near-black, warm bias */
+    --panel: #141311;          /* raised surface */
+    --panel-2: #1c1a17;        /* raised surface, hover/nested */
+    --hair: #2a2723;           /* hairline on dark */
+    --ink: #f7f5f0;            /* warm off-white */
+    --ink-dim: #cbc5ba;
+    --muted: #948d80;          /* warm grey */
+    --faint: #6a655c;
+    --brand: #e0431f;          /* rust, brightened for dark ground */
+    --brand-ink: #ffffff;
+    --brand-soft: #e0431f1f;
+    /* caption pop colors — from the real remotion styles */
+    --pop-yellow: #FACC15;
+    --pop-green:  #34D058;
+    --pop-cyan:   #38BDF8;
+    --pop-violet: #7C3AED;
+    --pop-lime:   #A3E635;
+    --shadow: 0 24px 60px -20px rgba(0,0,0,.7);
+    --r-sm: 8px; --r-md: 14px; --r-lg: 22px; --r-xl: 30px;
+    --edge: color-mix(in srgb, var(--ink) 8%, transparent);
+    --maxw: 1120px;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    /* page ground — theme aware */
+    --bg: #0b0b0a;
+    --bg-2: #100f0d;
+    --surface: var(--panel);
+    --surface-ink: var(--ink);
+    --surface-muted: var(--muted);
+    --surface-hair: var(--hair);
+    --nav-bg: rgba(11,11,10,.72);
+  }
+  /* Light theme: warm paper for content sections; the video "screen" stays dark in both. */
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f6f3ec;
+      --bg-2: #efeae0;
+      --surface: #ffffff;
+      --surface-ink: #1a1917;
+      --surface-muted: #6b6862;
+      --surface-hair: #1a19171f;
+      --edge: #1a191712;
+      --nav-bg: rgba(246,243,236,.78);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b0b0a; --bg-2: #100f0d; --surface: var(--panel);
+    --surface-ink: var(--ink); --surface-muted: var(--muted); --surface-hair: var(--hair);
+    --edge: color-mix(in srgb, var(--ink) 8%, transparent);
+    --nav-bg: rgba(11,11,10,.72);
+  }
+  :root[data-theme="light"] {
+    --bg: #f6f3ec; --bg-2: #efeae0; --surface: #ffffff;
+    --surface-ink: #1a1917; --surface-muted: #6b6862; --surface-hair: #1a19171f;
+    --edge: #1a191712; --nav-bg: rgba(246,243,236,.78);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--surface-ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+  a { color: inherit; text-decoration: none; }
+  ::selection { background: var(--brand); color: #fff; }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--surface-muted);
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .eyebrow::before { content: ""; width: 14px; height: 1px; background: var(--brand); display: inline-block; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    font-weight: 700; font-size: 15px; letter-spacing: -.01em;
+    padding: 13px 22px; border-radius: 999px; cursor: pointer;
+    border: 1px solid transparent; transition: transform .15s ease, filter .15s ease, background .15s ease, border-color .15s ease;
+  }
+  .btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+  .btn-primary {
+    background: var(--brand); color: var(--brand-ink);
+    box-shadow: 0 10px 30px -8px color-mix(in srgb, var(--brand) 60%, transparent);
+  }
+  .btn-primary:hover { transform: translateY(-1px); filter: brightness(1.06); }
+  .btn-ghost { background: transparent; color: var(--surface-ink); border-color: var(--edge); }
+  .btn-ghost:hover { border-color: color-mix(in srgb, var(--surface-ink) 30%, transparent); }
+
+  /* ============ NAV ============ */
+  header.nav {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: saturate(1.4) blur(14px);
+    background: var(--nav-bg);
+    border-bottom: 1px solid var(--edge);
+  }
+  .nav-in { height: 64px; display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-weight: 800; letter-spacing: -.02em; font-size: 18px; }
+  .logo b { color: var(--brand); }
+  .nav-links { display: none; gap: 28px; }
+  .nav-links a { font-size: 14px; color: var(--surface-muted); transition: color .15s; }
+  .nav-links a:hover { color: var(--surface-ink); }
+  .nav-cta { display: flex; align-items: center; gap: 14px; }
+  .nav-cta .signin { font-size: 14px; color: var(--surface-muted); }
+  .nav-cta .signin:hover { color: var(--surface-ink); }
+  @media (min-width: 860px) { .nav-links { display: flex; } }
+
+  /* ============ HERO ============ */
+  .hero {
+    position: relative;
+    background: var(--stage);
+    color: var(--ink);
+    padding: 72px 0 84px;
+    overflow: hidden;
+    border-bottom: 1px solid var(--hair);
+  }
+  .hero::before { /* ambient warm glow */
+    content: ""; position: absolute; inset: 0;
+    background:
+      radial-gradient(60% 50% at 50% -8%, color-mix(in srgb, var(--brand) 26%, transparent), transparent 70%),
+      radial-gradient(50% 40% at 82% 30%, rgba(124,58,237,.14), transparent 70%),
+      radial-gradient(46% 44% at 12% 74%, rgba(56,189,248,.10), transparent 70%);
+    pointer-events: none;
+  }
+  .hero::after { /* subtle grain */
+    content: ""; position: absolute; inset: 0; opacity: .04; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .hero-in { position: relative; z-index: 1; display: grid; gap: 44px; align-items: center; }
+  @media (min-width: 940px) {
+    .hero-in { grid-template-columns: 1.05fr .95fr; gap: 56px; }
+  }
+  .hero h1 {
+    font-size: clamp(38px, 6.2vw, 68px);
+    line-height: .98; letter-spacing: -.035em; font-weight: 800;
+    margin: 18px 0 0; text-wrap: balance;
+  }
+  .hero h1 .hl { position: relative; white-space: nowrap; color: var(--pop-yellow); }
+  .hero p.sub {
+    color: var(--ink-dim); font-size: clamp(16px, 1.5vw, 19px); line-height: 1.5;
+    margin: 22px 0 0; max-width: 30ch;
+  }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; align-items: center; }
+  .hero .microtrust { display: flex; align-items: center; gap: 8px; margin-top: 20px; color: var(--muted); font-size: 13px; }
+  .stars { color: var(--pop-yellow); letter-spacing: 2px; }
+
+  /* ---- the phone / clip stage ---- */
+  .stage-col { display: flex; justify-content: center; }
+  .device {
+    position: relative; width: min(340px, 82vw);
+    aspect-ratio: 9 / 16; border-radius: 34px;
+    background: linear-gradient(#000, #000) padding-box,
+                linear-gradient(160deg, #3a3733, #17161300) border-box;
+    border: 1.5px solid transparent;
+    box-shadow: var(--shadow), 0 0 0 1px rgba(255,255,255,.03) inset;
+    overflow: hidden;
+  }
+  .clip { position: absolute; inset: 0; overflow: hidden; }
+  .clip .frame { /* fake video content */
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(120% 90% at 30% 12%, #2b2a27 0%, #16150f 52%, #070706 100%);
+  }
+  .clip .frame::after { /* subject silhouette hint */
+    content: ""; position: absolute; left: 50%; bottom: -6%; transform: translateX(-50%);
+    width: 64%; height: 64%; border-radius: 50% 50% 44% 44%;
+    background: radial-gradient(60% 60% at 50% 30%, rgba(224,67,31,.24), transparent 70%);
+    filter: blur(6px);
+  }
+  .clip-chrome {
+    position: absolute; left: 14px; right: 14px; top: 14px; z-index: 3;
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: var(--mono); font-size: 10.5px; color: rgba(255,255,255,.62);
+  }
+  .rec { display: inline-flex; align-items: center; gap: 6px; }
+  .rec .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--brand); box-shadow: 0 0 10px var(--brand); animation: blink 1.6s infinite; }
+  .tc { letter-spacing: .04em; }
+  .progress { position: absolute; left: 14px; right: 14px; bottom: 14px; height: 3px; border-radius: 3px; background: rgba(255,255,255,.16); z-index: 3; overflow: hidden; }
+  .progress i { position: absolute; inset: 0 auto 0 0; width: 40%; background: var(--brand); border-radius: 3px; animation: seek 3.6s linear infinite; }
+
+  /* ---- caption player ---- */
+  .cap-wrap { position: absolute; left: 0; right: 0; bottom: 20%; z-index: 2; display: flex; justify-content: center; padding: 0 16px; }
+  .cap {
+    --kw: var(--pop-yellow);
+    text-align: center; font-weight: 800; line-height: 1.12;
+    font-size: 27px; letter-spacing: -.01em; color: #fff;
+    text-shadow: 0 2px 6px rgba(0,0,0,.85), 0 0 1px rgba(0,0,0,.9);
+    max-width: 90%;
+  }
+  .cap .w { display: inline-block; margin: 0 .14em; opacity: 0; transform: translateY(8px) scale(.86); }
+  .cap.play .w { animation: wordIn .34s cubic-bezier(.2,.9,.25,1.2) forwards; animation-delay: var(--d, 0s); }
+  .cap .kw { color: var(--kw); }
+  /* style variants */
+  .cap.s-hormozi { text-transform: uppercase; -webkit-text-stroke: 1.4px #000; paint-order: stroke fill; font-size: 30px; }
+  .cap.s-hype    { text-transform: uppercase; -webkit-text-stroke: 1.3px #000; paint-order: stroke fill; --kw: var(--pop-green); }
+  .cap.s-hype .kw { text-shadow: 0 0 16px color-mix(in srgb, var(--pop-green) 55%, transparent); }
+  .cap.s-min     { text-transform: lowercase; font-weight: 700; font-size: 25px; }
+  .cap.s-box     { text-transform: uppercase; }
+  .cap.s-box .kw { background: var(--pop-violet); color: var(--pop-lime); padding: 1px 9px; border-radius: 7px; -webkit-text-stroke: 0; box-decoration-break: clone; }
+  .cap.s-karaoke { --kw: var(--pop-yellow); }
+  .cap.s-karaoke .kw { text-shadow: 0 0 18px color-mix(in srgb, var(--pop-yellow) 60%, transparent); }
+
+  /* style badge pill on device */
+  .style-tag {
+    position: absolute; z-index: 4; top: 44px; left: 50%; transform: translateX(-50%);
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
+    color: #fff; background: rgba(0,0,0,.5); border: 1px solid rgba(255,255,255,.14);
+    padding: 4px 10px; border-radius: 999px; backdrop-filter: blur(6px);
+    transition: opacity .3s;
+  }
+
+  /* floating style chips beside device */
+  .chip-cloud { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+  .fchip {
+    position: absolute; font-size: 12px; font-weight: 700; padding: 7px 12px; border-radius: 999px;
+    background: var(--panel-2); border: 1px solid var(--hair); color: var(--ink-dim);
+    box-shadow: 0 10px 24px -12px rgba(0,0,0,.8);
+    animation: float 6s ease-in-out infinite;
+  }
+  .fchip .d { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 7px; vertical-align: middle; }
+  .fchip.a { top: 8%; left: -6%; animation-delay: -1s; }
+  .fchip.b { top: 32%; right: -10%; animation-delay: -3s; }
+  .fchip.c { bottom: 20%; left: -12%; animation-delay: -2s; }
+  .fchip.d2 { bottom: 6%; right: -4%; animation-delay: -4.5s; }
+  @media (max-width: 620px) { .fchip { display: none; } }
+
+  /* ============ MARQUEE ============ */
+  .marquee { background: var(--bg-2); border-bottom: 1px solid var(--edge); padding: 16px 0; overflow: hidden; }
+  .marquee .row { display: flex; gap: 12px; width: max-content; animation: slide 26s linear infinite; }
+  .marquee:hover .row { animation-play-state: paused; }
+  .mchip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--edge); font-size: 13px; font-weight: 600; color: var(--surface-muted); background: var(--surface); }
+  .mchip .d { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* ============ SECTION SHELL ============ */
+  section.blk { padding: 84px 0; border-bottom: 1px solid var(--edge); }
+  .sec-head { display: flex; flex-direction: column; gap: 14px; margin-bottom: 40px; }
+  .sec-head h2 { font-size: clamp(26px, 3.4vw, 40px); letter-spacing: -.03em; font-weight: 800; margin: 0; text-wrap: balance; line-height: 1.04; }
+  .sec-head p { color: var(--surface-muted); font-size: 16px; max-width: 56ch; margin: 0; line-height: 1.55; }
+
+  /* ============ STAT BAND ============ */
+  .stats { background: var(--stage); color: var(--ink); border-bottom: 1px solid var(--hair); }
+  .stats .grid { display: grid; grid-template-columns: repeat(2, 1fr); }
+  @media (min-width: 760px) { .stats .grid { grid-template-columns: repeat(4, 1fr); } }
+  .stat { padding: 40px 24px; border-right: 1px solid var(--hair); border-top: 1px solid var(--hair); }
+  .stat:nth-child(1), .stat:nth-child(2) { border-top: 0; }
+  @media (min-width: 760px) { .stat { border-top: 0; } .stat:nth-child(4) { border-right: 0; } }
+  .stat .n { font-size: clamp(30px, 4vw, 44px); font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .stat .n b { color: var(--brand); }
+  .stat .l { color: var(--muted); font-size: 13.5px; margin-top: 6px; line-height: 1.45; }
+
+  /* ============ STYLE GALLERY ============ */
+  .gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  @media (min-width: 680px) { .gallery { grid-template-columns: repeat(3, 1fr); } }
+  @media (min-width: 960px) { .gallery { grid-template-columns: repeat(4, 1fr); } }
+  .gcard { border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--surface-hair); background: #0a0a09; }
+  .gpreview { position: relative; aspect-ratio: 5/4; display: grid; place-items: center; overflow: hidden; }
+  .gpreview .bg { position: absolute; inset: 0; }
+  .gcap { position: relative; z-index: 1; font-weight: 800; color: #fff; font-size: 17px; text-align: center; padding: 0 14px; text-shadow: 0 2px 5px rgba(0,0,0,.85); line-height: 1.15; }
+  .glabel { padding: 11px 14px; background: var(--surface); color: var(--surface-ink); font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; }
+  .glabel .real { font-family: var(--mono); font-size: 10px; color: var(--surface-muted); letter-spacing: .08em; text-transform: uppercase; }
+
+  /* ============ BENTO (why not black box) ============ */
+  .bento { display: grid; gap: 14px; grid-template-columns: repeat(1, 1fr); }
+  @media (min-width: 760px) { .bento { grid-template-columns: repeat(3, 1fr); } .bento .big { grid-column: span 3; } }
+  .cell { background: var(--surface); border: 1px solid var(--surface-hair); border-radius: var(--r-lg); padding: 26px; position: relative; overflow: hidden; }
+  .cell h3 { font-size: 18px; letter-spacing: -.02em; margin: 14px 0 8px; }
+  .cell p { color: var(--surface-muted); font-size: 14.5px; line-height: 1.55; margin: 0; }
+  .cell .ic { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); }
+  .cell .ic svg { width: 20px; height: 20px; }
+  .cell.big { display: grid; gap: 22px; align-items: center; background: var(--stage); color: var(--ink); border-color: var(--hair); }
+  @media (min-width: 760px) { .cell.big { grid-template-columns: 1.1fr 1fr; padding: 34px; } }
+  .cell.big h3 { font-size: clamp(20px, 2.4vw, 28px); color: #fff; }
+  .cell.big p { color: var(--ink-dim); font-size: 15px; }
+  /* compare widget */
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .compare .col { border-radius: var(--r-md); padding: 16px; font-size: 13px; }
+  .compare .them { background: #211d1b; border: 1px solid var(--hair); color: var(--muted); }
+  .compare .us { background: color-mix(in srgb, var(--brand) 14%, #17110f); border: 1px solid color-mix(in srgb, var(--brand) 40%, transparent); color: var(--ink); }
+  .compare h4 { margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: .1em; font-family: var(--mono); }
+  .compare ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .compare li { display: flex; gap: 8px; line-height: 1.35; }
+  .compare li svg { flex: none; width: 15px; height: 15px; margin-top: 1px; }
+
+  /* ============ STEPS ============ */
+  .steps { display: grid; gap: 1px; background: var(--surface-hair); border: 1px solid var(--surface-hair); border-radius: var(--r-lg); overflow: hidden; }
+  @media (min-width: 760px) { .steps { grid-template-columns: repeat(4, 1fr); } }
+  .step { background: var(--surface); padding: 26px 24px; }
+  .step .k { font-family: var(--mono); font-size: 12px; color: var(--brand); font-weight: 700; }
+  .step h3 { margin: 10px 0 6px; font-size: 17px; letter-spacing: -.01em; }
+  .step p { margin: 0; color: var(--surface-muted); font-size: 14px; line-height: 1.5; }
+
+  /* ============ PRICING ============ */
+  .prices { display: grid; gap: 16px; grid-template-columns: 1fr; }
+  @media (min-width: 640px) { .prices { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1000px) { .prices { grid-template-columns: repeat(4, 1fr); } }
+  .price { border: 1px solid var(--surface-hair); border-radius: var(--r-lg); padding: 26px; background: var(--surface); display: flex; flex-direction: column; position: relative; }
+  .price.feat { border-color: var(--brand); box-shadow: 0 20px 50px -24px color-mix(in srgb, var(--brand) 55%, transparent); }
+  .price .tier { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: var(--surface-muted); }
+  .price .amt { font-size: 38px; font-weight: 800; letter-spacing: -.03em; margin: 10px 0 2px; font-variant-numeric: tabular-nums; }
+  .price .amt span { font-size: 15px; font-weight: 500; color: var(--surface-muted); }
+  .price .note { font-size: 12px; color: var(--surface-muted); min-height: 16px; }
+  .price ul { list-style: none; margin: 18px 0 22px; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 13.5px; color: var(--surface-muted); }
+  .price li { display: flex; gap: 9px; }
+  .price li svg { flex: none; width: 16px; height: 16px; color: var(--brand); }
+  .price .badge { position: absolute; top: -11px; right: 18px; background: var(--brand); color: #fff; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; padding: 4px 10px; border-radius: 999px; }
+  .price .btn { margin-top: auto; width: 100%; }
+  .price .btn-out { background: transparent; border-color: var(--surface-hair); color: var(--surface-ink); }
+  .price .btn-out:hover { border-color: color-mix(in srgb, var(--surface-ink) 32%, transparent); }
+
+  /* ============ PROOF STRIP ============ */
+  .proof { display: grid; gap: 16px; grid-template-columns: 1fr; }
+  @media (min-width: 820px) { .proof { grid-template-columns: repeat(3, 1fr); } }
+  .quote { background: var(--surface); border: 1px solid var(--surface-hair); border-radius: var(--r-lg); padding: 24px; }
+  .quote .stars { font-size: 14px; margin-bottom: 12px; }
+  .quote p { margin: 0 0 16px; font-size: 15px; line-height: 1.55; letter-spacing: -.01em; }
+  .who { display: flex; align-items: center; gap: 11px; }
+  .who .av { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; color: #fff; font-size: 15px; }
+  .who .nm { font-size: 13.5px; font-weight: 700; }
+  .who .hd { font-size: 12px; color: var(--surface-muted); font-family: var(--mono); }
+  .slot-note { font-family: var(--mono); font-size: 11px; color: var(--surface-muted); letter-spacing: .06em; margin-top: 18px; text-align: center; opacity: .8; }
+
+  /* ============ CTA + FOOTER ============ */
+  .final { background: var(--stage); color: var(--ink); text-align: center; padding: 96px 0; position: relative; overflow: hidden; border-bottom: 1px solid var(--hair); }
+  .final::before { content: ""; position: absolute; inset: 0; background: radial-gradient(50% 60% at 50% 40%, color-mix(in srgb, var(--brand) 28%, transparent), transparent 70%); }
+  .final .in { position: relative; z-index: 1; }
+  .final h2 { font-size: clamp(30px, 5vw, 52px); letter-spacing: -.035em; font-weight: 800; margin: 0 auto; max-width: 16ch; text-wrap: balance; line-height: 1; }
+  .final p { color: var(--ink-dim); margin: 18px auto 30px; max-width: 44ch; font-size: 17px; }
+  footer { background: var(--bg); padding: 34px 0; }
+  .foot-in { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+  .foot-in .links { display: flex; gap: 20px; font-size: 13px; color: var(--surface-muted); }
+  .foot-in .links a:hover { color: var(--brand); }
+  .foot-in .cr { font-size: 13px; color: var(--surface-muted); font-family: var(--mono); }
+
+  /* ============ ANIMATIONS ============ */
+  @keyframes wordIn { to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+  @keyframes seek { from { transform: translateX(-100%);} to { transform: translateX(250%);} }
+  @keyframes float { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-10px);} }
+  @keyframes slide { from { transform: translateX(0);} to { transform: translateX(-50%);} }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+    .cap .w { opacity: 1 !important; transform: none !important; }
+    .progress i { display: none; }
+  }
+</style>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <div class="logo"><b>Insta</b>cap</div>
+    <nav class="nav-links">
+      <a href="#styles">Styles</a>
+      <a href="#how">How it works</a>
+      <a href="#why">Why Instacap</a>
+      <a href="#pricing">Pricing</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="signin" href="#">Sign in</a>
+      <a class="btn btn-primary" href="#" style="padding:10px 18px;font-size:14px;">Get started free</a>
+    </div>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="wrap hero-in">
+    <div class="hero-copy">
+      <span class="eyebrow">Word-by-word animated captions</span>
+      <h1>The caption looks<br>exactly like the<br><span class="hl">style you picked.</span></h1>
+      <p class="sub">Upload a video, pick a real caption style, export. No credits, no black-box templates, no watching a spinner guess what you'll get.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#">Start free — no card</a>
+        <a class="btn btn-ghost" href="#styles">See 11 caption styles</a>
+      </div>
+      <div class="microtrust">
+        <span class="stars">★★★★★</span>
+        <span>What you preview is what renders — every pixel.</span>
+      </div>
+    </div>
+
+    <div class="stage-col">
+      <div class="device">
+        <div class="chip-cloud">
+          <span class="fchip a"><span class="d" style="background:var(--pop-yellow)"></span>Hormozi</span>
+          <span class="fchip b"><span class="d" style="background:var(--pop-violet)"></span>Box Highlight</span>
+          <span class="fchip c"><span class="d" style="background:var(--pop-green)"></span>Hype</span>
+          <span class="fchip d2"><span class="d" style="background:#fff"></span>Minimal</span>
+        </div>
+        <div class="clip">
+          <div class="frame"></div>
+          <div class="clip-chrome">
+            <span class="rec"><span class="dot"></span>REC</span>
+            <span class="tc" id="tc">00:00:07</span>
+          </div>
+          <span class="style-tag" id="styleTag">Hormozi</span>
+          <div class="cap-wrap"><div class="cap play s-hormozi" id="cap"></div></div>
+          <div class="progress"><i></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MARQUEE ============ -->
+<div class="marquee" aria-hidden="true">
+  <div class="row" id="marquee"></div>
+</div>
+
+<!-- ============ STAT BAND ============ -->
+<section class="stats">
+  <div class="wrap">
+    <div class="grid">
+      <div class="stat"><div class="n"><b>11</b></div><div class="l">Real caption styles — actual Remotion components, not config presets</div></div>
+      <div class="stat"><div class="n"><b>0</b></div><div class="l">Credits to track. One flat price, unlimited renders</div></div>
+      <div class="stat"><div class="n">1:1</div><div class="l">Preview matches export exactly — no surprise output</div></div>
+      <div class="stat"><div class="n">7<span style="font-size:.5em;font-weight:600;color:var(--muted)">days</span></div><div class="l">Auto-delete of your source + renders. Stated up front</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STYLE GALLERY ============ -->
+<section class="blk" id="styles">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Caption styles</span>
+      <h2>Every style is a real render, not a mockup.</h2>
+      <p>These aren't screenshots of a settings panel. Each one is a live React/Remotion composition — the exact code that renders your video. Hover to see it move.</p>
+    </div>
+    <div class="gallery" id="gallery"></div>
+  </div>
+</section>
+
+<!-- ============ WHY / BENTO ============ -->
+<section class="blk" id="why" style="background:var(--bg-2)">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Why Instacap, not veed / captions.ai</span>
+      <h2>You shouldn't need a credit calculator to caption a video.</h2>
+    </div>
+    <div class="bento">
+      <div class="cell big">
+        <div>
+          <h3>Real components, not a config file you can't see inside.</h3>
+          <p>Competitors hide styling behind a black-box template and a credit meter. Every Instacap style is an actual composition — what you preview is what renders, down to the pixel.</p>
+        </div>
+        <div class="compare">
+          <div class="col them">
+            <h4>Them</h4>
+            <ul>
+              <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5l10 10M15 5L5 15"/></svg>Credits per export</li>
+              <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5l10 10M15 5L5 15"/></svg>Preview ≠ output</li>
+              <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5l10 10M15 5L5 15"/></svg>Surprise watermark</li>
+            </ul>
+          </div>
+          <div class="col us">
+            <h4>Instacap</h4>
+            <ul>
+              <li><svg viewBox="0 0 20 20" fill="none" stroke="var(--brand)" stroke-width="2.4"><path d="M4 10l4 4 8-9"/></svg>Unlimited renders</li>
+              <li><svg viewBox="0 0 20 20" fill="none" stroke="var(--brand)" stroke-width="2.4"><path d="M4 10l4 4 8-9"/></svg>1:1 preview</li>
+              <li><svg viewBox="0 0 20 20" fill="none" stroke="var(--brand)" stroke-width="2.4"><path d="M4 10l4 4 8-9"/></svg>No-watermark tiers</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="cell">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg></div>
+        <h3>One price, no credits</h3>
+        <p>Flat tier. No balance to top up, no per-export fee, no "upgrade to render this one."</p>
+      </div>
+      <div class="cell">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h7"/></svg></div>
+        <h3>Bring your own transcript</h3>
+        <p>Auto-transcribe word-by-word, or drop an SRT/VTT and skip straight to styling.</p>
+      </div>
+      <div class="cell">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4v6c0 4-3 7-8 8-5-1-8-4-8-8V7z"/></svg></div>
+        <h3>Transparent limits</h3>
+        <p>10 min / 500MB uploads, MP4 or MOV. Stated up front — not discovered at checkout.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section class="blk" id="how">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">How it works</span>
+      <h2>Upload to download in four steps.</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><span class="k">01</span><h3>Upload</h3><p>Drop an MP4 or MOV — up to 500MB, 10 minutes.</p></div>
+      <div class="step"><span class="k">02</span><h3>Transcribe</h3><p>Deepgram transcribes word-by-word, or bring your own SRT/VTT.</p></div>
+      <div class="step"><span class="k">03</span><h3>Pick a style</h3><p>Choose a real caption style — see exactly how it looks before export.</p></div>
+      <div class="step"><span class="k">04</span><h3>Export</h3><p>Rendered by Remotion, downloaded straight to you.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROOF ============ -->
+<section class="blk" id="proof" style="background:var(--bg-2)">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">From creators</span>
+      <h2>Made for people who post every day.</h2>
+    </div>
+    <div class="proof">
+      <div class="quote">
+        <div class="stars" style="color:var(--brand)">★★★★★</div>
+        <p>"The preview is the render. I stopped exporting three times to check the caption timing — it's just right the first time."</p>
+        <div class="who"><span class="av" style="background:var(--pop-violet)">MR</span><div><div class="nm">Maya R.</div><div class="hd">@mayamakes · 120K</div></div></div>
+      </div>
+      <div class="quote">
+        <div class="stars" style="color:var(--brand)">★★★★★</div>
+        <p>"No credits is the whole thing for me. I batch 20 Reels on a Sunday and never think about a meter."</p>
+        <div class="who"><span class="av" style="background:var(--pop-green)">DK</span><div><div class="nm">Devon K.</div><div class="hd">@devonclips · 88K</div></div></div>
+      </div>
+      <div class="quote">
+        <div class="stars" style="color:var(--brand)">★★★★★</div>
+        <p>"Hormozi style that actually looks like Hormozi style. The stroke and pop are dead on."</p>
+        <div class="who"><span class="av" style="background:var(--pop-cyan)">SL</span><div><div class="nm">Sam L.</div><div class="hd">@sledits · 54K</div></div></div>
+      </div>
+    </div>
+    <p class="slot-note">// Mockup placeholder testimonials — swap for real creator quotes / G2 · Trustpilot ratings at launch</p>
+  </div>
+</section>
+
+<!-- ============ PRICING ============ -->
+<section class="blk" id="pricing">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Pricing</span>
+      <h2>One set of features. Pick a cadence.</h2>
+      <p>Every paid plan is identical — unlimited renders within the upload limits, no watermark, all 11 styles. Only the billing period changes.</p>
+    </div>
+    <div class="prices">
+      <div class="price">
+        <span class="tier">Free</span>
+        <div class="amt">$0</div>
+        <div class="note">No card required</div>
+        <ul>
+          <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10l4 4 8-9"/></svg>3 renders / month</li>
+          <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10l4 4 8-9"/></svg>Watermarked export</li>
+          <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10l4 4 8-9"/></svg>All caption styles</li>
+        </ul>
+        <a class="btn btn-out" href="#">Start free</a>
+      </div>
+      <div class="price">
+        <span class="tier">Weekly</span>
+        <div class="amt">$6.99<span>/wk</span></div>
+        <div class="note">Best for a one-off push</div>
+        <ul>
+          <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10l4 4 8-9"/></svg>Unlimited renders</li>
+          <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10l4 4 8-9"/></svg>No watermark</li>
+          <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10l4 4 8-9"/></svg>All 11 styles</li>
+        </ul>
+        <a class="btn btn-out" href="#">Get Weekly</a>
+      </div>
+      <div class="price feat">
+        <span class="badge">Most popular</span>
+        <span class="tier">Monthly</span>
+        <div class="amt">$14.99<span>/mo</span></div>
+        <div class="note">The anchor plan</div>
+        <ul>
+          <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10l4 4 8-9"/></svg>Unlimited renders</li>
+          <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10l4 4 8-9"/></svg>No watermark</li>
+          <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10l4 4 8-9"/></svg>All 11 styles</li>
+        </ul>
+        <a class="btn btn-primary" href="#">Get Monthly</a>
+      </div>
+      <div class="price">
+        <span class="tier">Yearly</span>
+        <div class="amt">$119<span>/yr</span></div>
+        <div class="note">~$9.92/mo · save 34%</div>
+        <ul>
+          <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10l4 4 8-9"/></svg>Unlimited renders</li>
+          <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10l4 4 8-9"/></svg>No watermark</li>
+          <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10l4 4 8-9"/></svg>All 11 styles</li>
+        </ul>
+        <a class="btn btn-out" href="#">Get Yearly</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section class="final">
+  <div class="wrap in">
+    <h2>Caption your next video in minutes.</h2>
+    <p>Free to start, no card. Pick a style, hit export, get exactly what you saw.</p>
+    <a class="btn btn-primary" href="#" style="font-size:16px;padding:15px 28px;">Start free — no card required</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-in">
+    <div class="logo" style="font-size:15px;"><b>Insta</b>cap</div>
+    <div class="links"><a href="#">Terms</a><a href="#">Privacy</a><a href="#">Support</a></div>
+    <div class="cr">© 2026 Instacap</div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---- caption pop colors ----
+  var POP = { yellow:'#FACC15', green:'#34D058', cyan:'#38BDF8', violet:'#7C3AED', lime:'#A3E635', white:'#ffffff' };
+
+  // ---- hero caption player: cycle real styles ----
+  var SCENES = [
+    { tag:'Hormozi', cls:'s-hormozi', words:[['THIS',0],['IS',0],['HOW',0],['YOU',0],['STOP',1],['THE',0],['SCROLL',0]] },
+    { tag:'Hype',    cls:'s-hype',    words:[['LET','0'],['THAT',0],['SINK',1],['IN',1]] },
+    { tag:'Box Highlight', cls:'s-box', words:[['Watch',0],['this',0],['part',1],['closely',0]] },
+    { tag:'Minimal', cls:'s-min',     words:[['keep',0],['it',0],['clean',1],['and',0],['simple',0]] },
+    { tag:'Karaoke', cls:'s-karaoke', words:[['Every',0],['single',1],['word',1],['lands',0]] }
+  ];
+  var cap = document.getElementById('cap');
+  var styleTag = document.getElementById('styleTag');
+  var si = 0;
+
+  function render(scene) {
+    cap.className = 'cap ' + scene.cls;
+    styleTag.textContent = scene.tag;
+    cap.innerHTML = '';
+    var frag = document.createDocumentFragment();
+    scene.words.forEach(function (w, i) {
+      var span = document.createElement('span');
+      span.className = 'w' + (w[1] ? ' kw' : '');
+      span.textContent = w[0];
+      span.style.setProperty('--d', (i * 0.11) + 's');
+      frag.appendChild(span);
+      if (i < scene.words.length - 1) frag.appendChild(document.createTextNode(' '));
+    });
+    cap.appendChild(frag);
+    // retrigger animation
+    void cap.offsetWidth;
+    cap.classList.add('play');
+  }
+  render(SCENES[0]);
+  if (!reduce) {
+    setInterval(function () {
+      si = (si + 1) % SCENES.length;
+      cap.classList.remove('play');
+      render(SCENES[si]);
+    }, 3300);
+  }
+
+  // ---- fake timecode tick ----
+  if (!reduce) {
+    var tcEl = document.getElementById('tc'), t = 7;
+    setInterval(function () {
+      t = (t + 1) % 12;
+      tcEl.textContent = '00:00:' + (t < 10 ? '0' + t : t);
+    }, 900);
+  }
+
+  // ---- style marquee ----
+  var STYLES = [
+    ['Word by Word', POP.yellow], ['Karaoke', POP.yellow], ['Fade', '#8a8378'],
+    ['Spring', POP.yellow], ['Hype', POP.green], ['Hormozi', POP.yellow],
+    ['Minimal', '#ffffff'], ['Box Highlight', POP.violet], ['Comic', POP.cyan],
+    ['Pill', '#c7c2b8'], ['Script', POP.yellow]
+  ];
+  var mq = document.getElementById('marquee');
+  function chip(name, color) {
+    var el = document.createElement('span');
+    el.className = 'mchip';
+    var d = document.createElement('span');
+    d.className = 'd'; d.style.background = color;
+    el.appendChild(d);
+    el.appendChild(document.createTextNode(name));
+    return el;
+  }
+  // duplicate list for seamless loop
+  STYLES.concat(STYLES).forEach(function (s) { mq.appendChild(chip(s[0], s[1])); });
+
+  // ---- style gallery (static real-render look, animate on hover) ----
+  var GAL = [
+    { name:'Hormozi', cls:'s-hormozi', kw:POP.yellow, glow:POP.yellow, text:['JUST','LIKE','THIS'], kwi:2 },
+    { name:'Hype', cls:'s-hype', kw:POP.green, glow:POP.green, text:['LEVEL','UP','NOW'], kwi:2 },
+    { name:'Box Highlight', cls:'s-box', kw:POP.violet, glow:POP.violet, text:['READ','THIS','PART'], kwi:2 },
+    { name:'Comic', cls:'s-hype', kw:POP.cyan, glow:POP.cyan, text:['BOOM','RIGHT','HERE'], kwi:0 },
+    { name:'Word by Word', cls:'', kw:POP.yellow, glow:POP.yellow, text:['Just','like','this'], kwi:2 },
+    { name:'Karaoke', cls:'s-karaoke', kw:POP.yellow, glow:POP.yellow, text:['Every','word','lands'], kwi:1 },
+    { name:'Minimal', cls:'s-min', kw:POP.white, glow:'#8a8378', text:['just','like','this'], kwi:1 },
+    { name:'Script', cls:'', kw:POP.yellow, glow:POP.yellow, text:['just','like','this'], kwi:2 }
+  ];
+  var g = document.getElementById('gallery');
+  GAL.forEach(function (item) {
+    var card = document.createElement('div'); card.className = 'gcard';
+    var prev = document.createElement('div'); prev.className = 'gpreview';
+    var bg = document.createElement('div'); bg.className = 'bg';
+    bg.style.background = 'radial-gradient(130% 100% at 25% 10%, #302f2c 0%, #1a1917 55%, #0a0a09 100%)';
+    var glow = document.createElement('div'); glow.className = 'bg';
+    glow.style.background = 'radial-gradient(60% 70% at 78% 82%, ' + item.glow + '55, transparent 70%)';
+    glow.style.opacity = '.4';
+    var capEl = document.createElement('div');
+    capEl.className = 'gcap cap ' + item.cls;
+    capEl.style.setProperty('--kw', item.kw);
+    item.text.forEach(function (w, i) {
+      var s = document.createElement('span');
+      s.className = 'w' + (i === item.kwi ? ' kw' : '');
+      s.style.opacity = '1'; s.style.transform = 'none';
+      s.textContent = w;
+      capEl.appendChild(s); capEl.appendChild(document.createTextNode(' '));
+    });
+    prev.appendChild(bg); prev.appendChild(glow); prev.appendChild(capEl);
+    var lab = document.createElement('div'); lab.className = 'glabel';
+    lab.innerHTML = '<span>' + item.name + '</span><span class="real">live</span>';
+    card.appendChild(prev); card.appendChild(lab);
+    g.appendChild(card);
+
+    // animate on hover
+    if (!reduce) {
+      card.addEventListener('mouseenter', function () {
+        var ws = capEl.querySelectorAll('.w');
+        ws.forEach(function (el, i) {
+          el.style.opacity = '0'; el.style.transform = 'translateY(8px) scale(.86)';
+          void el.offsetWidth;
+          el.style.setProperty('--d', (i * 0.1) + 's');
+        });
+        capEl.classList.remove('play'); void capEl.offsetWidth; capEl.classList.add('play');
+        capEl.querySelectorAll('.w').forEach(function (el, i) {
+          el.style.animation = 'wordIn .34s cubic-bezier(.2,.9,.25,1.2) forwards';
+          el.style.animationDelay = (i * 0.1) + 's';
+        });
+      });
+    }
+  });
+})();
+</script>

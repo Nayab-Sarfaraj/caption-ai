@@ -81,7 +81,7 @@ export function SupportModal({ onClose }: { onClose: () => void }) {
     >
       <div
         className={[
-          'bg-white max-w-md w-full p-6 sm:p-7 space-y-5 relative transition-all duration-200',
+          'bg-[var(--panel)] max-w-md w-full rounded-2xl p-6 sm:p-7 space-y-5 relative transition-all duration-200',
           visible ? 'opacity-100 scale-100' : 'opacity-0 scale-95',
         ].join(' ')}
         onClick={(e) => e.stopPropagation()}
@@ -90,7 +90,7 @@ export function SupportModal({ onClose }: { onClose: () => void }) {
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="absolute top-4 right-4 text-[#a39e96] hover:text-[#1a1917] transition-colors"
+          className="absolute top-4 right-4 text-[var(--mute)] hover:text-[var(--ink)] transition-colors"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 6L6 18M6 6l12 12" />
@@ -98,12 +98,12 @@ export function SupportModal({ onClose }: { onClose: () => void }) {
         </button>
 
         <div>
-          <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96] mb-1.5">{'// Support'}</p>
-          <h2 className="text-2xl font-bold tracking-wide uppercase text-[#1a1917]">Get in touch</h2>
+          <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)] mb-1.5">{'// Support'}</p>
+          <h2 className="text-2xl font-bold tracking-wide uppercase text-[var(--ink)]">Get in touch</h2>
         </div>
 
         {sent ? (
-          <p className="text-sm text-[#6b6862]">Thanks — we&rsquo;ll follow up at {getValues('email')}.</p>
+          <p className="text-sm text-[var(--ink-dim)]">Thanks — we&rsquo;ll follow up at {getValues('email')}.</p>
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
             <div className="grid grid-cols-3 gap-2">
@@ -113,10 +113,10 @@ export function SupportModal({ onClose }: { onClose: () => void }) {
                   type="button"
                   onClick={() => setValue('type', t.id)}
                   className={[
-                    'text-xs font-medium px-2 py-2 border transition-colors',
+                    'text-xs font-medium rounded-lg px-2 py-2 border transition-colors',
                     type === t.id
-                      ? 'border-[#c1361f] text-[#c1361f] bg-[#c1361f08]'
-                      : 'border-[#14120f1f] text-[#6b6862] hover:border-[#14120f3d]',
+                      ? 'border-[var(--brand)] text-[var(--brand)] bg-[var(--brand-soft)]'
+                      : 'border-[var(--hair)] text-[var(--ink-dim)] hover:border-[var(--faint)]',
                   ].join(' ')}
                 >
                   {t.label}
@@ -125,35 +125,35 @@ export function SupportModal({ onClose }: { onClose: () => void }) {
             </div>
 
             <div>
-              <label htmlFor="support-email" className="text-xs text-[#6b6862] block mb-1">Email</label>
+              <label htmlFor="support-email" className="text-xs text-[var(--ink-dim)] block mb-1">Email</label>
               <input
                 id="support-email"
                 type="email"
                 placeholder="you@example.com"
                 {...register('email')}
-                className="w-full text-sm text-[#1a1917] border border-[#14120f1f] px-3 py-2 focus:border-[#c1361f] outline-none transition-colors"
+                className="w-full text-sm text-[var(--ink)] border border-[var(--hair)] rounded-lg px-3 py-2 focus:border-[var(--brand)] outline-none transition-colors"
               />
-              {errors.email && <p className="text-xs text-[#c1361f] mt-1">{errors.email.message}</p>}
+              {errors.email && <p className="text-xs text-[var(--brand)] mt-1">{errors.email.message}</p>}
             </div>
 
             <div>
-              <label htmlFor="support-message" className="text-xs text-[#6b6862] block mb-1">Message</label>
+              <label htmlFor="support-message" className="text-xs text-[var(--ink-dim)] block mb-1">Message</label>
               <textarea
                 id="support-message"
                 rows={4}
                 placeholder={type === 'bug' ? 'What happened, and what did you expect instead?' : 'What’s on your mind?'}
                 {...register('message')}
-                className="w-full text-sm text-[#1a1917] border border-[#14120f1f] px-3 py-2 focus:border-[#c1361f] outline-none transition-colors resize-none"
+                className="w-full text-sm text-[var(--ink)] border border-[var(--hair)] rounded-lg px-3 py-2 focus:border-[var(--brand)] outline-none transition-colors resize-none"
               />
-              {errors.message && <p className="text-xs text-[#c1361f] mt-1">{errors.message.message}</p>}
+              {errors.message && <p className="text-xs text-[var(--brand)] mt-1">{errors.message.message}</p>}
             </div>
 
-            {apiError && <p className="text-xs text-[#c1361f]">{apiError}</p>}
+            {apiError && <p className="text-xs text-[var(--brand)]">{apiError}</p>}
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-[#c1361f] text-white text-sm font-bold px-5 py-2.5 hover:brightness-[1.08] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-[var(--brand)] text-white text-sm font-bold rounded-lg px-5 py-2.5 hover:brightness-[1.08] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? 'Sending…' : 'Send'}
             </button>

@@ -142,3 +142,60 @@ body {
     @apply font-sans;
   }
 }
+
+/* ============================================================
+   Instacap redesign tokens — cinematic caption-studio system.
+   Namespaced (--stage/--ink/--pop-*) so they never collide with
+   the shadcn oklch tokens above. Shared by marketing + dashboard.
+   ============================================================ */
+:root {
+  /* dark cinematic ground */
+  --stage: #0b0b0a;
+  --panel: #141311;
+  --panel-2: #1c1a17;
+  --hair: #2a2723;
+  /* warm ink ramp on dark */
+  --ink: #f7f5f0;
+  --ink-dim: #cbc5ba;
+  --mute: #948d80;
+  --faint: #6a655c;
+  /* brand — rust, brightened for dark ground; CTA only */
+  --brand: #e0431f;
+  --brand-ink: #ffffff;
+  --brand-soft: #e0431f1f;
+  /* caption pops — mirror remotion/compositions real style colors */
+  --pop-yellow: #facc15;
+  --pop-green: #34d058;
+  --pop-cyan: #38bdf8;
+  --pop-violet: #7c3aed;
+  --pop-lime: #a3e635;
+  /* semantic (separate from brand) */
+  --ok: #34d058;
+  --warn: #f7c204;
+  --err: #e0431f;
+  /* one radius scale — kills the sharp/rounded mix */
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 22px;
+  --r-xl: 30px;
+  --r-pill: 999px;
+  --edge: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+/* Accessible focus ring — low specificity (:where) so component styles win.
+   Covers every raw <button>/<a> across the dashboard in one place. */
+:where(a, button, [role="button"], input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Global reduced-motion safety net for the whole app. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

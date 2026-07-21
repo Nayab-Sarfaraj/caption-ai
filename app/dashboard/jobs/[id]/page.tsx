@@ -16,13 +16,13 @@ import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 
 const STATUS: Record<string, { color: string; label: string }> = {
-  done:             { color: '#2e7d4f', label: 'DONE' },
-  rendering:        { color: '#b8860b', label: 'RENDERING…' },
-  transcribing:     { color: '#b8860b', label: 'TRANSCRIBING…' },
-  transcript_ready: { color: '#1e5f8c', label: 'READY' },
-  processing:       { color: '#b8860b', label: 'PROCESSING…' },
-  pending:          { color: '#a39e96', label: 'PENDING' },
-  failed:           { color: '#c1361f', label: 'FAILED' },
+  done:             { color: 'var(--ok)', label: 'DONE' },
+  rendering:        { color: 'var(--warn)', label: 'RENDERING…' },
+  transcribing:     { color: 'var(--warn)', label: 'TRANSCRIBING…' },
+  transcript_ready: { color: 'var(--pop-cyan)', label: 'READY' },
+  processing:       { color: 'var(--warn)', label: 'PROCESSING…' },
+  pending:          { color: 'var(--mute)', label: 'PENDING' },
+  failed:           { color: 'var(--brand)', label: 'FAILED' },
 }
 
 const FPS = 30
@@ -74,7 +74,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
     <div className="px-4 sm:px-6 py-6 sm:py-8 space-y-5 min-h-full font-[family-name:var(--font-cc)]">
       <Link
         href="/dashboard"
-        className="inline-flex items-center gap-1 text-sm text-[#6b6862] hover:text-[#1a1917] transition-colors"
+        className="inline-flex items-center gap-1 text-sm text-[var(--ink-dim)] hover:text-[var(--ink)] transition-colors"
       >
         <ChevronLeft className="w-4 h-4" />
         Back
@@ -101,7 +101,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
         {/* Left: video or status placeholder */}
           <div>
             {isDone && outputUrl ? (
-              <div className="border border-[#14120f1f] bg-black overflow-hidden flex items-center justify-center">
+              <div className="border border-[var(--hair)] bg-black overflow-hidden flex items-center justify-center rounded-2xl">
                 <video
                   src={outputUrl}
                   controls
@@ -110,7 +110,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
                 />
               </div>
             ) : (
-              <div className="border border-[#14120f1f] bg-black overflow-hidden">
+              <div className="border border-[var(--hair)] bg-black overflow-hidden rounded-2xl">
                 <div className="aspect-video flex flex-col items-center justify-center gap-3">
                   {(isProcessing || isRendering) && (
                     <div className="flex gap-1.5">
@@ -118,7 +118,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
                         <span
                           key={d}
                           className="w-1.5 h-1.5 animate-bounce"
-                          style={{ backgroundColor: '#b8860b', animationDelay: `${d}s` }}
+                          style={{ backgroundColor: 'var(--warn)', animationDelay: `${d}s` }}
                         />
                       ))}
                     </div>
@@ -133,30 +133,30 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           </div>
 
           {/* Right: info panel */}
-          <div className="border border-[#14120f1f] bg-white p-5 space-y-5">
+          <div className="border border-[var(--hair)] bg-[var(--panel)] p-5 space-y-5 rounded-2xl">
             <div className="space-y-2">
-              <h1 className="text-sm font-bold text-[#1a1917] truncate">{job.originalFilename}</h1>
+              <h1 className="text-sm font-bold text-[var(--ink)] truncate">{job.originalFilename}</h1>
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
                 <span className="text-sm" style={{ color: s.color }}>{s.label}</span>
               </div>
             </div>
 
-            <div className="border-t border-[#14120f1f]" />
+            <div className="border-t border-[var(--hair)]" />
 
             <div className="space-y-3 text-sm">
               {job.transcriptSource && (
                 <div className="flex items-center justify-between">
-                  <span className="text-[#a39e96]">Transcript</span>
-                  <span className="text-[#6b6862] text-xs">
+                  <span className="text-[var(--mute)]">Transcript</span>
+                  <span className="text-[var(--ink-dim)] text-xs">
                     {job.transcriptSource === 'user' ? 'Uploaded SRT/VTT' : 'AI · Deepgram'}
                   </span>
                 </div>
               )}
               {job.createdAt && (
                 <div className="flex items-center justify-between">
-                  <span className="text-[#a39e96]">Created</span>
-                  <span className="text-[#6b6862] text-xs">
+                  <span className="text-[var(--mute)]">Created</span>
+                  <span className="text-[var(--ink-dim)] text-xs">
                     {new Date(job.createdAt).toLocaleString()}
                   </span>
                 </div>

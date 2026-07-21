@@ -19,20 +19,20 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
   return (
     <aside
       className={[
-        'shrink-0 border-r border-[#14120f1f] bg-white flex flex-col h-full transition-[width] duration-150',
+        'shrink-0 border-r border-[var(--hair)] bg-[var(--panel)] flex flex-col h-full transition-[width] duration-150',
         collapsed ? 'w-[56px]' : 'w-[208px]',
       ].join(' ')}
     >
-      <div className={['h-14 flex items-center border-b border-[#14120f1f]', collapsed ? 'justify-center px-0' : 'justify-between px-4'].join(' ')}>
+      <div className={['h-14 flex items-center border-b border-[var(--hair)]', collapsed ? 'justify-center px-0' : 'justify-between px-4'].join(' ')}>
         {!collapsed && (
           <Link href="/dashboard" className="flex items-center gap-2 overflow-hidden whitespace-nowrap">
-            <span className="text-[13px] font-bold tracking-[0.08em] uppercase text-[#1a1917]"><span className="text-[#c1361f]">Insta</span>cap</span>
+            <span className="text-[13px] font-bold tracking-[0.08em] uppercase text-[var(--ink)]"><span className="text-[var(--brand)]">Insta</span>cap</span>
           </Link>
         )}
         <button
           type="button"
           onClick={() => setCollapsed((c) => !c)}
-          className="w-6 h-6 flex items-center justify-center text-[#a39e96] hover:text-[#1a1917] border border-transparent hover:border-[#14120f1f] transition-colors shrink-0"
+          className="w-6 h-6 flex items-center justify-center rounded-md text-[var(--mute)] hover:text-[var(--ink)] border border-transparent hover:border-[var(--hair)] transition-colors shrink-0"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -51,14 +51,14 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
               href={href}
               title={collapsed ? label : undefined}
               className={[
-                'flex items-center gap-2.5 px-2 py-2 text-xs tracking-wide border-l-2 transition-colors',
+                'flex items-center gap-2.5 px-2 py-2 text-xs tracking-wide rounded-md border-l-2 transition-colors',
                 collapsed ? 'justify-center' : '',
                 active
-                  ? 'text-[#1a1917] border-[#c1361f] bg-[#c1361f08]'
-                  : 'text-[#a39e96] border-transparent hover:text-[#1a1917]',
+                  ? 'text-[var(--ink)] border-[var(--brand)] bg-[var(--brand-soft)]'
+                  : 'text-[var(--mute)] border-transparent hover:text-[var(--ink)]',
               ].join(' ')}
             >
-              <span className={['text-[10px]', active ? 'text-[#c1361f]' : 'text-[#c7c2b8]'].join(' ')}>
+              <span className={['text-[10px]', active ? 'text-[var(--brand)]' : 'text-[var(--faint)]'].join(' ')}>
                 {index}
               </span>
               {!collapsed && label}
@@ -77,7 +77,7 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
             onClick={() => setShowPaywall(true)}
             title={collapsed ? 'Upgrade to Pro' : undefined}
             className={[
-              'flex items-center justify-center gap-1.5 bg-[#c1361f] text-white text-xs font-bold py-2 hover:brightness-[1.08] transition-all',
+              'flex items-center justify-center gap-1.5 rounded-lg bg-[var(--brand)] text-white text-xs font-bold py-2 hover:brightness-[1.08] transition-all',
               collapsed ? 'w-8 h-8 shrink-0' : 'w-full',
             ].join(' ')}
           >
@@ -86,7 +86,7 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
         </div>
       )}
 
-      <div className="border-t border-[#14120f1f]">
+      <div className="border-t border-[var(--hair)]">
         <div className={['p-3 flex items-center gap-2.5', collapsed ? 'justify-center' : ''].join(' ')}>
           <UserButton />
           {!collapsed && (
@@ -95,7 +95,7 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
             subscriptionStatus === 'active' ? (
               <Link
                 href="/dashboard/billing"
-                className="text-[10px] uppercase tracking-wide text-[#a39e96] hover:text-[#c1361f] hover:border-[#c1361f] border border-[#14120f1f] px-1.5 py-0.5 transition-colors"
+                className="text-[10px] uppercase tracking-wide rounded-md text-[var(--mute)] hover:text-[var(--brand)] hover:border-[var(--brand)] border border-[var(--hair)] px-1.5 py-0.5 transition-colors"
               >
                 {PLAN_BADGE[subscriptionStatus]}
               </Link>
@@ -103,7 +103,7 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
               <button
                 type="button"
                 onClick={() => setShowPaywall(true)}
-                className="text-[10px] uppercase tracking-wide text-[#a39e96] hover:text-[#c1361f] hover:border-[#c1361f] border border-[#14120f1f] px-1.5 py-0.5 transition-colors"
+                className="text-[10px] uppercase tracking-wide rounded-md text-[var(--mute)] hover:text-[var(--brand)] hover:border-[var(--brand)] border border-[var(--hair)] px-1.5 py-0.5 transition-colors"
               >
                 {PLAN_BADGE[subscriptionStatus]}
               </button>
@@ -116,7 +116,7 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
             onClick={() => setShowSupport(true)}
             title={collapsed ? 'Contact support' : undefined}
             className={[
-              'flex items-center gap-2.5 px-2 py-2 text-xs tracking-wide text-[#a39e96] hover:text-[#c1361f] transition-colors',
+              'flex items-center gap-2.5 px-2 py-2 text-xs tracking-wide text-[var(--mute)] hover:text-[var(--brand)] transition-colors',
               collapsed ? 'justify-center' : 'w-full',
             ].join(' ')}
           >
@@ -128,7 +128,7 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
               type="button"
               title={collapsed ? 'Log out' : undefined}
               className={[
-                'flex items-center gap-2.5 px-2 py-2 text-xs tracking-wide text-[#a39e96] hover:text-[#c1361f] transition-colors',
+                'flex items-center gap-2.5 px-2 py-2 text-xs tracking-wide text-[var(--mute)] hover:text-[var(--brand)] transition-colors',
                 collapsed ? 'justify-center' : 'w-full',
               ].join(' ')}
             >
@@ -138,9 +138,9 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
           </SignOutButton>
           {!collapsed && (
             <div className="flex items-center gap-2 px-2 pt-1">
-              <Link href="/terms" className="text-[10px] text-[#a39e96] hover:text-[#c1361f] transition-colors">Terms</Link>
-              <span className="text-[10px] text-[#c7c2b8]">·</span>
-              <Link href="/privacy" className="text-[10px] text-[#a39e96] hover:text-[#c1361f] transition-colors">Privacy</Link>
+              <Link href="/terms" className="text-[10px] text-[var(--mute)] hover:text-[var(--brand)] transition-colors">Terms</Link>
+              <span className="text-[10px] text-[var(--faint)]">·</span>
+              <Link href="/privacy" className="text-[10px] text-[var(--mute)] hover:text-[var(--brand)] transition-colors">Privacy</Link>
             </div>
           )}
         </div>

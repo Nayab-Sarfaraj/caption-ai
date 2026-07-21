@@ -38,7 +38,7 @@ export function PaywallModal({ onClose, onContinueFree }: PaywallModalProps) {
     >
       <div
         className={[
-          'bg-white max-w-md w-full p-6 sm:p-7 space-y-5 relative transition-all duration-200',
+          'bg-[var(--panel)] rounded-2xl max-w-md w-full p-6 sm:p-7 space-y-5 relative transition-all duration-200',
           visible ? 'opacity-100 scale-100' : 'opacity-0 scale-95',
         ].join(' ')}
         onClick={(e) => e.stopPropagation()}
@@ -47,7 +47,7 @@ export function PaywallModal({ onClose, onContinueFree }: PaywallModalProps) {
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="absolute top-4 right-4 text-[#a39e96] hover:text-[#1a1917] transition-colors"
+          className="absolute top-4 right-4 text-[var(--mute)] hover:text-[var(--ink)] transition-colors"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 6L6 18M6 6l12 12" />
@@ -56,26 +56,26 @@ export function PaywallModal({ onClose, onContinueFree }: PaywallModalProps) {
 
         {/* Outcome first — what changes for you, not what it costs */}
         <div>
-          <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96] mb-1.5">{'// Upgrade'}</p>
-          <h2 className="text-2xl font-bold tracking-wide uppercase text-[#1a1917]">Go unlimited</h2>
-          <p className="text-sm text-[#6b6862] mt-1.5">Unlimited, watermark-free renders — no monthly limit.</p>
+          <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)] mb-1.5">{'// Upgrade'}</p>
+          <h2 className="text-2xl font-bold tracking-wide uppercase text-[var(--ink)]">Go unlimited</h2>
+          <p className="text-sm text-[var(--ink-dim)] mt-1.5">Unlimited, watermark-free renders — no monthly limit.</p>
         </div>
 
         {/* Value explanation — honest Free vs Pro, only real differences */}
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-[11px] uppercase tracking-wide text-[#a39e96]">
+            <tr className="text-[11px] uppercase tracking-wide text-[var(--mute)]">
               <th className="text-left font-normal pb-2">&nbsp;</th>
               <th className="text-center font-normal pb-2">Free</th>
-              <th className="text-center font-normal pb-2 text-[#c1361f]">Pro</th>
+              <th className="text-center font-normal pb-2 text-[var(--brand)]">Pro</th>
             </tr>
           </thead>
           <tbody>
             {PLAN_COMPARISON.map((row) => (
-              <tr key={row.label} className="border-t border-[#14120f1f]">
-                <td className="py-2 text-[#1a1917]">{row.label}</td>
-                <td className="py-2 text-center text-[#6b6862]">{row.free}</td>
-                <td className="py-2 text-center text-[#1a1917] font-bold">{row.pro}</td>
+              <tr key={row.label} className="border-t border-[var(--hair)]">
+                <td className="py-2 text-[var(--ink)]">{row.label}</td>
+                <td className="py-2 text-center text-[var(--ink-dim)]">{row.free}</td>
+                <td className="py-2 text-center text-[var(--ink)] font-bold">{row.pro}</td>
               </tr>
             ))}
           </tbody>
@@ -84,18 +84,18 @@ export function PaywallModal({ onClose, onContinueFree }: PaywallModalProps) {
         {/* Reassurance — real, not manufactured: no card required for free tier,
             and if they're seeing this because they're out of renders, tell them
             honestly when it resets instead of only pushing to pay. */}
-        <p className="text-xs text-[#6b6862]">
+        <p className="text-xs text-[var(--ink-dim)]">
           No card required to keep using the free tier — your renders reset in {daysUntilRenderReset()} day{daysUntilRenderReset() === 1 ? '' : 's'}. Cancel Pro anytime.
         </p>
 
-        <div className="border-t border-[#14120f1f]" />
+        <div className="border-t border-[var(--hair)]" />
 
         {/* Pricing — after value, not before */}
         <div className="grid grid-cols-3 gap-2 text-center">
           {PRICING_TIERS.map((t) => (
             <div key={t.id}>
-              <p className="text-lg font-bold text-[#1a1917]">{t.price}</p>
-              <p className="text-[11px] text-[#a39e96]">{t.period}</p>
+              <p className="text-lg font-bold text-[var(--ink)]">{t.price}</p>
+              <p className="text-[11px] text-[var(--mute)]">{t.period}</p>
             </div>
           ))}
         </div>
@@ -106,7 +106,7 @@ export function PaywallModal({ onClose, onContinueFree }: PaywallModalProps) {
           <button
             type="button"
             onClick={onContinueFree}
-            className="w-full text-center text-xs text-[#a39e96] hover:text-[#6b6862] transition-colors"
+            className="w-full text-center text-xs text-[var(--mute)] hover:text-[var(--ink-dim)] transition-colors"
           >
             Continue with free render (watermarked)
           </button>

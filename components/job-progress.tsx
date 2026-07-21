@@ -60,13 +60,13 @@ export function JobProgress({ jobId, initialStatus, onDone, onFailed }: JobProgr
 
   return (
     <div className="space-y-2 font-[family-name:var(--font-cc)]">
-      <div className="flex items-center justify-between text-xs text-[#6b6862]">
+      <div className="flex items-center justify-between text-xs text-[var(--ink-dim)]">
         <span>{statusLabel}</span>
         <span className="tabular-nums">{percent}%</span>
       </div>
-      <div className="h-[3px] w-full bg-[#14120f1f] overflow-hidden">
+      <div className="h-[3px] w-full bg-[var(--hair)] overflow-hidden rounded-full">
         <div
-          className="h-full bg-[#c1361f] transition-all duration-300"
+          className="h-full bg-[var(--brand)] rounded-full transition-all duration-300"
           style={{ width: `${percent}%` }}
         />
       </div>

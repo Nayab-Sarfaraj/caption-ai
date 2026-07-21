@@ -20,10 +20,10 @@ const PLAN_LABEL: Record<string, string> = {
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="border border-[#14120f1f] bg-white p-5 space-y-1.5">
-      <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96]">{label}</p>
-      <p className="text-2xl font-bold text-[#1a1917] tabular-nums">{value}</p>
-      {sub && <p className="text-xs text-[#6b6862]">{sub}</p>}
+    <div className="border border-[var(--hair)] bg-[var(--panel)] rounded-2xl p-5 space-y-1.5">
+      <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)]">{label}</p>
+      <p className="text-2xl font-bold text-[var(--ink)] tabular-nums">{value}</p>
+      {sub && <p className="text-xs text-[var(--ink-dim)]">{sub}</p>}
     </div>
   )
 }
@@ -45,8 +45,8 @@ export default async function UsagePage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-8 py-7 sm:py-10">
-      <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96] mb-1.5">{'// Usage'}</p>
-      <h1 className="text-2xl font-bold tracking-wide uppercase text-[#1a1917]">Usage</h1>
+      <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)] mb-1.5">{'// Usage'}</p>
+      <h1 className="text-2xl font-bold tracking-wide uppercase text-[var(--ink)]">Usage</h1>
 
       <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard label="Current plan" value={PLAN_LABEL[status] ?? 'Free'} />
@@ -60,20 +60,20 @@ export default async function UsagePage() {
       </div>
 
       {!isPaid && (
-        <div className="mt-4 border border-[#14120f1f] bg-white p-5 space-y-4">
+        <div className="mt-4 border border-[var(--hair)] bg-[var(--panel)] rounded-2xl p-5 space-y-4">
           <div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-[#a39e96]">Free-tier renders this month</span>
-              <span className="text-[#6b6862] tabular-nums">{rendersThisMonth} / {FREE_TIER_MONTHLY_RENDERS}</span>
+              <span className="text-[var(--mute)]">Free-tier renders this month</span>
+              <span className="text-[var(--ink-dim)] tabular-nums">{rendersThisMonth} / {FREE_TIER_MONTHLY_RENDERS}</span>
             </div>
-            <div className="h-1.5 w-full bg-[#14120f1f] overflow-hidden rounded-full mt-2.5">
+            <div className="h-1.5 w-full bg-[var(--hair)] overflow-hidden rounded-full mt-2.5">
               <div
-                className="h-full bg-[#c1361f] transition-all"
+                className="h-full bg-[var(--brand)] rounded-full transition-all"
                 style={{ width: `${Math.min(100, (rendersThisMonth / FREE_TIER_MONTHLY_RENDERS) * 100)}%` }}
               />
             </div>
           </div>
-          <p className="text-xs text-[#6b6862]">Free renders are watermarked. Subscribe for unlimited, watermark-free exports.</p>
+          <p className="text-xs text-[var(--ink-dim)]">Free renders are watermarked. Subscribe for unlimited, watermark-free exports.</p>
           <BillingActions status={status} />
         </div>
       )}

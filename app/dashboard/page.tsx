@@ -24,9 +24,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-8 py-7 sm:py-10">
-      <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96] mb-1.5">{'// New Upload'}</p>
-      <h1 className="text-2xl font-bold tracking-wide uppercase text-[#1a1917]">New video</h1>
-      <p className="text-[13px] text-[#6b6862] mt-1.5">
+      <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)] mb-1.5">{'// New Upload'}</p>
+      <h1 className="text-2xl font-bold tracking-wide uppercase text-[var(--ink)]">New video</h1>
+      <p className="text-[13px] text-[var(--ink-dim)] mt-1.5">
         Upload a clip, pick a caption style, export word-by-word animated captions.
       </p>
 
@@ -38,11 +38,11 @@ export default async function DashboardPage() {
       {jobs.length > 0 && (
         <section className="mt-10">
           <div className="flex items-baseline justify-between mb-3">
-            <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96]">{'// Recent'}</p>
+            <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)]">{'// Recent'}</p>
             {total > RECENT_COUNT && (
               <Link
                 href="/dashboard/jobs"
-                className="text-xs text-[#6b6862] hover:text-[#1a1917] transition-colors"
+                className="text-xs text-[var(--ink-dim)] hover:text-[var(--ink)] transition-colors"
               >
                 View more →
               </Link>

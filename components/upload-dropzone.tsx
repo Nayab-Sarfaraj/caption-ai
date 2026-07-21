@@ -213,14 +213,14 @@ export function UploadDropzone({ isPaid, rendersRemaining }: { isPaid: boolean; 
       )}
 
       {!isPaid && (
-        <p className="text-xs text-[#a39e96]">
+        <p className="text-xs text-[var(--mute)]">
           {blocked
             ? 'Free limit reached this month ·'
             : `${rendersRemaining} free render${rendersRemaining === 1 ? '' : 's'} left this month · watermarked ·`}{' '}
           <button
             type="button"
             onClick={() => setShowPaywall(true)}
-            className="text-[#c1361f] hover:brightness-90 transition-all font-medium underline-offset-2 hover:underline"
+            className="text-[var(--brand)] hover:brightness-90 transition-all font-medium underline-offset-2 hover:underline"
           >
             Upgrade for unlimited
           </button>
@@ -229,13 +229,13 @@ export function UploadDropzone({ isPaid, rendersRemaining }: { isPaid: boolean; 
 
       {/* Mode toggle */}
       <div className="flex items-center justify-between">
-        <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96]">{'// Upload'}</p>
+        <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)]">{'// Upload'}</p>
         {/* Bulk upload disabled for now — commented out, not removed.
         <button
           type="button"
           onClick={toggleBatchMode}
           disabled={isUploading}
-          className="text-xs font-medium text-[#1a1917] border border-[#14120f1f] px-2.5 py-1 hover:border-[#c1361f] hover:text-[#c1361f] transition-colors disabled:opacity-40"
+          className="text-xs font-medium text-[var(--ink)] border border-[var(--hair)] px-2.5 py-1 hover:border-[var(--brand)] hover:text-[var(--brand)] transition-colors disabled:opacity-40"
         >
           {batchMode ? '← Single video upload' : `Upload multiple videos (up to ${MAX_BATCH_FILES})`}
         </button>
@@ -246,8 +246,8 @@ export function UploadDropzone({ isPaid, rendersRemaining }: { isPaid: boolean; 
       <div
         {...videoDropzone.getRootProps()}
         className={[
-          'border min-h-[200px] flex items-center justify-center text-center cursor-pointer transition-colors duration-150 bg-white',
-          videoDropzone.isDragActive ? 'border-[#c1361f] bg-[#c1361f08]' : 'border-[#14120f1f] hover:border-[#14120f3d]',
+          'border rounded-2xl min-h-[200px] flex items-center justify-center text-center cursor-pointer transition-colors duration-150 bg-[var(--panel)]',
+          videoDropzone.isDragActive ? 'border-[var(--brand)] bg-[var(--brand-soft)]' : 'border-[var(--hair)] hover:border-[var(--faint)]',
           isUploading ? 'pointer-events-none opacity-50' : '',
         ].join(' ')}
       >
@@ -257,38 +257,38 @@ export function UploadDropzone({ isPaid, rendersRemaining }: { isPaid: boolean; 
             <div className="w-full py-6 px-4 space-y-1.5 max-h-[200px] overflow-y-auto text-left">
               {videoFiles.map((f, i) => (
                 <div key={`${f.name}-${i}`} className="flex items-center justify-between text-sm">
-                  <span className="text-[#1a1917] truncate">{f.name}</span>
-                  <span className="text-xs text-[#6b6862] shrink-0 ml-2">{(f.size / 1024 / 1024).toFixed(1)} MB</span>
+                  <span className="text-[var(--ink)] truncate">{f.name}</span>
+                  <span className="text-xs text-[var(--ink-dim)] shrink-0 ml-2">{(f.size / 1024 / 1024).toFixed(1)} MB</span>
                 </div>
               ))}
             </div>
           ) : (
             <div className="py-8">
-              <div className="w-9 h-9 mx-auto mb-3.5 border border-[#14120f1f] flex items-center justify-center text-[#6b6862]">
+              <div className="w-9 h-9 mx-auto mb-3.5 border rounded-lg border-[var(--hair)] flex items-center justify-center text-[var(--ink-dim)]">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
               </div>
-              <p className="text-sm text-[#1a1917]">Drop up to {MAX_BATCH_FILES} videos</p>
-              <p className="text-xs text-[#a39e96] mt-1.5">MP4 or MOV · 500MB max each</p>
+              <p className="text-sm text-[var(--ink)]">Drop up to {MAX_BATCH_FILES} videos</p>
+              <p className="text-xs text-[var(--mute)] mt-1.5">MP4 or MOV · 500MB max each</p>
             </div>
           )
         ) : videoFile ? (
           <div className="space-y-1.5 py-8">
-            <p className="text-sm text-[#1a1917]">{videoFile.name}</p>
-            <p className="text-xs text-[#6b6862]">
+            <p className="text-sm text-[var(--ink)]">{videoFile.name}</p>
+            <p className="text-xs text-[var(--ink-dim)]">
               {(videoFile.size / 1024 / 1024).toFixed(1)} MB · {videoFile.type === 'video/mp4' ? 'MP4' : 'MOV'}
             </p>
           </div>
         ) : (
           <div className="py-8">
-            <div className="w-9 h-9 mx-auto mb-3.5 border border-[#14120f1f] flex items-center justify-center text-[#6b6862]">
+            <div className="w-9 h-9 mx-auto mb-3.5 border border-[var(--hair)] flex items-center justify-center text-[var(--ink-dim)]">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
               </svg>
             </div>
-            <p className="text-sm text-[#1a1917]">Import or drag your video</p>
-            <p className="text-xs text-[#a39e96] mt-1.5">MP4 or MOV · 500MB max · 10:00 max</p>
+            <p className="text-sm text-[var(--ink)]">Import or drag your video</p>
+            <p className="text-xs text-[var(--mute)] mt-1.5">MP4 or MOV · 500MB max · 10:00 max</p>
           </div>
         )}
       </div>
@@ -296,10 +296,10 @@ export function UploadDropzone({ isPaid, rendersRemaining }: { isPaid: boolean; 
       {/* Style picker — CC channel tiles */}
       <div className="space-y-2.5">
         <div className="flex items-baseline justify-between">
-          <p className="text-[11px] tracking-[0.15em] uppercase text-[#a39e96]">
+          <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)]">
             Caption Style{batchMode && ' (applies to all videos)'}
           </p>
-          <span className="text-[11px] text-[#a39e96]">{STYLES.length} styles</span>
+          <span className="text-[11px] text-[var(--mute)]">{STYLES.length} styles</span>
         </div>
         <div className="relative">
           <div className="flex gap-3 overflow-x-auto pb-1 -mx-0.5 px-0.5 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -313,22 +313,22 @@ export function UploadDropzone({ isPaid, rendersRemaining }: { isPaid: boolean; 
                   disabled={isUploading}
                   className={[
                     'shrink-0 w-[148px] snap-start text-left transition-all disabled:opacity-40 overflow-hidden rounded-xl',
-                    active ? 'ring-2 ring-inset ring-[#c1361f]' : 'ring-1 ring-inset ring-[#14120f1f] hover:ring-[#14120f3d]',
+                    active ? 'ring-2 ring-inset ring-[var(--brand)]' : 'ring-1 ring-inset ring-[var(--hair)] hover:ring-[var(--faint)]',
                   ].join(' ')}
                 >
                   <div className="relative">
                     <CaptionStylePreview id={s.id} />
                     {active && (
-                      <span className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-[#c1361f] flex items-center justify-center">
+                      <span className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-[var(--brand)] flex items-center justify-center">
                         <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                         </svg>
                       </span>
                     )}
                   </div>
-                  <div className="px-3 py-2.5 bg-white">
-                    <p className="text-xs text-[#1a1917] font-medium">{s.label}</p>
-                    <p className="text-[11px] text-[#a39e96] leading-tight mt-1 line-clamp-1">{s.desc}</p>
+                  <div className="px-3 py-2.5 bg-[var(--panel)]">
+                    <p className="text-xs text-[var(--ink)] font-medium">{s.label}</p>
+                    <p className="text-[11px] text-[var(--mute)] leading-tight mt-1 line-clamp-1">{s.desc}</p>
                   </div>
                 </button>
               )
@@ -337,7 +337,7 @@ export function UploadDropzone({ isPaid, rendersRemaining }: { isPaid: boolean; 
             <div className="shrink-0 w-2" aria-hidden="true" />
           </div>
           {/* right-edge fade signals there's more to scroll, instead of a hard clip */}
-          <div className="absolute inset-y-0 right-0 w-14 pointer-events-none bg-gradient-to-r from-transparent to-[#faf9f6]" />
+          <div className="absolute inset-y-0 right-0 w-14 pointer-events-none bg-gradient-to-r from-transparent to-[var(--stage)]" />
         </div>
       </div>
 
@@ -347,7 +347,7 @@ export function UploadDropzone({ isPaid, rendersRemaining }: { isPaid: boolean; 
           <button
             type="button"
             onClick={() => setShowCaption(!showCaption)}
-            className="text-xs font-medium text-[#1a1917] hover:text-[#c1361f] transition-colors"
+            className="text-xs font-medium text-[var(--ink)] hover:text-[var(--brand)] transition-colors"
           >
             {showCaption ? '− Hide' : '+ Have an .srt or .vtt? Skip AI transcription'}
           </button>
@@ -355,15 +355,15 @@ export function UploadDropzone({ isPaid, rendersRemaining }: { isPaid: boolean; 
             <div
               {...captionDropzone.getRootProps()}
               className={[
-                'mt-2 border border-dashed p-4 text-center cursor-pointer transition-all bg-white',
-                captionDropzone.isDragActive ? 'border-[#c1361f] bg-[#c1361f08]' : 'border-[#14120f1f] hover:border-[#14120f3d]',
+                'mt-2 border rounded-2xl border-dashed p-4 text-center cursor-pointer transition-all bg-[var(--panel)]',
+                captionDropzone.isDragActive ? 'border-[var(--brand)] bg-[var(--brand-soft)]' : 'border-[var(--hair)] hover:border-[var(--faint)]',
                 isUploading ? 'pointer-events-none opacity-50' : '',
               ].join(' ')}
             >
               <input {...captionDropzone.getInputProps()} />
               {captionFile
-                ? <span className="text-sm text-[#1a1917]">{captionFile.name}</span>
-                : <span className="text-sm text-[#a39e96]">Drop .srt or .vtt</span>}
+                ? <span className="text-sm text-[var(--ink)]">{captionFile.name}</span>
+                : <span className="text-sm text-[var(--mute)]">Drop .srt or .vtt</span>}
             </div>
           )}
         </div>
@@ -372,24 +372,24 @@ export function UploadDropzone({ isPaid, rendersRemaining }: { isPaid: boolean; 
       {/* Progress bar */}
       {isUploading && (
         <div className="space-y-1.5">
-          <div className="h-[3px] w-full bg-[#14120f1f] overflow-hidden">
+          <div className="h-[3px] w-full rounded-full bg-[var(--hair)] overflow-hidden">
             <div
-              className="h-full bg-[#c1361f] transition-all duration-300"
+              className="h-full rounded-full bg-[var(--brand)] transition-all duration-300"
               style={{ width: `${step === 'uploading' ? uploadProgress : 100}%` }}
             />
           </div>
-          <p className="text-xs text-[#a39e96] text-center">{stepLabel[step]}</p>
+          <p className="text-xs text-[var(--mute)] text-center">{stepLabel[step]}</p>
         </div>
       )}
 
-      {error && <p className="text-sm text-[#c1361f]">{error}</p>}
+      {error && <p className="text-sm text-[var(--brand)]">{error}</p>}
 
       {/* CTA */}
       <button
         type="button"
         disabled={!hasFiles || isUploading}
         onClick={handleGenerateClick}
-        className="w-full bg-[#c1361f] text-white text-sm font-bold py-3 hover:brightness-[1.08] transition-all disabled:opacity-35 disabled:cursor-not-allowed"
+        className="w-full rounded-lg bg-[var(--brand)] text-white text-sm font-bold py-3 hover:brightness-[1.08] transition-all disabled:opacity-35 disabled:cursor-not-allowed"
       >
         {isUploading
           ? stepLabel[step]

@@ -10,13 +10,13 @@ export function RemoveWatermarkCta() {
   const [showPaywall, setShowPaywall] = useState(false)
 
   return (
-    <div className="border border-[#14120f1f] bg-[#c1361f08] p-3 space-y-1.5">
+    <div className="rounded-2xl border border-[var(--hair)] bg-[var(--brand-soft)] p-3 space-y-1.5">
       {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
-      <p className="text-xs text-[#1a1917]">This export has a watermark (free tier).</p>
+      <p className="text-xs text-[var(--ink)]">This export has a watermark (free tier).</p>
       <button
         type="button"
         onClick={() => setShowPaywall(true)}
-        className="text-xs font-bold text-[#c1361f] hover:brightness-90 transition-all"
+        className="text-xs font-bold text-[var(--brand)] hover:brightness-90 transition-all"
       >
         Subscribe to remove it →
       </button>
