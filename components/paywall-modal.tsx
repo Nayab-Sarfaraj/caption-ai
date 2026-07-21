@@ -57,7 +57,7 @@ export function PaywallModal({ onClose, onContinueFree }: PaywallModalProps) {
         {/* Outcome first — what changes for you, not what it costs */}
         <div>
           <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)] mb-1.5">{'// Upgrade'}</p>
-          <h2 className="text-2xl font-bold tracking-wide uppercase text-[var(--ink)]">Go unlimited</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-[var(--ink)] font-[family-name:var(--font-display)]">Go unlimited</h2>
           <p className="text-sm text-[var(--ink-dim)] mt-1.5">Unlimited, watermark-free renders — no monthly limit.</p>
         </div>
 

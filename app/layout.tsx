@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono, Courier_Prime, Bangers, Anton, Fredoka, Montserrat, Roboto, Caveat } from 'next/font/google'
+import { Geist, Geist_Mono, Bricolage_Grotesque, Bangers, Anton, Fredoka, Montserrat, Roboto, Caveat } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
 import { Providers } from '@/components/providers'
 import './globals.css'
@@ -14,9 +14,11 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 })
 
-const courierPrime = Courier_Prime({
-  variable: '--font-cc',
-  weight: ['400', '700'],
+// Display face for headlines — a characterful grotesque, readable at every
+// size. Body/labels/numbers stay Geist; caption fonts (Anton etc) stay product-only.
+const bricolage = Bricolage_Grotesque({
+  variable: '--font-display',
+  weight: ['600', '700', '800'],
   subsets: ['latin'],
 })
 
@@ -67,7 +69,7 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${courierPrime.variable} ${PREVIEW_FONT_VARS} h-full antialiased dark scroll-smooth`}>
+      <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} ${PREVIEW_FONT_VARS} h-full antialiased dark scroll-smooth`}>
         <body className="min-h-full flex flex-col">
             <Providers>{children}</Providers>
           </body>

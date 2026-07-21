@@ -25,7 +25,7 @@ export default async function DashboardPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-8 py-7 sm:py-10">
       <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)] mb-1.5">{'// New Upload'}</p>
-      <h1 className="text-2xl font-bold tracking-wide uppercase text-[var(--ink)]">New video</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-[var(--ink)] font-[family-name:var(--font-display)]">New video</h1>
       <p className="text-[13px] text-[var(--ink-dim)] mt-1.5">
         Upload a clip, pick a caption style, export word-by-word animated captions.
       </p>

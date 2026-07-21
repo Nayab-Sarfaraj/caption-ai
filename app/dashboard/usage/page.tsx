@@ -5,7 +5,7 @@ import { findByClerkId } from '@/src/repositories/user.repository'
 import { getUsageStats, getTotalStorageBytes, countRendersThisMonth } from '@/src/repositories/job.repository'
 import { FREE_TIER_MONTHLY_RENDERS } from '@/src/services/billing.service'
 import { formatBytes } from '@/src/helpers/format-bytes'
-import { BillingActions } from '@/components/billing-actions'
+import Link from 'next/link'
 
 const PLAN_LABEL: Record<string, string> = {
   active: 'Pro',
@@ -46,7 +46,7 @@ export default async function UsagePage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-8 py-7 sm:py-10">
       <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)] mb-1.5">{'// Usage'}</p>
-      <h1 className="text-2xl font-bold tracking-wide uppercase text-[var(--ink)]">Usage</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-[var(--ink)] font-[family-name:var(--font-display)]">Usage</h1>
 
       <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard label="Current plan" value={PLAN_LABEL[status] ?? 'Free'} />
@@ -74,7 +74,13 @@ export default async function UsagePage() {
             </div>
           </div>
           <p className="text-xs text-[var(--ink-dim)]">Free renders are watermarked. Subscribe for unlimited, watermark-free exports.</p>
-          <BillingActions status={status} />
+          <Link
+            href="/dashboard/billing"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--brand)] text-white text-sm font-bold px-4 py-2.5 hover:brightness-[1.08] transition-all"
+          >
+            See plans &amp; upgrade
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+          </Link>
         </div>
       )}
     </div>

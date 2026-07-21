@@ -39,7 +39,7 @@ export default async function AllJobsPage({
       <div className="flex items-baseline justify-between mt-5 mb-3">
         <div>
           <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)] mb-1.5">{'// All Videos'}</p>
-          <h1 className="text-2xl font-bold tracking-wide uppercase text-[var(--ink)]">Videos</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--ink)] font-[family-name:var(--font-display)]">Videos</h1>
         </div>
         <span className="text-xs text-[var(--mute)] tabular-nums">{total} total</span>
       </div>

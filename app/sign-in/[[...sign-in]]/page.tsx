@@ -8,9 +8,9 @@ export default async function SignInPage() {
   if (userId) redirect('/dashboard')
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center gap-6 bg-[#faf9f6] font-[family-name:var(--font-cc)] px-4">
+    <main className="min-h-screen flex flex-col items-center justify-center gap-6 bg-[var(--stage)] font-[family-name:var(--font-geist-sans)] px-4">
       <div className="flex items-center gap-2">
-        <span className="text-[13px] font-bold tracking-[0.08em] uppercase text-[#1a1917]"><span className="text-[#c1361f]">Insta</span>cap</span>
+        <span className="text-[15px] font-extrabold tracking-[-0.02em] text-[var(--ink)]"><span className="text-[var(--brand)]">Insta</span>cap</span>
       </div>
       <SignIn appearance={clerkAppearance} fallbackRedirectUrl="/dashboard" />
     </main>

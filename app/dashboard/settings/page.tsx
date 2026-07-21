@@ -12,7 +12,7 @@ export default async function SettingsPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-8 py-7 sm:py-10">
       <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)] mb-1.5">{'// Brand kit'}</p>
-      <h1 className="text-2xl font-bold tracking-wide uppercase text-[var(--ink)]">Brand kit</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-[var(--ink)] font-[family-name:var(--font-display)]">Brand kit</h1>
       <p className="text-[13px] text-[var(--ink-dim)] mt-1.5">
         Set your default caption style, colors, and font. Applied automatically on every new export — override per-video anytime.
       </p>

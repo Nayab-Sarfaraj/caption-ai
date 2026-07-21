@@ -7,6 +7,7 @@ import { FREE_TIER_MONTHLY_RENDERS, getSubscriptionDetails } from '@/src/service
 import { PLAN_COMPARISON, daysUntilRenderReset } from '@/src/helpers/plan-comparison'
 import { PRICING_TIERS } from '@/src/helpers/pricing-tiers'
 import { BillingActions } from '@/components/billing-actions'
+import { PlanCards } from '@/components/plan-cards'
 
 const STATUS_COPY: Record<string, { label: string; desc: string; color: string }> = {
   active: { label: 'PRO', color: 'var(--ok)', desc: 'Unlimited renders, no watermark.' },
@@ -44,7 +45,7 @@ export default async function BillingPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-8 py-7 sm:py-10">
       <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)] mb-1.5">{'// Billing'}</p>
-      <h1 className="text-2xl font-bold tracking-wide uppercase text-[var(--ink)]">Plan</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-[var(--ink)] font-[family-name:var(--font-display)]">Plan</h1>
 
       {/* Current status — always shown, top of page */}
       <div className="mt-6 max-w-md rounded-2xl border border-[var(--hair)] bg-[var(--panel)] p-5 space-y-3">
@@ -97,54 +98,42 @@ export default async function BillingPage() {
         {isActive && <BillingActions status={status} />}
       </div>
 
-      {/* Upgrade content — outcome, value, reassurance, price, CTA. Only shown
-          to non-Pro users; a paying user doesn't need to be re-sold. */}
+      {/* Upgrade — plan cards front and centre, Free-vs-Pro table as supporting
+          detail. Only shown to non-Pro users; a paying user isn't re-sold. */}
       {!isActive && (
-        <div className="mt-6 max-w-md rounded-2xl border border-[var(--hair)] bg-[var(--panel)] p-5 sm:p-6 space-y-5">
+        <div className="mt-8 space-y-5">
           <div>
             <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)] mb-1.5">{'// Upgrade'}</p>
-            <h2 className="text-xl font-bold tracking-wide uppercase text-[var(--ink)]">Go unlimited</h2>
-            <p className="text-sm text-[var(--ink-dim)] mt-1.5">Unlimited, watermark-free renders — no monthly limit.</p>
+            <h2 className="text-xl font-bold tracking-tight text-[var(--ink)] font-[family-name:var(--font-display)]">Go unlimited</h2>
+            <p className="text-sm text-[var(--ink-dim)] mt-1.5">Unlimited, watermark-free renders — no monthly limit. Cancel anytime.</p>
           </div>
 
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-[11px] uppercase tracking-wide text-[var(--mute)]">
-                <th className="text-left font-normal pb-2">&nbsp;</th>
-                <th className="text-center font-normal pb-2">Free</th>
-                <th className="text-center font-normal pb-2 text-[var(--brand)]">Pro</th>
-              </tr>
-            </thead>
-            <tbody>
-              {PLAN_COMPARISON.map((row) => (
-                <tr key={row.label} className="border-t border-[var(--hair)]">
-                  <td className="py-2 text-[var(--ink)]">{row.label}</td>
-                  <td className="py-2 text-center text-[var(--ink-dim)]">{row.free}</td>
-                  <td className="py-2 text-center text-[var(--ink)] font-bold">{row.pro}</td>
+          <PlanCards status={status} />
+
+          {/* Free vs Pro — supporting detail */}
+          <div className="max-w-md rounded-2xl border border-[var(--hair)] bg-[var(--panel)] p-5 space-y-4">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-[11px] uppercase tracking-wide text-[var(--mute)]">
+                  <th className="text-left font-normal pb-2">&nbsp;</th>
+                  <th className="text-center font-normal pb-2">Free</th>
+                  <th className="text-center font-normal pb-2 text-[var(--brand)]">Pro</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <p className="text-xs text-[var(--ink-dim)]">
-            No card required to keep using the free tier — your renders reset in {daysUntilRenderReset()} day{daysUntilRenderReset() === 1 ? '' : 's'}. Cancel Pro anytime.
-          </p>
-
-          <div className="border-t border-[var(--hair)]" />
-
-          <div className="grid grid-cols-3 gap-3">
-            {PRICING_TIERS.map((t) => (
-              <div key={t.id}>
-                <p className="text-[11px] text-[var(--mute)] uppercase tracking-wide">{t.label}</p>
-                <p className="text-xl font-bold text-[var(--ink)] mt-0.5">
-                  {t.price}<span className="text-xs font-normal text-[var(--ink-dim)]">{t.period}</span>
-                </p>
-                {t.note && <p className="text-[11px] text-[var(--mute)] mt-0.5">{t.note}</p>}
-              </div>
-            ))}
+              </thead>
+              <tbody>
+                {PLAN_COMPARISON.map((row) => (
+                  <tr key={row.label} className="border-t border-[var(--hair)]">
+                    <td className="py-2 text-[var(--ink)]">{row.label}</td>
+                    <td className="py-2 text-center text-[var(--ink-dim)]">{row.free}</td>
+                    <td className="py-2 text-center text-[var(--ink)] font-bold">{row.pro}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="text-xs text-[var(--ink-dim)]">
+              No card required to keep using the free tier — your renders reset in {daysUntilRenderReset()} day{daysUntilRenderReset() === 1 ? '' : 's'}. Cancel Pro anytime.
+            </p>
           </div>
-
-          <BillingActions status={status} />
         </div>
       )}
     </div>

@@ -99,7 +99,7 @@ export function SupportModal({ onClose }: { onClose: () => void }) {
 
         <div>
           <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)] mb-1.5">{'// Support'}</p>
-          <h2 className="text-2xl font-bold tracking-wide uppercase text-[var(--ink)]">Get in touch</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-[var(--ink)] font-[family-name:var(--font-display)]">Get in touch</h2>
         </div>
 
         {sent ? (
