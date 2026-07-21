@@ -2,6 +2,7 @@ import React from 'react'
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo, spring, interpolate } from 'remotion'
 import { withScriptFallback } from '../lib/fonts'
 import type { Transcript } from '../types'
+import { captionAnchorStyle } from '../lib/caption-layout'
 
 export interface SpringProps {
   transcript: Transcript
@@ -10,6 +11,8 @@ export interface SpringProps {
   textColor?: string
   fontFamily?: string
   fontSizeMultiplier?: number
+  posX?: number
+  posY?: number
 }
 
 export const Spring: React.FC<SpringProps> = ({
@@ -19,6 +22,8 @@ export const Spring: React.FC<SpringProps> = ({
   textColor = '#FFFFFF',
   fontFamily = 'system-ui, -apple-system, sans-serif',
   fontSizeMultiplier = 1,
+  posX,
+  posY,
 }) => {
   const frame = useCurrentFrame()
   const { fps, width, height } = useVideoConfig()
@@ -62,9 +67,7 @@ export const Spring: React.FC<SpringProps> = ({
       {currentSegment && (
         <AbsoluteFill
           style={{
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-            paddingBottom,
+            ...captionAnchorStyle(paddingBottom, posX, posY),
             paddingLeft: paddingH,
             paddingRight: paddingH,
           }}

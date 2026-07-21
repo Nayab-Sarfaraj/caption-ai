@@ -3,6 +3,7 @@ import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo, spring, 
 import { loadFont } from '@remotion/google-fonts/Bangers'
 import { withScriptFallback } from '../lib/fonts'
 import type { Transcript } from '../types'
+import { captionAnchorStyle } from '../lib/caption-layout'
 
 const { fontFamily: BANGERS } = loadFont()
 
@@ -13,6 +14,8 @@ export interface HypeProps {
   textColor?: string
   fontFamily?: string
   fontSizeMultiplier?: number
+  posX?: number
+  posY?: number
 }
 
 // "MrBeast style": punchy scale-overshoot bounce per word, thick black stroke,
@@ -24,6 +27,8 @@ export const Hype: React.FC<HypeProps> = ({
   textColor = '#FFFFFF',
   fontFamily = BANGERS,
   fontSizeMultiplier = 1,
+  posX,
+  posY,
 }) => {
   const frame = useCurrentFrame()
   const { fps, width, height } = useVideoConfig()
@@ -63,9 +68,7 @@ export const Hype: React.FC<HypeProps> = ({
       {currentSegment && (
         <AbsoluteFill
           style={{
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-            paddingBottom,
+            ...captionAnchorStyle(paddingBottom, posX, posY),
             paddingLeft: paddingH,
             paddingRight: paddingH,
           }}

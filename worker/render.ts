@@ -91,7 +91,7 @@ async function processTranscribePhase(bullJob: Job<RenderJobPayload>): Promise<v
 // ─── Render phase ────────────────────────────────────────────────────────────
 
 async function processRenderPhase(bullJob: Job<RenderJobPayload>): Promise<void> {
-  const { jobId, userId, videoKey, compositionId, fps, activeColor = '#FACC15', textColor = '#FFFFFF', accentColor, fontFamily, watermark } = bullJob.data
+  const { jobId, userId, videoKey, compositionId, fps, activeColor = '#FACC15', textColor = '#FFFFFF', accentColor, fontFamily, fontSizeMultiplier, posX, posY, watermark } = bullJob.data
   const tmpDir = `/tmp/${jobId}`
 
   try {
@@ -118,7 +118,7 @@ async function processRenderPhase(bullJob: Job<RenderJobPayload>): Promise<void>
     // so worker and preview can't silently diverge on props one of them
     // forgets to pass (this already happened once: fontFamily reached the
     // preview but not the worker until it was explicitly wired through).
-    const inputProps = { style: compositionId, transcript, videoSrc, activeColor, textColor, accentColor, fontFamily, watermark }
+    const inputProps = { style: compositionId, transcript, videoSrc, activeColor, textColor, accentColor, fontFamily, fontSizeMultiplier, posX, posY, watermark }
 
     const composition = await selectComposition({
       serveUrl,

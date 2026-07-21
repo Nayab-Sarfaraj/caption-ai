@@ -23,6 +23,9 @@ const triggerRenderSchema = z.object({
   textColor: hexColorSchema.optional(),
   accentColor: hexColorSchema.optional(),
   fontFamily: fontFamilySchema.optional(),
+  fontSizeMultiplier: z.number().min(0.5).max(2).optional(),
+  posX: z.number().min(0).max(100).optional(),
+  posY: z.number().min(0).max(100).optional(),
 })
 
 export async function handleGetJob(
@@ -102,6 +105,9 @@ export async function handleTriggerRender(
     textColor: parsed.data.textColor ?? brandKit?.textColor ?? undefined,
     accentColor: parsed.data.accentColor ?? brandKit?.accentColor ?? undefined,
     fontFamily: parsed.data.fontFamily ?? brandKit?.fontFamily ?? undefined,
+    fontSizeMultiplier: parsed.data.fontSizeMultiplier ?? undefined,
+    posX: parsed.data.posX ?? undefined,
+    posY: parsed.data.posY ?? undefined,
     watermark,
   }
 
@@ -113,6 +119,9 @@ export async function handleTriggerRender(
     textColor: payload.textColor,
     accentColor: payload.accentColor,
     fontFamily: payload.fontFamily,
+    fontSizeMultiplier: payload.fontSizeMultiplier,
+    captionPosX: payload.posX,
+    captionPosY: payload.posY,
     watermarked: watermark,
   })
 

@@ -73,6 +73,9 @@ export async function retryJob(jobId: string, userId: string): Promise<{ status:
       textColor: job.textColor ?? undefined,
       accentColor: job.accentColor ?? undefined,
       fontFamily: job.fontFamily ?? undefined,
+      fontSizeMultiplier: job.fontSizeMultiplier ?? undefined,
+      captionPosX: job.captionPosX ?? undefined,
+      captionPosY: job.captionPosY ?? undefined,
       watermarked: watermark,
     })
   }
@@ -90,6 +93,9 @@ export async function retryJob(jobId: string, userId: string): Promise<{ status:
         textColor: job.textColor ?? undefined,
         accentColor: job.accentColor ?? undefined,
         fontFamily: job.fontFamily ?? undefined,
+        fontSizeMultiplier: job.fontSizeMultiplier ?? undefined,
+        posX: job.captionPosX ?? undefined,
+        posY: job.captionPosY ?? undefined,
         watermark,
       }
     : {

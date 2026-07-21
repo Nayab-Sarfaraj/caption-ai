@@ -24,6 +24,8 @@ export interface CaptionRootProps {
   accentColor?: string
   fontFamily?: string
   fontSizeMultiplier?: number
+  posX?: number
+  posY?: number
   watermark?: boolean
 }
 
@@ -52,8 +54,8 @@ const Watermark: React.FC = () => {
   )
 }
 
-export const CaptionRoot: React.FC<CaptionRootProps> = ({ style, transcript, videoSrc, activeColor, textColor, accentColor, fontFamily, fontSizeMultiplier, watermark }) => {
-  const shared = { activeColor, textColor, fontFamily, fontSizeMultiplier }
+export const CaptionRoot: React.FC<CaptionRootProps> = ({ style, transcript, videoSrc, activeColor, textColor, accentColor, fontFamily, fontSizeMultiplier, posX, posY, watermark }) => {
+  const shared = { activeColor, textColor, fontFamily, fontSizeMultiplier, posX, posY }
 
   let composition: React.ReactNode
   if (style === 'Karaoke')      composition = <Karaoke      transcript={transcript} videoSrc={videoSrc} {...shared} />

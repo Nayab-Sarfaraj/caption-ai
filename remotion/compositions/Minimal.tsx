@@ -3,6 +3,7 @@ import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo, interpol
 import { loadFont } from '@remotion/google-fonts/Inter'
 import { withScriptFallback } from '../lib/fonts'
 import type { Transcript, TranscriptSegment } from '../types'
+import { captionAnchorStyle } from '../lib/caption-layout'
 
 const { fontFamily: INTER } = loadFont('normal', { weights: ['500'], subsets: ['latin'] })
 
@@ -13,6 +14,8 @@ export interface MinimalProps {
   textColor?: string
   fontFamily?: string
   fontSizeMultiplier?: number
+  posX?: number
+  posY?: number
 }
 
 // "Iman Gadzhi / Ali Abdaal style": lowercase, single flat color, no per-word
@@ -24,6 +27,8 @@ export const Minimal: React.FC<MinimalProps> = ({
   textColor = '#FFFFFF',
   fontFamily = INTER,
   fontSizeMultiplier = 1,
+  posX,
+  posY,
 }) => {
   const frame = useCurrentFrame()
   const { fps, width, height } = useVideoConfig()
@@ -74,9 +79,7 @@ export const Minimal: React.FC<MinimalProps> = ({
       {currentSegment && (
         <AbsoluteFill
           style={{
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-            paddingBottom,
+            ...captionAnchorStyle(paddingBottom, posX, posY),
             paddingLeft: paddingH,
             paddingRight: paddingH,
           }}

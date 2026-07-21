@@ -33,6 +33,8 @@ interface StyleSettings {
   accentColor: string
   fontFamily: string
   fontSizeMultiplier: number
+  posX: number // caption horizontal position, 0–100 % of frame (50 = center)
+  posY: number // caption vertical position, 0–100 % of frame (82 = lower third)
 }
 
 type SettingsMap = Record<CompositionId, StyleSettings>
@@ -43,6 +45,8 @@ const DEFAULT: StyleSettings = {
   accentColor: '#A3E635',
   fontFamily: FONTS[0].value,
   fontSizeMultiplier: 1.0,
+  posX: 50,
+  posY: 82,
 }
 
 const INITIAL_SETTINGS: SettingsMap = {
@@ -92,6 +96,11 @@ export function PreviewPlayer({
     setSettings(prev => ({ ...prev, [style]: { ...prev[style], [key]: value } }))
   }, [style])
 
+  // Restore the current style's colors, font, size and position to its defaults.
+  const resetStyle = useCallback(() => {
+    setSettings(prev => ({ ...prev, [style]: { ...INITIAL_SETTINGS[style] } }))
+  }, [style])
+
   const inputProps = useMemo(
     () => ({
       style,
@@ -102,6 +111,8 @@ export function PreviewPlayer({
       accentColor: cur.accentColor,
       fontFamily: cur.fontFamily,
       fontSizeMultiplier: cur.fontSizeMultiplier,
+      posX: cur.posX,
+      posY: cur.posY,
       watermark: willWatermark,
     }),
     [style, transcript, videoSrc, cur, willWatermark]
@@ -121,6 +132,8 @@ export function PreviewPlayer({
           accentColor: cur.accentColor,
           fontFamily: cur.fontFamily,
           fontSizeMultiplier: cur.fontSizeMultiplier,
+          posX: cur.posX,
+          posY: cur.posY,
         }),
       })
       if (!res.ok) {
@@ -299,14 +312,24 @@ export function PreviewPlayer({
         {view === 'appearance' && (
           /* ── Appearance (per-style) ── */
           <>
-            <div className="flex items-center gap-2">
-              <button type="button" onClick={() => setView('styles')} className="flex items-center gap-1 text-xs text-[var(--ink-dim)] hover:text-[var(--ink)] transition-colors">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-                Back
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => setView('styles')} className="flex items-center gap-1 text-xs text-[var(--ink-dim)] hover:text-[var(--ink)] transition-colors">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                  Back
+                </button>
+                <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)]">
+                  {STYLES.find(s => s.id === style)?.label}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={resetStyle}
+                className="flex items-center gap-1 text-[10px] text-[var(--mute)] hover:text-[var(--brand)] rounded-md border border-[var(--hair)] px-2 py-1 transition-colors"
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+                Reset
               </button>
-              <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)]">
-                {STYLES.find(s => s.id === style)?.label}
-              </p>
             </div>
 
             <ColorSwatch
@@ -356,6 +379,29 @@ export function PreviewPlayer({
                 className="w-full accent-[var(--brand)] cursor-pointer"
               />
               <div className="flex justify-between text-[10px] text-[var(--mute)]"><span>Small</span><span>Large</span></div>
+            </div>
+
+            {/* Caption position — % of frame, so preview matches render exactly */}
+            <div className="space-y-2.5">
+              <p className="text-xs text-[var(--mute)]">Position</p>
+
+              <div className="space-y-1">
+                <input type="range" min={0} max={100} step={1} value={cur.posY}
+                  onChange={(e) => update('posY', parseInt(e.target.value, 10))}
+                  className="w-full accent-[var(--brand)] cursor-pointer"
+                  aria-label="Vertical position"
+                />
+                <div className="flex justify-between text-[10px] text-[var(--mute)]"><span>Top</span><span>Bottom</span></div>
+              </div>
+
+              <div className="space-y-1">
+                <input type="range" min={0} max={100} step={1} value={cur.posX}
+                  onChange={(e) => update('posX', parseInt(e.target.value, 10))}
+                  className="w-full accent-[var(--brand)] cursor-pointer"
+                  aria-label="Horizontal position"
+                />
+                <div className="flex justify-between text-[10px] text-[var(--mute)]"><span>Left</span><span>Right</span></div>
+              </div>
             </div>
           </>
         )}

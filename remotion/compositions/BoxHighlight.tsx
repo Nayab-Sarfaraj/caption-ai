@@ -3,6 +3,7 @@ import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo, spring }
 import { loadFont } from '@remotion/google-fonts/Montserrat'
 import { withScriptFallback } from '../lib/fonts'
 import type { Transcript } from '../types'
+import { captionAnchorStyle } from '../lib/caption-layout'
 
 const { fontFamily: MONTSERRAT } = loadFont('normal', { weights: ['900'], subsets: ['latin'] })
 
@@ -14,6 +15,8 @@ export interface BoxHighlightProps {
   accentColor?: string
   fontFamily?: string
   fontSizeMultiplier?: number
+  posX?: number
+  posY?: number
 }
 
 // Captions.ai "AI Edit" style: short word chunks, most words plain white,
@@ -26,6 +29,8 @@ export const BoxHighlight: React.FC<BoxHighlightProps> = ({
   accentColor = '#A3E635',
   fontFamily = MONTSERRAT,
   fontSizeMultiplier = 1,
+  posX,
+  posY,
 }) => {
   const frame = useCurrentFrame()
   const { fps, width, height } = useVideoConfig()
@@ -65,9 +70,7 @@ export const BoxHighlight: React.FC<BoxHighlightProps> = ({
       {currentSegment && (
         <AbsoluteFill
           style={{
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-            paddingBottom,
+            ...captionAnchorStyle(paddingBottom, posX, posY),
             paddingLeft: paddingH,
             paddingRight: paddingH,
           }}

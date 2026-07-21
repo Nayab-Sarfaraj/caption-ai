@@ -3,6 +3,7 @@ import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo, spring, 
 import { loadFont } from '@remotion/google-fonts/Anton'
 import { withScriptFallback } from '../lib/fonts'
 import type { Transcript } from '../types'
+import { captionAnchorStyle } from '../lib/caption-layout'
 
 const { fontFamily: ANTON } = loadFont()
 
@@ -13,6 +14,8 @@ export interface HormoziProps {
   textColor?: string
   fontFamily?: string
   fontSizeMultiplier?: number
+  posX?: number
+  posY?: number
 }
 
 // "Hormozi style": condensed uppercase, yellow stroke outline, each word pops
@@ -24,6 +27,8 @@ export const Hormozi: React.FC<HormoziProps> = ({
   textColor = '#FFFFFF',
   fontFamily = ANTON,
   fontSizeMultiplier = 1,
+  posX,
+  posY,
 }) => {
   const frame = useCurrentFrame()
   const { fps, width, height } = useVideoConfig()
@@ -63,9 +68,7 @@ export const Hormozi: React.FC<HormoziProps> = ({
       {currentSegment && (
         <AbsoluteFill
           style={{
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-            paddingBottom,
+            ...captionAnchorStyle(paddingBottom, posX, posY),
             paddingLeft: paddingH,
             paddingRight: paddingH,
           }}

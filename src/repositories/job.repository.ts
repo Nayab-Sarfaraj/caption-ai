@@ -118,7 +118,7 @@ export async function updateJobFailed(id: string, errorMessage: string): Promise
 // retry can reuse exactly what was attempted, not today's brand kit values.
 export async function updateJobRenderConfig(
   id: string,
-  config: { compositionId: string; activeColor?: string; textColor?: string; accentColor?: string; fontFamily?: string; watermarked: boolean }
+  config: { compositionId: string; activeColor?: string; textColor?: string; accentColor?: string; fontFamily?: string; fontSizeMultiplier?: number; captionPosX?: number; captionPosY?: number; watermarked: boolean }
 ): Promise<void> {
   await connectDB()
   await Job.findByIdAndUpdate(id, { $set: config })
