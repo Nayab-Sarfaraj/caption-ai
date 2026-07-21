@@ -10,6 +10,14 @@
 }
 .clip { position: absolute; inset: 0; overflow: hidden; }
 .frame { position: absolute; inset: 0; background: radial-gradient(120% 90% at 30% 12%, #2b2a27 0%, #16150f 52%, #070706 100%); }
+/* Silent podcast clip fills the stage; .frame stays behind as the pre-load
+   placeholder (video is transparent until it paints). object-fit: cover keeps
+   a 9:16 crop centered. */
+.video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+/* Scrim darkens top (chrome) + bottom (caption) so overlays stay legible over
+   bright footage. */
+.scrim { position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(to bottom, rgba(0,0,0,.35) 0%, transparent 26%, transparent 52%, rgba(0,0,0,.62) 100%); }
 .frame::after {
   content: ""; position: absolute; left: 50%; bottom: -6%; transform: translateX(-50%);
   width: 64%; height: 64%; border-radius: 50% 50% 44% 44%;

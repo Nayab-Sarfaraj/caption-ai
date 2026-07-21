@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { STYLE_PREVIEW_META } from '@/components/caption-style-preview'
 import type { CompositionId } from '@/remotion/compositions/CaptionRoot'
 import s from './hero-caption-demo.module.css'
@@ -28,6 +28,7 @@ const CHIPS = [
 export function HeroCaptionDemo() {
   const [i, setI] = useState(0)
   const [t, setT] = useState(7)
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -35,6 +36,20 @@ export function HeroCaptionDemo() {
     const scene = setInterval(() => setI((v) => (v + 1) % SCENES.length), 3300)
     const clock = setInterval(() => setT((v) => (v + 1) % 12), 900)
     return () => { clearInterval(scene); clearInterval(clock) }
+  }, [])
+
+  // Only play the clip while it's on-screen (saves bandwidth/CPU when scrolled
+  // away) and never under reduced-motion. Muted autoplay is browser-allowed.
+  useEffect(() => {
+    const v = videoRef.current
+    if (!v) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const io = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) v.play().catch(() => {}); else v.pause() },
+      { threshold: 0.25 },
+    )
+    io.observe(v)
+    return () => io.disconnect()
   }, [])
 
   const scene = SCENES[i]
@@ -54,6 +69,19 @@ export function HeroCaptionDemo() {
       </div>
       <div className={s.clip}>
         <div className={s.frame} />
+        {/* Silent podcast clip — drop /public/hero-demo.mp4 (9:16, muted). Falls
+            back to the .frame gradient until it loads / if the file is absent. */}
+        <video
+          ref={videoRef}
+          className={s.video}
+          src="/hero-demo.mp4"
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          aria-hidden="true"
+        />
+        <div className={s.scrim} aria-hidden="true" />
         <div className={s.chrome}>
           <span className={s.rec}><span className={s.recDot} />REC</span>
           <span className={s.tc}>{tc}</span>
