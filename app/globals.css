@@ -217,3 +217,50 @@ body {
     scroll-behavior: auto !important;
   }
 }
+/* ── Clerk dark overrides ──────────────────────────────────────────────────
+   clerk-js v6 ignores @clerk/themes `dark` baseTheme and the input/label color
+   variables (only colorPrimary lands), so its widgets render light — white
+   inputs, dark labels — on our dark pages. Force the dark surfaces here against
+   Clerk's STABLE class names. Unlayered + !important so they beat Clerk's own
+   injected styles; var() resolves because the widget is normal DOM, not shadow. */
+.cl-card,
+.cl-cardBox,
+.cl-modalContent {
+  background-color: var(--panel) !important;
+  border-color: var(--hair) !important;
+}
+.cl-footer { background: transparent !important; }
+
+.cl-formFieldInput,
+.cl-input,
+.cl-otpCodeFieldInput {
+  background-color: var(--panel-2) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--hair) !important;
+}
+.cl-formFieldInput::placeholder { color: var(--mute) !important; }
+.cl-formFieldInput:focus,
+.cl-input:focus { border-color: var(--brand) !important; }
+
+.cl-formFieldLabel,
+.cl-identityPreviewText,
+.cl-formHeaderTitle,
+.cl-userPreviewMainIdentifier { color: var(--ink) !important; }
+.cl-formHeaderSubtitle,
+.cl-dividerText,
+.cl-footerActionText,
+.cl-formFieldHintText,
+.cl-userPreviewSecondaryIdentifier { color: var(--mute) !important; }
+
+.cl-socialButtonsBlockButton,
+.cl-socialButtonsIconButton {
+  background-color: var(--panel-2) !important;
+  border: 1px solid var(--hair) !important;
+}
+.cl-socialButtonsBlockButtonText { color: var(--ink) !important; }
+
+.cl-dividerLine { background-color: var(--hair) !important; }
+.cl-footerActionLink,
+.cl-formResendCodeLink { color: var(--brand) !important; }
+.cl-formFieldInputShowPasswordButton,
+.cl-formFieldInputShowPasswordIcon { color: var(--mute) !important; }

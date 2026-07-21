@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono, Bricolage_Grotesque, Bangers, Anton, Fredoka, Montserrat, Roboto, Caveat } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
+import { clerkAppearance } from '@/src/lib/clerk-appearance'
 import { Providers } from '@/components/providers'
 import './globals.css'
 
@@ -68,7 +69,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider appearance={clerkAppearance}>
       <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} ${PREVIEW_FONT_VARS} h-full antialiased dark scroll-smooth`}>
         <body className="min-h-full flex flex-col">
             <Providers>{children}</Providers>
