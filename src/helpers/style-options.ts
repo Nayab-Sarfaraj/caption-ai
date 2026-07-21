@@ -1,6 +1,8 @@
 import type { CompositionId } from '@/remotion/compositions/CaptionRoot'
 
 export const STYLES: { id: CompositionId; label: string; desc: string; category: string }[] = [
+  { id: 'SingleWord', label: 'Single Word', desc: 'One giant word, punch-scaled',       category: 'Trending' },
+  { id: 'NeonGlow',  label: 'Neon Glow',    desc: 'Active word lights up, no box',       category: 'Trending' },
   { id: 'WordByWord', label: 'Word by Word', desc: 'Active word scales up',            category: 'Highlight' },
   { id: 'Karaoke',   label: 'Karaoke',      desc: 'Words shift color',                 category: 'Highlight' },
   { id: 'Spring',    label: 'Spring',        desc: 'Words spring from below',           category: 'Highlight' },
@@ -10,11 +12,13 @@ export const STYLES: { id: CompositionId; label: string; desc: string; category:
   { id: 'Comic',     label: 'Comic',         desc: 'Cartoon font, keyword color swap',  category: 'Hype' },
   { id: 'Minimal',   label: 'Minimal',      desc: 'Restrained, single-color, no hype',  category: 'Clean' },
   { id: 'Pill',      label: 'Pill',          desc: 'Clean dark pill badge, no hype',     category: 'Clean' },
+  { id: 'CaptionBar', label: 'Caption Bar', desc: 'Solid bar behind the line, podcast', category: 'Clean' },
   { id: 'Fade',      label: 'Fade',          desc: 'Line fades per segment',             category: 'Clean' },
+  { id: 'Typewriter', label: 'Typewriter',  desc: 'Types in with a blinking cursor',     category: 'Editorial' },
   { id: 'Script',    label: 'Script',        desc: 'Gold italic script accent word',     category: 'Editorial' },
 ]
 
-export const CATEGORY_ORDER = ['Highlight', 'Hype', 'Clean', 'Editorial']
+export const CATEGORY_ORDER = ['Trending', 'Highlight', 'Hype', 'Clean', 'Editorial']
 
 export const COMPOSITION_IDS = STYLES.map((s) => s.id) as [CompositionId, ...CompositionId[]]
 

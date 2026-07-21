@@ -11,9 +11,13 @@ import { BoxHighlight } from './BoxHighlight'
 import { Comic } from './Comic'
 import { Pill } from './Pill'
 import { Script } from './Script'
+import { SingleWord } from './SingleWord'
+import { Typewriter } from './Typewriter'
+import { NeonGlow } from './NeonGlow'
+import { CaptionBar } from './CaptionBar'
 import type { Transcript } from '../types'
 
-export type CompositionId = 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring' | 'Hype' | 'Hormozi' | 'Minimal' | 'BoxHighlight' | 'Comic' | 'Pill' | 'Script'
+export type CompositionId = 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring' | 'Hype' | 'Hormozi' | 'Minimal' | 'BoxHighlight' | 'Comic' | 'Pill' | 'Script' | 'SingleWord' | 'Typewriter' | 'NeonGlow' | 'CaptionBar'
 
 export interface CaptionRootProps {
   style: CompositionId
@@ -68,6 +72,10 @@ export const CaptionRoot: React.FC<CaptionRootProps> = ({ style, transcript, vid
   else if (style === 'Comic')        composition = <Comic        transcript={transcript} videoSrc={videoSrc} {...shared} />
   else if (style === 'Pill')         composition = <Pill         transcript={transcript} videoSrc={videoSrc} {...shared} />
   else if (style === 'Script')       composition = <Script       transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'SingleWord')   composition = <SingleWord   transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'Typewriter')   composition = <Typewriter   transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'NeonGlow')     composition = <NeonGlow     transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'CaptionBar')   composition = <CaptionBar   transcript={transcript} videoSrc={videoSrc} {...shared} />
   else composition = <WordByWord transcript={transcript} videoSrc={videoSrc} {...shared} />
 
   return (

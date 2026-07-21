@@ -61,6 +61,10 @@ const INITIAL_SETTINGS: SettingsMap = {
   Comic:      { ...DEFAULT, activeColor: '#38BDF8', textColor: '#FFFFFF', fontFamily: 'Fredoka, sans-serif' },
   Pill:       { ...DEFAULT, activeColor: '#1F2937', textColor: '#FFFFFF', fontFamily: 'Roboto, sans-serif' },
   Script:     { ...DEFAULT, activeColor: '#FBBF24', textColor: '#FFFFFF', fontFamily: 'Inter, system-ui, sans-serif' },
+  SingleWord: { ...DEFAULT, activeColor: '#FACC15', textColor: '#FFFFFF', fontFamily: 'Anton, Impact, sans-serif' },
+  Typewriter: { ...DEFAULT, activeColor: '#FACC15', textColor: '#FFFFFF', fontFamily: '"Courier New", Courier, monospace' },
+  NeonGlow:   { ...DEFAULT, activeColor: '#22D3EE', textColor: '#FFFFFF', fontFamily: 'Montserrat, sans-serif' },
+  CaptionBar: { ...DEFAULT, activeColor: '#FACC15', textColor: '#FFFFFF', fontFamily: 'Montserrat, sans-serif' },
 }
 
 export function PreviewPlayer({

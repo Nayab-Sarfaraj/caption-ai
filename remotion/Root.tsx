@@ -11,6 +11,10 @@ import { BoxHighlight } from './compositions/BoxHighlight'
 import { Comic } from './compositions/Comic'
 import { Pill } from './compositions/Pill'
 import { Script } from './compositions/Script'
+import { SingleWord } from './compositions/SingleWord'
+import { Typewriter } from './compositions/Typewriter'
+import { NeonGlow } from './compositions/NeonGlow'
+import { CaptionBar } from './compositions/CaptionBar'
 import { CaptionRoot } from './compositions/CaptionRoot'
 import { SAMPLE_TRANSCRIPT, SAMPLE_DURATION_FRAMES } from './sample-transcript'
 
@@ -126,6 +130,42 @@ const RemotionRoot: React.FC = () => {
         height={HEIGHT}
         durationInFrames={SAMPLE_DURATION_FRAMES}
         defaultProps={{ ...defaultProps, activeColor: '#FBBF24' }}
+      />
+      <Composition
+        id="SingleWord"
+        component={SingleWord}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+        durationInFrames={SAMPLE_DURATION_FRAMES}
+        defaultProps={defaultProps}
+      />
+      <Composition
+        id="Typewriter"
+        component={Typewriter}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+        durationInFrames={SAMPLE_DURATION_FRAMES}
+        defaultProps={defaultProps}
+      />
+      <Composition
+        id="NeonGlow"
+        component={NeonGlow}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+        durationInFrames={SAMPLE_DURATION_FRAMES}
+        defaultProps={{ ...defaultProps, activeColor: '#22D3EE' }}
+      />
+      <Composition
+        id="CaptionBar"
+        component={CaptionBar}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+        durationInFrames={SAMPLE_DURATION_FRAMES}
+        defaultProps={defaultProps}
       />
       <Composition
         id="CaptionRoot"

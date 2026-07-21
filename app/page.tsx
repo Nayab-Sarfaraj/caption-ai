@@ -24,6 +24,10 @@ const STYLE_LABELS: Record<CompositionId, string> = {
   Comic: "Comic",
   Pill: "Pill",
   Script: "Script",
+  SingleWord: "Single Word",
+  Typewriter: "Typewriter",
+  NeonGlow: "Neon Glow",
+  CaptionBar: "Caption Bar",
 };
 
 const STYLE_IDS = Object.keys(STYLE_PREVIEW_META) as CompositionId[];
