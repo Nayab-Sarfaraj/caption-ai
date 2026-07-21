@@ -26,7 +26,7 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
       <div className={['h-14 flex items-center border-b border-[var(--hair)]', collapsed ? 'justify-center px-0' : 'justify-between px-4'].join(' ')}>
         {!collapsed && (
           <Link href="/dashboard" className="flex items-center gap-2 overflow-hidden whitespace-nowrap">
-            <span className="text-[13px] font-bold tracking-[0.08em] uppercase text-[var(--ink)]"><span className="text-[var(--brand)]">Insta</span>cap</span>
+            <span className="text-[15px] font-extrabold tracking-[-0.02em] text-[var(--ink)]"><span className="text-[var(--brand)]">Insta</span>cap</span>
           </Link>
         )}
         <button

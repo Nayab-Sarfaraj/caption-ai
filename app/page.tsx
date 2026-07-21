@@ -364,7 +364,7 @@ export default async function RootPage() {
       {/* FAQ */}
       <section className={`${s.blk} ${s.alt}`}>
         <div className={s.wrap}>
-          <div className={s.secHead}>
+          <div className={`${s.secHead} ${s.centered}`}>
             <span className={s.eyebrow}>FAQ</span>
             <h2>Questions, answered.</h2>
           </div>

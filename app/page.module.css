@@ -6,6 +6,9 @@
   color: var(--ink);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   min-height: 100vh;
+  /* clip (not hidden) so a wide child — e.g. the min-width comparison table —
+     can't stretch the page, while the sticky nav keeps working */
+  overflow-x: clip;
 }
 .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 
@@ -186,7 +189,7 @@
 .cr { font-size: 13px; color: var(--mute); font-family: var(--font-geist-mono), monospace; }
 
 /* ---------- comparison table ---------- */
-.cmpWrap { overflow-x: auto; border: 1px solid var(--hair); border-radius: var(--r-lg); }
+.cmpWrap { overflow-x: auto; max-width: 100%; border: 1px solid var(--hair); border-radius: var(--r-lg); }
 .cmp { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 660px; }
 .cmp th, .cmp td { padding: 15px 18px; text-align: left; border-bottom: 1px solid var(--hair); }
 .cmp thead th { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--mute); font-weight: 600; font-family: var(--font-geist-mono), monospace; }
@@ -200,7 +203,8 @@
 .no { color: var(--faint); }
 
 /* ---------- faq ---------- */
-.faq { display: grid; gap: 10px; max-width: 760px; }
+.faq { display: grid; gap: 10px; max-width: 760px; margin: 0 auto; }
+.centered { text-align: center; align-items: center; }
 .faqItem { border: 1px solid var(--hair); border-radius: var(--r-md); background: var(--panel); overflow: hidden; }
 .faqItem summary { list-style: none; cursor: pointer; padding: 18px 20px; font-weight: 600; font-size: 15px; color: var(--ink); display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 .faqItem summary::-webkit-details-marker { display: none; }

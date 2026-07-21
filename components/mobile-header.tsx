@@ -29,7 +29,7 @@ export function MobileHeader({ subscriptionStatus = 'none' }: { subscriptionStat
             <Menu className="w-[18px] h-[18px]" />
           </button>
           <Link href="/dashboard" className="flex items-center gap-2">
-            <span className="text-[13px] font-bold tracking-[0.08em] uppercase text-[var(--ink)]"><span className="text-[var(--brand)]">Insta</span>cap</span>
+            <span className="text-[15px] font-extrabold tracking-[-0.02em] text-[var(--ink)]"><span className="text-[var(--brand)]">Insta</span>cap</span>
           </Link>
         </div>
 
@@ -76,7 +76,7 @@ export function MobileHeader({ subscriptionStatus = 'none' }: { subscriptionStat
         ].join(' ')}
       >
         <div className="h-14 flex items-center justify-between px-4 border-b border-[var(--hair)]">
-          <span className="text-[13px] font-bold tracking-[0.08em] uppercase text-[var(--ink)]"><span className="text-[var(--brand)]">Insta</span>cap</span>
+          <span className="text-[15px] font-extrabold tracking-[-0.02em] text-[var(--ink)]"><span className="text-[var(--brand)]">Insta</span>cap</span>
           <button
             type="button"
             onClick={() => setMenuOpen(false)}
