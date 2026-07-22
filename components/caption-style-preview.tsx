@@ -1,6 +1,6 @@
 import type { CompositionId } from '@/remotion/compositions/CaptionRoot'
 
-type Mechanic = 'plain' | 'stroke' | 'box' | 'pill' | 'script' | 'lowercase' | 'single' | 'typewriter' | 'neon' | 'bar'
+type Mechanic = 'plain' | 'stroke' | 'box' | 'pill' | 'script' | 'lowercase' | 'single' | 'typewriter' | 'neon' | 'bar' | 'gradient' | 'highlighter' | 'underline' | 'glide' | 'outline' | 'meme'
 
 interface StyleMeta {
   mechanic: Mechanic
@@ -31,6 +31,12 @@ export const STYLE_PREVIEW_META: Record<CompositionId, StyleMeta> = {
   Typewriter:   { mechanic: 'typewriter', fontFamily: 'var(--font-geist-mono), monospace', baseColor: '#fff', keywordColor: '#FACC15', glow: '#FACC15' },
   NeonGlow:     { mechanic: 'neon',      fontFamily: 'var(--font-montserrat), sans-serif', baseColor: '#fff', keywordColor: '#22D3EE', glow: '#22D3EE' },
   CaptionBar:   { mechanic: 'bar',       fontFamily: 'var(--font-montserrat), sans-serif', baseColor: '#fff', keywordColor: '#FACC15', glow: '#FACC15' },
+  Gradient:     { mechanic: 'gradient',  fontFamily: 'var(--font-montserrat), sans-serif', baseColor: '#fff', keywordColor: '#A855F7', glow: '#A855F7' },
+  Highlighter:  { mechanic: 'highlighter', fontFamily: 'var(--font-montserrat), sans-serif', baseColor: '#fff', keywordColor: '#FDE047', glow: '#FDE047' },
+  Underline:    { mechanic: 'underline', fontFamily: 'var(--font-montserrat), sans-serif', baseColor: '#fff', keywordColor: '#38BDF8', glow: '#38BDF8' },
+  Glide:        { mechanic: 'glide',     fontFamily: 'var(--font-montserrat), sans-serif', baseColor: '#fff', keywordColor: '#FACC15', glow: '#FACC15' },
+  Outline:      { mechanic: 'outline',   fontFamily: 'var(--font-anton), sans-serif',      baseColor: '#fff', keywordColor: '#FACC15', uppercase: true, glow: '#FACC15' },
+  Meme:         { mechanic: 'meme',      fontFamily: 'Impact, "Arial Black", sans-serif',  baseColor: '#fff', uppercase: true, glow: '#8a8378' },
 }
 
 const DROP_SHADOW = '0 2px 5px rgba(0,0,0,0.85), 0 0 1px rgba(0,0,0,0.9)'
@@ -79,6 +85,18 @@ export function CaptionStylePreview({ id }: { id: CompositionId }) {
   } else if (meta.mechanic === 'neon') {
     keyword = (
       <span style={{ color: meta.keywordColor, fontFamily: meta.fontFamily, textTransform, textShadow: `0 0 6px ${meta.glow}, 0 0 18px ${meta.glow}, 0 0 36px ${meta.glow}` }}>this</span>
+    )
+  } else if (meta.mechanic === 'gradient') {
+    keyword = (
+      <span style={{ fontFamily: meta.fontFamily, textTransform, backgroundImage: `linear-gradient(90deg, ${meta.keywordColor}, #F9A8D4)`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent', WebkitTextFillColor: 'transparent', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.5))' }}>this</span>
+    )
+  } else if (meta.mechanic === 'highlighter') {
+    keyword = (
+      <span style={{ fontFamily: meta.fontFamily, textTransform, color: '#171717', backgroundColor: meta.keywordColor, padding: '1px 7px', borderRadius: 4, lineHeight: 1.4 }}>this</span>
+    )
+  } else if (meta.mechanic === 'underline') {
+    keyword = (
+      <span style={{ fontFamily: meta.fontFamily, textTransform, color: meta.keywordColor, borderBottom: `3px solid ${meta.keywordColor}`, paddingBottom: 1, textShadow: DROP_SHADOW }}>this</span>
     )
   } else {
     keyword = (
@@ -139,6 +157,15 @@ export function CaptionStylePreview({ id }: { id: CompositionId }) {
         ) : meta.mechanic === 'typewriter' ? (
           <span className="font-bold text-[15px]" style={{ fontFamily: meta.fontFamily, color: '#fff' }}>
             Just like this<span style={{ color: meta.keywordColor }}>▋</span>
+          </span>
+        ) : meta.mechanic === 'outline' ? (
+          <span className="font-bold" style={{ fontSize: '20px', fontFamily: meta.fontFamily, textTransform: 'uppercase' }}>
+            <span style={{ color: 'transparent', WebkitTextStroke: '1.3px #fff', paintOrder: 'stroke fill' as const }}>Just like </span>
+            <span style={{ color: meta.keywordColor, WebkitTextStroke: `1.3px ${meta.keywordColor}`, paintOrder: 'stroke fill' as const }}>this</span>
+          </span>
+        ) : meta.mechanic === 'meme' ? (
+          <span style={{ fontFamily: meta.fontFamily, textTransform: 'uppercase', color: '#fff', WebkitTextStroke: '2px #000', paintOrder: 'stroke fill' as const, fontSize: '20px', fontWeight: 400, letterSpacing: '0.02em' }}>
+            Just like this
           </span>
         ) : (
           content

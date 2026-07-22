@@ -15,6 +15,12 @@ import { SingleWord } from './compositions/SingleWord'
 import { Typewriter } from './compositions/Typewriter'
 import { NeonGlow } from './compositions/NeonGlow'
 import { CaptionBar } from './compositions/CaptionBar'
+import { Gradient } from './compositions/Gradient'
+import { Highlighter } from './compositions/Highlighter'
+import { Underline } from './compositions/Underline'
+import { Glide } from './compositions/Glide'
+import { Outline } from './compositions/Outline'
+import { Meme } from './compositions/Meme'
 import { CaptionRoot } from './compositions/CaptionRoot'
 import { SAMPLE_TRANSCRIPT, SAMPLE_DURATION_FRAMES } from './sample-transcript'
 
@@ -161,6 +167,60 @@ const RemotionRoot: React.FC = () => {
       <Composition
         id="CaptionBar"
         component={CaptionBar}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+        durationInFrames={SAMPLE_DURATION_FRAMES}
+        defaultProps={defaultProps}
+      />
+      <Composition
+        id="Gradient"
+        component={Gradient}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+        durationInFrames={SAMPLE_DURATION_FRAMES}
+        defaultProps={{ ...defaultProps, activeColor: '#A855F7', textColor: '#F9A8D4' }}
+      />
+      <Composition
+        id="Highlighter"
+        component={Highlighter}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+        durationInFrames={SAMPLE_DURATION_FRAMES}
+        defaultProps={{ ...defaultProps, activeColor: '#FDE047' }}
+      />
+      <Composition
+        id="Underline"
+        component={Underline}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+        durationInFrames={SAMPLE_DURATION_FRAMES}
+        defaultProps={{ ...defaultProps, activeColor: '#38BDF8' }}
+      />
+      <Composition
+        id="Glide"
+        component={Glide}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+        durationInFrames={SAMPLE_DURATION_FRAMES}
+        defaultProps={defaultProps}
+      />
+      <Composition
+        id="Outline"
+        component={Outline}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+        durationInFrames={SAMPLE_DURATION_FRAMES}
+        defaultProps={defaultProps}
+      />
+      <Composition
+        id="Meme"
+        component={Meme}
         fps={FPS}
         width={WIDTH}
         height={HEIGHT}

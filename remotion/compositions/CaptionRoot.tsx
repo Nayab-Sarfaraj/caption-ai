@@ -15,9 +15,15 @@ import { SingleWord } from './SingleWord'
 import { Typewriter } from './Typewriter'
 import { NeonGlow } from './NeonGlow'
 import { CaptionBar } from './CaptionBar'
+import { Gradient } from './Gradient'
+import { Highlighter } from './Highlighter'
+import { Underline } from './Underline'
+import { Glide } from './Glide'
+import { Outline } from './Outline'
+import { Meme } from './Meme'
 import type { Transcript } from '../types'
 
-export type CompositionId = 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring' | 'Hype' | 'Hormozi' | 'Minimal' | 'BoxHighlight' | 'Comic' | 'Pill' | 'Script' | 'SingleWord' | 'Typewriter' | 'NeonGlow' | 'CaptionBar'
+export type CompositionId = 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring' | 'Hype' | 'Hormozi' | 'Minimal' | 'BoxHighlight' | 'Comic' | 'Pill' | 'Script' | 'SingleWord' | 'Typewriter' | 'NeonGlow' | 'CaptionBar' | 'Gradient' | 'Highlighter' | 'Underline' | 'Glide' | 'Outline' | 'Meme'
 
 export interface CaptionRootProps {
   style: CompositionId
@@ -76,6 +82,12 @@ export const CaptionRoot: React.FC<CaptionRootProps> = ({ style, transcript, vid
   else if (style === 'Typewriter')   composition = <Typewriter   transcript={transcript} videoSrc={videoSrc} {...shared} />
   else if (style === 'NeonGlow')     composition = <NeonGlow     transcript={transcript} videoSrc={videoSrc} {...shared} />
   else if (style === 'CaptionBar')   composition = <CaptionBar   transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'Gradient')     composition = <Gradient     transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'Highlighter')  composition = <Highlighter  transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'Underline')    composition = <Underline    transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'Glide')        composition = <Glide        transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'Outline')      composition = <Outline      transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'Meme')         composition = <Meme         transcript={transcript} videoSrc={videoSrc} {...shared} />
   else composition = <WordByWord transcript={transcript} videoSrc={videoSrc} {...shared} />
 
   return (

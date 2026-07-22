@@ -22,25 +22,31 @@ Last updated: 2026-07-22.
 
 ---
 
-## Implemented (15)
+## Implemented (21)
 
 | Style | id | Mechanic | Category |
 |---|---|---|---|
+| Single Word | `SingleWord` | one giant word, punch-scaled | Trending |
+| Neon Glow | `NeonGlow` | active word lights up, no box | Trending |
+| Gradient | `Gradient` | gradient-fill text, animated sweep | Trending |
 | Word by Word | `WordByWord` | active word scales up | Highlight |
 | Karaoke | `Karaoke` | words shift color as spoken | Highlight |
 | Spring | `Spring` | words spring in from below | Highlight |
 | Box Highlight | `BoxHighlight` | keyword in a colored box (Captions.ai) | Highlight |
+| Highlighter | `Highlighter` | marker swipe behind active word | Highlight |
+| Underline | `Underline` | underline sweeps under active word | Highlight |
+| Glide | `Glide` | words slide in from the side | Highlight |
 | Hype | `Hype` | MrBeast bounce + glow (Bangers) | Hype |
 | Hormozi | `Hormozi` | yellow-stroke pop-in (Anton) | Hype |
 | Comic | `Comic` | cartoon font, keyword color swap (Fredoka) | Hype |
 | Minimal | `Minimal` | restrained single-color | Clean |
 | Pill | `Pill` | per-word dark pill badge | Clean |
 | Caption Bar | `CaptionBar` | solid rounded bar behind whole line (podcast) | Clean |
+| Outline | `Outline` | hollow text, active word fills solid | Clean |
 | Fade | `Fade` | line fades per segment | Clean |
 | Typewriter | `Typewriter` | chars type in with blinking cursor | Editorial |
 | Script | `Script` | gold italic script accent word | Editorial |
-| Single Word | `SingleWord` | one giant word, punch-scaled | Trending |
-| Neon Glow | `NeonGlow` | active word lights up, no box | Trending |
+| Meme | `Meme` | white Impact all-caps, defaults top of frame | Editorial |
 
 ---
 
@@ -58,16 +64,10 @@ Ranked within each tier by impact ÷ effort. "Echoes" = which tool/creator uses 
     the editor. (2) **Noto Color Emoji must be installed on the render VM** or
     headless Chromium renders tofu boxes (known Remotion gotcha).
 
-### Recommended next 6-pack (mostly low effort, max distinctness → 21 styles)
+### ~~Recommended 6-pack~~ — SHIPPED 2026-07-22
 
-| Style | What it is | Echoes | Gap it fills | Effort |
-|---|---|---|---|---|
-| **Gradient** | gradient-fill text, animated sweep | aesthetic trend | lifestyle/pretty niche | Low-Med |
-| **Highlighter** | marker-swipe highlight, organic edges | edu creators | softer than hard BoxHighlight | Med |
-| **Underline** | animated underline sweep under active word | clean/edu | no underline mechanic yet | Low |
-| **Glide** | words slide in from the side | VEED "Glide" | new motion axis (all others pop/scale) | Low |
-| **Outline** | stroke-only, transparent fill (hollow) | aesthetic | distinct minimalist look | Low |
-| **Meme** | classic top/bottom white Impact all-caps | meme content | serves the meme audience | Low |
+Gradient, Highlighter, Underline, Glide, Outline, Meme are now implemented (see
+the table above). Took the set to 21 styles.
 
 ### Phase-after (exhaustive coverage)
 

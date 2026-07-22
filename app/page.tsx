@@ -28,6 +28,12 @@ const STYLE_LABELS: Record<CompositionId, string> = {
   Typewriter: "Typewriter",
   NeonGlow: "Neon Glow",
   CaptionBar: "Caption Bar",
+  Gradient: "Gradient",
+  Highlighter: "Highlighter",
+  Underline: "Underline",
+  Glide: "Glide",
+  Outline: "Outline",
+  Meme: "Meme",
 };
 
 const STYLE_IDS = Object.keys(STYLE_PREVIEW_META) as CompositionId[];

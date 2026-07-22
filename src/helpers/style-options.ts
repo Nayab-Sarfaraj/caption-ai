@@ -3,6 +3,12 @@ import type { CompositionId } from '@/remotion/compositions/CaptionRoot'
 export const STYLES: { id: CompositionId; label: string; desc: string; category: string }[] = [
   { id: 'SingleWord', label: 'Single Word', desc: 'One giant word, punch-scaled',       category: 'Trending' },
   { id: 'NeonGlow',  label: 'Neon Glow',    desc: 'Active word lights up, no box',       category: 'Trending' },
+  { id: 'Gradient',  label: 'Gradient',     desc: 'Gradient-fill text, animated sweep',  category: 'Trending' },
+  { id: 'Highlighter', label: 'Highlighter', desc: 'Marker swipe behind active word',    category: 'Highlight' },
+  { id: 'Underline', label: 'Underline',    desc: 'Underline sweeps under active word',  category: 'Highlight' },
+  { id: 'Glide',     label: 'Glide',        desc: 'Words slide in from the side',        category: 'Highlight' },
+  { id: 'Outline',   label: 'Outline',      desc: 'Hollow text, active word fills in',   category: 'Clean' },
+  { id: 'Meme',      label: 'Meme',         desc: 'White Impact all-caps, top of frame', category: 'Editorial' },
   { id: 'WordByWord', label: 'Word by Word', desc: 'Active word scales up',            category: 'Highlight' },
   { id: 'Karaoke',   label: 'Karaoke',      desc: 'Words shift color',                 category: 'Highlight' },
   { id: 'Spring',    label: 'Spring',        desc: 'Words spring from below',           category: 'Highlight' },

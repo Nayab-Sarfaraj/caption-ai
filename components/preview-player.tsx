@@ -65,6 +65,12 @@ const INITIAL_SETTINGS: SettingsMap = {
   Typewriter: { ...DEFAULT, activeColor: '#FACC15', textColor: '#FFFFFF', fontFamily: '"Courier New", Courier, monospace' },
   NeonGlow:   { ...DEFAULT, activeColor: '#22D3EE', textColor: '#FFFFFF', fontFamily: 'Montserrat, sans-serif' },
   CaptionBar: { ...DEFAULT, activeColor: '#FACC15', textColor: '#FFFFFF', fontFamily: 'Montserrat, sans-serif' },
+  Gradient:   { ...DEFAULT, activeColor: '#A855F7', textColor: '#F9A8D4', fontFamily: 'Montserrat, sans-serif' },
+  Highlighter:{ ...DEFAULT, activeColor: '#FDE047', textColor: '#FFFFFF', fontFamily: 'Montserrat, sans-serif' },
+  Underline:  { ...DEFAULT, activeColor: '#38BDF8', textColor: '#FFFFFF', fontFamily: 'Montserrat, sans-serif' },
+  Glide:      { ...DEFAULT, activeColor: '#FACC15', textColor: '#FFFFFF', fontFamily: 'Montserrat, sans-serif' },
+  Outline:    { ...DEFAULT, activeColor: '#FACC15', textColor: '#FFFFFF', fontFamily: 'Anton, Impact, sans-serif' },
+  Meme:       { ...DEFAULT, activeColor: '#FFFFFF', textColor: '#FFFFFF', fontFamily: 'Impact, "Arial Black", sans-serif', posY: 15 },
 }
 
 export function PreviewPlayer({
