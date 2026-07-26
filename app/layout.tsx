@@ -40,26 +40,46 @@ const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
-  title: 'Instacap — Word-by-word animated captions',
-  description: 'Upload your video, get beautiful animated captions powered by Remotion.',
+  title: 'Instacap — Free AI Video Caption Generator & Animated Subtitles',
+  description:
+    'Generate word-by-word animated captions for Instagram Reels, TikTok, and YouTube Shorts in seconds. Powered by fast AI transcription with zero credit limits.',
+  keywords: [
+    'video caption generator',
+    'ai subtitle generator',
+    'animated captions reels',
+    'tiktok captions maker',
+    'word by word captions',
+    'hormozi subtitles generator',
+    'auto captions online free',
+    'youtube shorts subtitles',
+  ],
   alternates: {
     canonical: '/',
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
   openGraph: {
-    title: 'Instacap — Word-by-word animated captions',
-    description: 'Upload your video, get beautiful animated captions powered by Remotion.',
+    title: 'Instacap — Free AI Video Caption Generator & Animated Subtitles',
+    description:
+      'Generate word-by-word animated captions for Instagram Reels, TikTok, and YouTube Shorts in seconds. Powered by fast AI transcription with zero credit limits.',
     url: appUrl,
     siteName: 'Instacap',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Instacap — Word-by-word animated captions',
-    description: 'Upload your video, get beautiful animated captions powered by Remotion.',
+    title: 'Instacap — Free AI Video Caption Generator & Animated Subtitles',
+    description:
+      'Generate word-by-word animated captions for Instagram Reels, TikTok, and YouTube Shorts in seconds.',
   },
 }
 
