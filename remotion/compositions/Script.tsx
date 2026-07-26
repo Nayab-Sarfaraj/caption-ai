@@ -4,6 +4,7 @@ import { loadFont as loadBaseFont } from '@remotion/google-fonts/Inter'
 import { loadFont as loadScriptFont } from '@remotion/google-fonts/Caveat'
 import { withScriptFallback } from '../lib/fonts'
 import type { Transcript, TranscriptSegment } from '../types'
+import { captionAnchorStyle } from '../lib/caption-layout'
 
 const { fontFamily: INTER } = loadBaseFont('normal', { weights: ['500'], subsets: ['latin'] })
 const { fontFamily: CAVEAT } = loadScriptFont('normal', { weights: ['700'], subsets: ['latin'] })
@@ -15,6 +16,8 @@ export interface ScriptProps {
   textColor?: string
   fontFamily?: string
   fontSizeMultiplier?: number
+  posX?: number
+  posY?: number
 }
 
 // VEED "Handwritten/Whisper" style: plain sentence-case base text, current
@@ -26,6 +29,8 @@ export const Script: React.FC<ScriptProps> = ({
   textColor = '#FFFFFF',
   fontFamily = INTER,
   fontSizeMultiplier = 1,
+  posX,
+  posY,
 }) => {
   const frame = useCurrentFrame()
   const { fps, width, height } = useVideoConfig()
@@ -64,9 +69,7 @@ export const Script: React.FC<ScriptProps> = ({
       {currentSegment && (
         <AbsoluteFill
           style={{
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-            paddingBottom,
+            ...captionAnchorStyle(paddingBottom, posX, posY),
             paddingLeft: paddingH,
             paddingRight: paddingH,
           }}

@@ -27,6 +27,9 @@ export interface IJob extends Document {
   textColor: string | null
   accentColor: string | null
   fontFamily: string | null
+  fontSizeMultiplier: number | null // caption scale from the last render; null = never rendered
+  captionPosX: number | null        // caption horizontal position 0–100 %; null = composition default
+  captionPosY: number | null        // caption vertical position 0–100 %; null = composition default
   watermarked: boolean | null   // whether the last-triggered render was free-tier watermarked; null = never rendered
   createdAt: Date
   updatedAt: Date
@@ -58,6 +61,9 @@ const JobSchema = new Schema<IJob>(
     textColor: { type: String, default: null },
     accentColor: { type: String, default: null },
     fontFamily: { type: String, default: null },
+    fontSizeMultiplier: { type: Number, default: null },
+    captionPosX: { type: Number, default: null },
+    captionPosY: { type: Number, default: null },
     watermarked: { type: Boolean, default: null },
   },
   { timestamps: true }

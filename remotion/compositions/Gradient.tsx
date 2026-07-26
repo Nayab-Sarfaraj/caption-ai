@@ -1,0 +1,95 @@
+import React from 'react'
+import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo, interpolate } from 'remotion'
+import { withScriptFallback } from '../lib/fonts'
+import type { Transcript } from '../types'
+import { captionAnchorStyle } from '../lib/caption-layout'
+
+export interface GradientProps {
+  transcript: Transcript
+  videoSrc: string
+  activeColor?: string
+  textColor?: string
+  fontFamily?: string
+  fontSizeMultiplier?: number
+  posX?: number
+  posY?: number
+}
+
+// Gradient-fill text with an animated sweep — the "pretty/lifestyle" aesthetic.
+// Gradient runs activeColor → textColor; clip it to the glyphs.
+export const Gradient: React.FC<GradientProps> = ({
+  transcript,
+  videoSrc,
+  activeColor = '#A855F7',
+  textColor = '#F9A8D4',
+  fontFamily = 'Montserrat, system-ui, sans-serif',
+  fontSizeMultiplier = 1,
+  posX,
+  posY,
+}) => {
+  const frame = useCurrentFrame()
+  const { fps, width, height } = useVideoConfig()
+  const currentTime = frame / fps
+  const isPortrait = height > width
+  const fontSize = Math.round((isPortrait ? width / 17 : width / 27) * fontSizeMultiplier)
+  const paddingBottom = Math.round(height * 0.1)
+  const paddingH = Math.round(width * 0.06)
+  const maxWidth = Math.round(width * 0.88)
+
+  const CHUNK_SIZE = 5
+  const currentSegment = transcript.segments.find((s) => currentTime >= s.start && currentTime < s.end)
+  const currentWordIdx = currentSegment
+    ? currentSegment.words.findIndex((w) => currentTime >= w.start && currentTime < w.end)
+    : -1
+  const activeIdx =
+    currentWordIdx >= 0 ? currentWordIdx
+    : currentSegment ? currentSegment.words.reduce((acc, w, i) => (currentTime >= w.start ? i : acc), 0)
+    : 0
+  const chunkStart = Math.floor(activeIdx / CHUNK_SIZE) * CHUNK_SIZE
+  const visibleWords = currentSegment ? currentSegment.words.slice(chunkStart, chunkStart + CHUNK_SIZE) : []
+
+  // Sweep the gradient horizontally over time.
+  const sweep = (frame * 1.8) % 200
+
+  return (
+    <AbsoluteFill style={{ backgroundColor: 'transparent' }}>
+      {videoSrc && (
+        <OffthreadVideo src={videoSrc} crossOrigin="anonymous" pauseWhenBuffering style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      )}
+      {currentSegment && (
+        <AbsoluteFill style={{ ...captionAnchorStyle(paddingBottom, posX, posY), paddingLeft: paddingH, paddingRight: paddingH }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35em', justifyContent: 'center', maxWidth }}>
+            {visibleWords.map((word, i) => {
+              const isCurrent = currentTime >= word.start && currentTime < word.end
+              const elapsed = Math.max(0, frame - Math.floor(word.start * fps))
+              const appear = interpolate(elapsed, [0, 5], [0.4, 1], { extrapolateRight: 'clamp' })
+              return (
+                <span
+                  key={i}
+                  style={{
+                    fontSize,
+                    fontWeight: 800,
+                    fontFamily: withScriptFallback(fontFamily),
+                    backgroundImage: `linear-gradient(90deg, ${activeColor}, ${textColor}, ${activeColor})`,
+                    backgroundSize: '200% 100%',
+                    backgroundPosition: `${sweep}% 0`,
+                    WebkitBackgroundClip: 'text',
+                    backgroundClip: 'text',
+                    color: 'transparent',
+                    WebkitTextFillColor: 'transparent',
+                    opacity: isCurrent ? 1 : appear,
+                    filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.6))',
+                    lineHeight: 1.25,
+                    display: 'inline-block',
+                  }}
+                >
+                  {word.word}
+                </span>
+              )
+            })}
+          </div>
+        </AbsoluteFill>
+      )}
+    </AbsoluteFill>
+  )
+}

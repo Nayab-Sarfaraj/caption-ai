@@ -27,12 +27,12 @@ export function RetryButton({ jobId, manualRetryCount }: { jobId: string; manual
 
   return (
     <div className="space-y-2">
-      {error && <p className="text-xs text-[#c1361f]">{error}</p>}
+      {error && <p className="text-xs text-[var(--brand)]">{error}</p>}
       <button
         type="button"
         onClick={handleRetry}
         disabled={loading || atCap}
-        className="w-full bg-[#c1361f] text-white text-sm font-bold py-2.5 hover:brightness-[1.08] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-[var(--brand)] text-white text-sm font-bold rounded-lg py-2.5 hover:brightness-[1.08] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? 'Retrying…' : atCap ? 'Retry limit reached' : `Retry${manualRetryCount > 0 ? ` (${manualRetryCount}/${MAX_MANUAL_RETRIES} used)` : ''}`}
       </button>

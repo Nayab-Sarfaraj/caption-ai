@@ -2,6 +2,7 @@ import React from 'react'
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo, spring } from 'remotion'
 import { withScriptFallback } from '../lib/fonts'
 import type { Transcript } from '../types'
+import { captionAnchorStyle } from '../lib/caption-layout'
 
 export interface WordByWordProps {
   transcript: Transcript
@@ -10,6 +11,8 @@ export interface WordByWordProps {
   textColor?: string
   fontFamily?: string
   fontSizeMultiplier?: number
+  posX?: number
+  posY?: number
 }
 
 export const WordByWord: React.FC<WordByWordProps> = ({
@@ -19,6 +22,8 @@ export const WordByWord: React.FC<WordByWordProps> = ({
   textColor = '#FFFFFF',
   fontFamily = 'system-ui, -apple-system, sans-serif',
   fontSizeMultiplier = 1,
+  posX,
+  posY,
 }) => {
   const frame = useCurrentFrame()
   const { fps, width, height } = useVideoConfig()
@@ -62,9 +67,7 @@ export const WordByWord: React.FC<WordByWordProps> = ({
       {currentSegment && (
         <AbsoluteFill
           style={{
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-            paddingBottom,
+            ...captionAnchorStyle(paddingBottom, posX, posY),
             paddingLeft: paddingH,
             paddingRight: paddingH,
           }}

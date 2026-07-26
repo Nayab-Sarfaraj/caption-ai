@@ -3,6 +3,7 @@ import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo, interpol
 import { loadFont } from '@remotion/google-fonts/Roboto'
 import { withScriptFallback } from '../lib/fonts'
 import type { Transcript, TranscriptSegment } from '../types'
+import { captionAnchorStyle } from '../lib/caption-layout'
 
 const { fontFamily: ROBOTO } = loadFont('normal', { weights: ['700'], subsets: ['latin'] })
 
@@ -13,6 +14,8 @@ export interface PillProps {
   textColor?: string
   fontFamily?: string
   fontSizeMultiplier?: number
+  posX?: number
+  posY?: number
 }
 
 // VEED "Box Highlight" clean style: sentence case, solid dark pill background,
@@ -24,6 +27,8 @@ export const Pill: React.FC<PillProps> = ({
   textColor = '#FFFFFF',
   fontFamily = ROBOTO,
   fontSizeMultiplier = 1,
+  posX,
+  posY,
 }) => {
   const frame = useCurrentFrame()
   const { fps, width, height } = useVideoConfig()
@@ -74,9 +79,7 @@ export const Pill: React.FC<PillProps> = ({
       {currentSegment && (
         <AbsoluteFill
           style={{
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-            paddingBottom,
+            ...captionAnchorStyle(paddingBottom, posX, posY),
             paddingLeft: paddingH,
             paddingRight: paddingH,
           }}

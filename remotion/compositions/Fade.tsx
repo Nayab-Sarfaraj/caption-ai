@@ -2,6 +2,7 @@ import React from 'react'
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo, interpolate } from 'remotion'
 import { withScriptFallback } from '../lib/fonts'
 import type { Transcript, TranscriptSegment } from '../types'
+import { captionAnchorStyle } from '../lib/caption-layout'
 
 export interface FadeProps {
   transcript: Transcript
@@ -10,6 +11,8 @@ export interface FadeProps {
   textColor?: string
   fontFamily?: string
   fontSizeMultiplier?: number
+  posX?: number
+  posY?: number
 }
 
 export const Fade: React.FC<FadeProps> = ({
@@ -18,6 +21,8 @@ export const Fade: React.FC<FadeProps> = ({
   textColor = '#FFFFFF',
   fontFamily = 'system-ui, -apple-system, sans-serif',
   fontSizeMultiplier = 1,
+  posX,
+  posY,
 }) => {
   const frame = useCurrentFrame()
   const { fps, width, height } = useVideoConfig()
@@ -69,9 +74,7 @@ export const Fade: React.FC<FadeProps> = ({
       {currentSegment && (
         <AbsoluteFill
           style={{
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-            paddingBottom,
+            ...captionAnchorStyle(paddingBottom, posX, posY),
             paddingLeft: paddingH,
             paddingRight: paddingH,
           }}

@@ -3,6 +3,7 @@ import { AbsoluteFill, useCurrentFrame, useVideoConfig, OffthreadVideo } from 'r
 import { loadFont } from '@remotion/google-fonts/Fredoka'
 import { withScriptFallback } from '../lib/fonts'
 import type { Transcript, TranscriptSegment } from '../types'
+import { captionAnchorStyle } from '../lib/caption-layout'
 
 const { fontFamily: FREDOKA } = loadFont('normal', { weights: ['700'], subsets: ['latin'] })
 
@@ -13,6 +14,8 @@ export interface ComicProps {
   textColor?: string
   fontFamily?: string
   fontSizeMultiplier?: number
+  posX?: number
+  posY?: number
 }
 
 // VEED "Impact/Colour Highlight" style: rounded cartoon font, black stroke,
@@ -25,6 +28,8 @@ export const Comic: React.FC<ComicProps> = ({
   textColor = '#FFFFFF',
   fontFamily = FREDOKA,
   fontSizeMultiplier = 1,
+  posX,
+  posY,
 }) => {
   const frame = useCurrentFrame()
   const { fps, width, height } = useVideoConfig()
@@ -64,9 +69,7 @@ export const Comic: React.FC<ComicProps> = ({
       {currentSegment && (
         <AbsoluteFill
           style={{
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-            paddingBottom,
+            ...captionAnchorStyle(paddingBottom, posX, posY),
             paddingLeft: paddingH,
             paddingRight: paddingH,
           }}
