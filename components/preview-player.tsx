@@ -190,6 +190,16 @@ export function PreviewPlayer({
   const [error, setError] = useState<string | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
+  const [isSwitchingStyle, setIsSwitchingStyle] = useState(false);
+
+  const handleStyleChange = useCallback((newStyle: CompositionId) => {
+    if (newStyle === style) return;
+    setIsSwitchingStyle(true);
+    setStyle(newStyle);
+    setTimeout(() => {
+      setIsSwitchingStyle(false);
+    }, 180);
+  }, [style]);
 
   const cur = settings[style];
   // Mirrors billing.service.ts's canRender — this render, if triggered now,
@@ -283,13 +293,15 @@ export function PreviewPlayer({
   // Compute real pixel dimensions instead: fill the container width, but cap
   // height at 75% of viewport so a portrait (9:16) video doesn't blow up past
   // the screen — recompute on container/window resize.
+  const desktopContainerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    const el = playerContainerRef.current;
-    if (!el) return;
     const ratio = width / height;
 
     const compute = () => {
-      const containerWidth = el.clientWidth || el.getBoundingClientRect().width;
+      const el = playerContainerRef.current || desktopContainerRef.current;
+      if (!el) return;
+      const containerWidth = el.clientWidth || el.getBoundingClientRect().width || (window.innerWidth < 1024 ? window.innerWidth - 32 : 600);
       if (!containerWidth) return;
 
       const isMobile = window.innerWidth < 1024;
@@ -305,13 +317,20 @@ export function PreviewPlayer({
     };
 
     compute();
-    const timer = setTimeout(compute, 150);
-    const ro = new ResizeObserver(compute);
-    ro.observe(el);
+    const timer = setTimeout(compute, 100);
+    const timer2 = setTimeout(compute, 500);
+
+    const el = playerContainerRef.current || desktopContainerRef.current;
+    let ro: ResizeObserver | null = null;
+    if (el) {
+      ro = new ResizeObserver(compute);
+      ro.observe(el);
+    }
     window.addEventListener("resize", compute);
     return () => {
       clearTimeout(timer);
-      ro.disconnect();
+      clearTimeout(timer2);
+      if (ro) ro.disconnect();
       window.removeEventListener("resize", compute);
     };
   }, [width, height]);
@@ -462,7 +481,7 @@ export function PreviewPlayer({
         {/* Zone 1: Player */}
         <div
           ref={playerContainerRef}
-          className="w-full overflow-hidden bg-black flex items-center justify-center"
+          className="relative w-full overflow-hidden bg-black flex items-center justify-center"
           style={{ minHeight: 240 }}
         >
           {playerSize.width > 0 ? (
@@ -481,6 +500,14 @@ export function PreviewPlayer({
           ) : (
             <div className="w-full flex items-center justify-center text-xs text-[var(--mute)]" style={{ height: 260 }}>
               Loading preview…
+            </div>
+          )}
+
+          {/* Smooth overlay spinner during style transitions */}
+          {isSwitchingStyle && (
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 z-20 transition-opacity">
+              <div className="w-6 h-6 border-2 border-[var(--brand)] border-t-transparent rounded-full animate-spin" />
+              <span className="text-[11px] font-medium text-white/90">Updating style…</span>
             </div>
           )}
         </div>
@@ -505,14 +532,14 @@ export function PreviewPlayer({
           </div>
 
           {/* Horizontal scroll rail of style cards */}
-          <div className="flex gap-2.5 overflow-x-auto px-4 pb-3 scroll-smooth" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex gap-2.5 overflow-x-auto px-4 pt-2 pb-3 scroll-smooth" style={{ scrollbarWidth: 'none' }}>
             {STYLES.map((s) => {
               const active = style === s.id;
               return (
                 <button
                   key={s.id}
                   type="button"
-                  onClick={() => setStyle(s.id)}
+                  onClick={() => handleStyleChange(s.id)}
                   className="shrink-0 flex flex-col items-center gap-1.5 focus:outline-none"
                   style={{ width: 104 }}
                 >
@@ -522,7 +549,7 @@ export function PreviewPlayer({
                       active ? "ring-2 ring-[var(--brand)] shadow-[0_0_12px_color-mix(in_srgb,var(--brand)_50%,transparent)]" : "ring-1 ring-[var(--hair)]",
                     ].join(" ")}
                   >
-                    <div className="absolute inset-0 flex items-center justify-center [&>div]:w-full [&>div]:h-full [&>div]:min-h-0 [&>div]:flex [&>div]:items-center [&>div]:justify-center">
+                    <div className="absolute inset-0 flex items-center justify-center [&>div]:w-full [&>div]:h-full [&>div]:min-h-0 [&>div]:flex [&>div]:items-center [&>div]:justify-center [&>div>div]:py-2 [&>div>div]:px-1 [&>div>div]:min-h-0">
                       <CaptionStylePreview id={s.id} />
                     </div>
                     {active && (
@@ -578,8 +605,8 @@ export function PreviewPlayer({
       <div className="hidden lg:flex flex-row gap-5 items-start w-full">
         {/* Left: player */}
         <div
-          ref={playerContainerRef}
-          className="flex-1 min-w-0 min-h-[320px] overflow-hidden rounded-2xl border border-[var(--hair)] bg-black flex items-center justify-center p-2"
+          ref={desktopContainerRef}
+          className="relative flex-1 min-w-0 min-h-[320px] overflow-hidden rounded-2xl border border-[var(--hair)] bg-black flex items-center justify-center p-2"
         >
           {playerSize.width > 0 ? (
             <Player
@@ -597,6 +624,14 @@ export function PreviewPlayer({
           ) : (
             <div className="w-full aspect-[9/16] max-h-[55vh] flex items-center justify-center text-xs text-[var(--mute)]">
               Loading preview...
+            </div>
+          )}
+
+          {/* Smooth overlay spinner during style transitions */}
+          {isSwitchingStyle && (
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 z-20 transition-opacity">
+              <div className="w-6 h-6 border-2 border-[var(--brand)] border-t-transparent rounded-full animate-spin" />
+              <span className="text-[11px] font-medium text-white/90">Updating style…</span>
             </div>
           )}
         </div>
@@ -652,7 +687,7 @@ export function PreviewPlayer({
                             <button
                               key={s.id}
                               type="button"
-                              onClick={() => setStyle(s.id)}
+                              onClick={() => handleStyleChange(s.id)}
                               className={["relative text-left transition-all overflow-hidden rounded-xl", active ? "ring-2 ring-inset ring-[var(--brand)]" : "ring-1 ring-inset ring-[var(--hair)] hover:ring-[var(--faint)]"].join(" ")}
                             >
                               <CaptionStylePreview id={s.id} />
