@@ -112,9 +112,9 @@ export default async function StyleLandingPage({ params }: Props) {
             Home
           </Link>
           <span>/</span>
-          <a href="/#styles" className="hover:underline">
+          <Link href="/#styles" className="hover:underline">
             Styles
-          </a>
+          </Link>
           <span>/</span>
           <span className="text-white font-medium">{meta.h1}</span>
         </nav>
