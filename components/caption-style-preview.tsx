@@ -114,7 +114,7 @@ export function CaptionStylePreview({ id }: { id: CompositionId }) {
   )
 
   return (
-    <div className="relative overflow-hidden rounded-t-xl" style={{ background: '#0a0a09' }}>
+    <div className="relative overflow-hidden rounded-t-xl w-full" style={{ background: '#0a0a09' }}>
       {/* base cinematic gradient */}
       <div
         className="absolute inset-0"
@@ -133,7 +133,7 @@ export function CaptionStylePreview({ id }: { id: CompositionId }) {
       {/* vignette */}
       <div className="absolute inset-0 pointer-events-none" style={{ boxShadow: 'inset 0 0 26px 4px rgba(0,0,0,0.6)' }} />
 
-      <div className="relative flex items-center justify-center px-4 py-7 min-h-[104px]">
+      <div className="relative flex items-center justify-center px-3 py-6 min-h-[96px] text-center">
         {meta.mechanic === 'pill' ? (
           <span
             className="text-white rounded-md px-3 py-1.5 font-bold text-[16px] inline-block"
