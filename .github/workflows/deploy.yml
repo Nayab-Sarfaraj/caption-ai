@@ -30,23 +30,29 @@ jobs:
         run: npm run lint
 
   deploy:
-    name: Deploy to VM
-    needs: build-check
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    environment: production
+  name: Deploy to VM
+  needs: build-check
+  if: github.event_name == 'push'
+  runs-on: ubuntu-latest
+  environment: production
 
-    steps:
-      - name: SSH into VM and deploy
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.VM_SSH_KEY }}
-          script: |
-            cd /home/nayabsarfaraj/captions
-            git pull origin main
-            npm install
-            npm run worker:build
-            npm run build
-            pm2 restart caption-worker caption-web
+  steps:
+    - name: Check secrets
+      env:
+        VM_HOST: ${{ secrets.VM_HOST }}
+        VM_USER: ${{ secrets.VM_USER }}
+        VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+      run: |
+        echo "HOST length: ${#VM_HOST}"
+        echo "USER length: ${#VM_USER}"
+        echo "KEY length: ${#VM_SSH_KEY}"
+
+    - name: SSH into VM and deploy
+      uses: appleboy/ssh-action@v1.2.0
+      with:
+        host: ${{ secrets.VM_HOST }}
+        username: ${{ secrets.VM_USER }}
+        key: ${{ secrets.VM_SSH_KEY }}
+        debug: true
+        script: |
+          whoami
