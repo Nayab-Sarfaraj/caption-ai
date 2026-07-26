@@ -3,6 +3,8 @@ name: deploy-instacap
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   build-check:
@@ -30,6 +32,7 @@ jobs:
   deploy:
     name: Deploy to VM
     needs: build-check
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: production
 
