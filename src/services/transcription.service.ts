@@ -30,10 +30,11 @@ class DeepgramProvider implements TranscriptionProvider {
       smart_format: true,
       punctuate: true,
       diarize: false,
-    })) as Record<string, unknown>;
+    })) as unknown as Record<string, unknown>;
 
     // v5 SDK wraps response as { data, rawResponse }
-    const result = response?.data ?? response;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result: any = response?.data ?? response;
     const alternative = result?.results?.channels?.[0]?.alternatives?.[0];
     if (!alternative?.words?.length) {
       throw new Error(
