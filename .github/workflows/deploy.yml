@@ -2,23 +2,26 @@ name: deploy-instacap
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build-check:
     name: Build & Type Check
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: 20
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -30,29 +33,46 @@ jobs:
         run: npm run lint
 
   deploy:
-  name: Deploy to VM
-  needs: build-check
-  if: github.event_name == 'push'
-  runs-on: ubuntu-latest
-  environment: production
+    name: Deploy to VM
+    needs: build-check
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production
 
-  steps:
-    - name: Check secrets
-      env:
-        VM_HOST: ${{ secrets.VM_HOST }}
-        VM_USER: ${{ secrets.VM_USER }}
-        VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
-      run: |
-        echo "HOST length: ${#VM_HOST}"
-        echo "USER length: ${#VM_USER}"
-        echo "KEY length: ${#VM_SSH_KEY}"
+    steps:
+      - name: Check secrets
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_USER: ${{ secrets.VM_USER }}
+          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+        run: |
+          echo "Host length: ${#VM_HOST}"
+          echo "User length: ${#VM_USER}"
+          echo "Key length: ${#VM_SSH_KEY}"
 
-    - name: SSH into VM and deploy
-      uses: appleboy/ssh-action@v1.2.0
-      with:
-        host: ${{ secrets.VM_HOST }}
-        username: ${{ secrets.VM_USER }}
-        key: ${{ secrets.VM_SSH_KEY }}
-        debug: true
-        script: |
-          whoami
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          port: 22
+          timeout: 60s
+          command_timeout: 30m
+          script_stop: true
+          debug: true
+          script: |
+            set -e
+
+            whoami
+            hostname
+
+            cd /home/nayabsarfaraj/captions
+
+            git pull origin main
+            npm install
+            npm run worker:build
+            npm run build
+            pm2 restart caption-worker caption-web
+
+            echo "Deployment completed successfully."
