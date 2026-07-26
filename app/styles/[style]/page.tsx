@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { CaptionStylePreview } from '@/components/caption-style-preview'
+import { StyleVideoPreview } from '@/components/style-video-preview'
 import { STYLE_SEO_MAP } from '@/src/helpers/style-seo-data'
 import {
   generateFaqSchema,
@@ -164,16 +164,9 @@ export default async function StyleLandingPage({ params }: Props) {
             </div>
           </div>
 
-          {/* Right Live Interactive Preview */}
+          {/* Right Live Interactive Phone Video Preview */}
           <div className="lg:col-span-5 flex justify-center">
-            <div className="w-full max-w-sm border border-[var(--border)] bg-[var(--card)] p-4 rounded-2xl shadow-2xl">
-              <div className="text-xs text-center font-mono text-[var(--mute)] mb-3">
-                LIVE STYLE PREVIEW ({meta.compositionId})
-              </div>
-              <div className="aspect-[9/16] overflow-hidden rounded-xl bg-black">
-                <CaptionStylePreview id={meta.compositionId} />
-              </div>
-            </div>
+            <StyleVideoPreview id={meta.compositionId} label={meta.compositionId} />
           </div>
         </div>
 

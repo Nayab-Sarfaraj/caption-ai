@@ -40,7 +40,7 @@ const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
-  title: 'Instacap — Free AI Video Caption Generator & Animated Subtitles',
+  title: 'Instacap — AI Video Caption Generator & Subtitles',
   description:
     'Generate word-by-word animated captions for Instagram Reels, TikTok, and YouTube Shorts in seconds. Powered by fast AI transcription with zero credit limits.',
   keywords: [
@@ -53,6 +53,10 @@ export const metadata: Metadata = {
     'auto captions online free',
     'youtube shorts subtitles',
   ],
+  icons: {
+    icon: '/icon.png',
+    apple: '/icon.png',
+  },
   alternates: {
     canonical: '/',
   },
@@ -68,7 +72,7 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: 'Instacap — Free AI Video Caption Generator & Animated Subtitles',
+    title: 'Instacap — AI Video Caption Generator & Subtitles',
     description:
       'Generate word-by-word animated captions for Instagram Reels, TikTok, and YouTube Shorts in seconds. Powered by fast AI transcription with zero credit limits.',
     url: appUrl,
@@ -77,7 +81,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Instacap — Free AI Video Caption Generator & Animated Subtitles',
+    title: 'Instacap — AI Video Caption Generator & Subtitles',
     description:
       'Generate word-by-word animated captions for Instagram Reels, TikTok, and YouTube Shorts in seconds.',
   },

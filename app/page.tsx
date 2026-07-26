@@ -249,7 +249,7 @@ export default async function RootPage() {
           <div>
             <span className={s.eyebrow}>Lightning-fast AI video captions</span>
             <h1 className={s.h1}>
-              High-retention animated captions for{" "}
+              AI Video Caption Generator for{" "}
               <span className={s.hl}>viral videos in seconds.</span>
             </h1>
             <p className={s.sub}>
