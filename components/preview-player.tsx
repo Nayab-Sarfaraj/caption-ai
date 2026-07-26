@@ -189,6 +189,7 @@ export function PreviewPlayer({
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
 
   const cur = settings[style];
   // Mirrors billing.service.ts's canRender — this render, if triggered now,
@@ -315,451 +316,380 @@ export function PreviewPlayer({
     };
   }, [width, height]);
 
+  const stylePanelContent = (
+    <>
+      {view === "appearance" && (
+        <>
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setView("styles")}
+                className="flex items-center gap-1 text-xs text-[var(--ink-dim)] hover:text-[var(--ink)] transition-colors"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+                Back
+              </button>
+              <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)]">
+                {STYLES.find((s) => s.id === style)?.label}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={resetStyle}
+              className="flex items-center gap-1 text-[10px] text-[var(--mute)] hover:text-[var(--brand)] rounded-md border border-[var(--hair)] px-2 py-1 transition-colors"
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></svg>
+              Reset
+            </button>
+          </div>
+          <ColorSwatch
+            label={style === "BoxHighlight" ? "Box" : style === "Pill" ? "Pill Background" : "Highlight"}
+            value={cur.activeColor}
+            onChange={(v) => update("activeColor", v)}
+            presets={HIGHLIGHT_PRESETS}
+          />
+          <ColorSwatch label="Text" value={cur.textColor} onChange={(v) => update("textColor", v)} presets={TEXT_PRESETS} />
+          {style === "BoxHighlight" && (
+            <ColorSwatch label="Accent" value={cur.accentColor} onChange={(v) => update("accentColor", v)} presets={HIGHLIGHT_PRESETS} />
+          )}
+          <div className="space-y-2 mt-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-[var(--mute)]">Font</p>
+              <button type="button" onClick={() => setView("fonts")} className="flex items-center gap-0.5 text-[10px] text-[var(--mute)] hover:text-[var(--ink-dim)] transition-colors">
+                More
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {FONTS.slice(0, FONTS_INITIAL).map((f) => (
+                <button
+                  key={f.value}
+                  type="button"
+                  onClick={() => update("fontFamily", f.value)}
+                  className={["px-2.5 py-1 rounded-lg border text-xs transition-all", cur.fontFamily === f.value ? "border-[var(--brand)] bg-[var(--brand-soft)] text-[var(--ink)]" : "border-[var(--hair)] text-[var(--ink-dim)] hover:border-[var(--faint)] hover:text-[var(--ink)]"].join(" ")}
+                  style={{ fontFamily: f.value }}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-2 mt-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-[var(--mute)]">Size</p>
+              <p className="text-xs text-[var(--ink-dim)] tabular-nums">{cur.fontSizeMultiplier.toFixed(2)}×</p>
+            </div>
+            <input type="range" min={0.5} max={2.0} step={0.05} value={cur.fontSizeMultiplier} onChange={(e) => update("fontSizeMultiplier", parseFloat(e.target.value))} className="w-full accent-[var(--brand)] cursor-pointer" />
+            <div className="flex justify-between text-[10px] text-[var(--mute)]"><span>Small</span><span>Large</span></div>
+          </div>
+          <div className="space-y-2.5 mt-4">
+            <p className="text-xs text-[var(--mute)]">Position</p>
+            <div className="space-y-1">
+              <input type="range" min={0} max={100} step={1} value={cur.posY} onChange={(e) => update("posY", parseInt(e.target.value, 10))} className="w-full accent-[var(--brand)] cursor-pointer" aria-label="Vertical position" />
+              <div className="flex justify-between text-[10px] text-[var(--mute)]"><span>Top</span><span>Bottom</span></div>
+            </div>
+            <div className="space-y-1">
+              <input type="range" min={0} max={100} step={1} value={cur.posX} onChange={(e) => update("posX", parseInt(e.target.value, 10))} className="w-full accent-[var(--brand)] cursor-pointer" aria-label="Horizontal position" />
+              <div className="flex justify-between text-[10px] text-[var(--mute)]"><span>Left</span><span>Right</span></div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {view === "fonts" && (
+        <>
+          <div className="flex items-center gap-2 mb-4">
+            <button type="button" onClick={() => setView("appearance")} className="flex items-center gap-1 text-xs text-[var(--ink-dim)] hover:text-[var(--ink)] transition-colors">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+              Back
+            </button>
+            <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)]">Font Family</p>
+          </div>
+          <div className="overflow-y-auto max-h-64 pr-0.5">
+            <div className="grid grid-cols-2 gap-2">
+              {FONTS.map((f) => (
+                <button
+                  key={f.value}
+                  type="button"
+                  onClick={() => update("fontFamily", f.value)}
+                  className={["rounded-lg border p-3 text-left transition-all space-y-1", cur.fontFamily === f.value ? "border-[var(--brand)] bg-[var(--brand-soft)]" : "border-[var(--hair)] hover:border-[var(--faint)]"].join(" ")}
+                >
+                  <p className="text-lg leading-none text-[var(--ink)]" style={{ fontFamily: f.value }}>Aa</p>
+                  <p className="text-[10px] text-[var(--mute)]">{f.label}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </>
+  );
+
+  const exportBar = (
+    <>
+      {!isPaid && (
+        <p className="text-xs text-[var(--mute)] text-center">
+          {willWatermark
+            ? `${rendersRemaining} free render${rendersRemaining === 1 ? "" : "s"} left · watermarked`
+            : "Free limit reached this month"}
+        </p>
+      )}
+      {error && <p className="text-xs text-[var(--brand)] text-center">{error}</p>}
+      <button
+        type="button"
+        onClick={handleExportClick}
+        disabled={exporting}
+        className="w-full rounded-lg bg-[var(--brand)] text-white text-sm font-bold py-3 hover:brightness-[1.08] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {exporting ? "Starting export…" : blocked ? "Upgrade to export" : `Export · ${STYLES.find((s) => s.id === style)?.label ?? style}`}
+      </button>
+    </>
+  );
+
   return (
-    <div className="flex flex-col lg:flex-row gap-5 items-stretch lg:items-start w-full">
+    <>
       {showPaywall && (
         <PaywallModal
           onClose={() => setShowPaywall(false)}
-          onContinueFree={
-            !blocked
-              ? () => {
-                  setShowPaywall(false);
-                  runExport();
-                }
-              : undefined
-          }
-          blockedMessage={
-            blocked
-              ? "Free render limit reached this month — upgrade for unlimited, watermark-free exports."
-              : undefined
-          }
+          onContinueFree={!blocked ? () => { setShowPaywall(false); runExport(); } : undefined}
+          blockedMessage={blocked ? "Free render limit reached this month — upgrade for unlimited, watermark-free exports." : undefined}
         />
       )}
 
-      {/* Left: player */}
-      <div
-        ref={playerContainerRef}
-        className="w-full flex-1 min-w-0 min-h-[320px] sm:min-h-[420px] overflow-hidden rounded-2xl border border-[var(--hair)] bg-black flex items-center justify-center p-2"
-      >
-        {playerSize.width > 0 ? (
-          <Player
-            component={
-              CaptionRoot as unknown as React.FC<Record<string, unknown>>
-            }
-            inputProps={inputProps as unknown as Record<string, unknown>}
-            durationInFrames={durationInFrames}
-            compositionWidth={width}
-            compositionHeight={height}
-            fps={30}
-            style={{ width: playerSize.width, height: playerSize.height }}
-            controls
-            clickToPlay
-            showVolumeControls
-          />
-        ) : (
-          <div className="w-full aspect-[9/16] max-h-[55vh] flex items-center justify-center text-xs text-[var(--mute)]">
-            Loading preview...
+      {/* ─── MOBILE LAYOUT (< lg) ─── */}
+      <div className="flex flex-col lg:hidden w-full pb-[80px]">
+        {/* Zone 1: Player */}
+        <div
+          ref={playerContainerRef}
+          className="w-full overflow-hidden bg-black flex items-center justify-center"
+          style={{ minHeight: 240 }}
+        >
+          {playerSize.width > 0 ? (
+            <Player
+              component={CaptionRoot as unknown as React.FC<Record<string, unknown>>}
+              inputProps={inputProps as unknown as Record<string, unknown>}
+              durationInFrames={durationInFrames}
+              compositionWidth={width}
+              compositionHeight={height}
+              fps={30}
+              style={{ width: playerSize.width, height: playerSize.height }}
+              controls
+              clickToPlay
+              showVolumeControls
+            />
+          ) : (
+            <div className="w-full flex items-center justify-center text-xs text-[var(--mute)]" style={{ height: 260 }}>
+              Loading preview…
+            </div>
+          )}
+        </div>
+
+        {/* Zone 2: Horizontal style rail */}
+        <div className="w-full bg-[var(--panel)] border-t border-[var(--hair)]">
+          {/* Job info strip */}
+          <div className="flex items-center justify-between px-4 pt-3 pb-2 gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: statusColor }} />
+              <p className="text-xs text-[var(--ink)] truncate font-medium">{filename}</p>
+            </div>
+            {/* Customize button → opens bottom sheet */}
+            <button
+              type="button"
+              onClick={() => { setView("appearance"); setMobileSheetOpen(true); }}
+              className="shrink-0 flex items-center gap-1.5 text-xs font-medium text-[var(--ink)] rounded-lg border border-[var(--hair)] px-2.5 py-1.5 hover:border-[var(--brand)] hover:text-[var(--brand)] transition-colors"
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
+              Customize
+            </button>
           </div>
+
+          {/* Horizontal scroll rail of style cards */}
+          <div className="flex gap-2.5 overflow-x-auto px-4 pb-3 scroll-smooth" style={{ scrollbarWidth: 'none' }}>
+            {STYLES.map((s) => {
+              const active = style === s.id;
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setStyle(s.id)}
+                  className="shrink-0 flex flex-col items-center gap-1.5 focus:outline-none"
+                  style={{ width: 104 }}
+                >
+                  <div
+                    className={[
+                      "relative w-full overflow-hidden rounded-xl transition-all aspect-[4/3]",
+                      active ? "ring-2 ring-[var(--brand)] shadow-[0_0_12px_color-mix(in_srgb,var(--brand)_50%,transparent)]" : "ring-1 ring-[var(--hair)]",
+                    ].join(" ")}
+                  >
+                    <div className="absolute inset-0 flex items-center justify-center [&>div]:w-full [&>div]:h-full [&>div]:min-h-0 [&>div]:flex [&>div]:items-center [&>div]:justify-center">
+                      <CaptionStylePreview id={s.id} />
+                    </div>
+                    {active && (
+                      <span className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-[var(--brand)] flex items-center justify-center z-10">
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                      </span>
+                    )}
+                  </div>
+                  <p className={["text-[10px] font-medium leading-tight text-center truncate w-full", active ? "text-[var(--brand)]" : "text-[var(--mute)]"].join(" ")}>
+                    {s.label}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Zone 3: Sticky export bar — solid background + blur so content never bleeds through */}
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--hair)] px-4 py-3 space-y-1.5" style={{ background: 'var(--bg)', backdropFilter: 'none' }}>
+          {exportBar}
+        </div>
+
+        {/* Slide-up customization bottom sheet */}
+        {mobileSheetOpen && (
+          <>
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+              onClick={() => setMobileSheetOpen(false)}
+            />
+            {/* Sheet */}
+            <div className="fixed bottom-0 left-0 right-0 z-50 bg-[var(--panel)] border-t border-[var(--hair)] rounded-t-2xl max-h-[75vh] flex flex-col" style={{ animation: 'slideUp 0.25s cubic-bezier(0.32, 0.72, 0, 1)' }}>
+              {/* Sheet handle + header */}
+              <div className="flex items-center justify-between px-5 pt-4 pb-3 shrink-0">
+                <div className="w-8 h-1 rounded-full bg-[var(--hair)] mx-auto absolute left-1/2 -translate-x-1/2 top-2.5" />
+                <p className="text-sm font-semibold text-[var(--ink)]">
+                  {view === "fonts" ? "Font Family" : `Edit · ${STYLES.find((s) => s.id === style)?.label ?? style}`}
+                </p>
+                <button type="button" onClick={() => setMobileSheetOpen(false)} className="text-[var(--mute)] hover:text-[var(--ink)] transition-colors">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                </button>
+              </div>
+              {/* Sheet content */}
+              <div className="flex-1 overflow-y-auto px-5 pb-6 space-y-4">
+                {stylePanelContent}
+              </div>
+            </div>
+          </>
         )}
       </div>
 
-      {/* Right: info + controls — pinned to the viewport independently of
-          the player's height, only the middle (job info + style picker)
-          scrolls, Export stays visible without scrolling the page. */}
-      <div className="w-full lg:w-80 shrink-0 rounded-2xl border border-[var(--hair)] bg-[var(--panel)] flex flex-col lg:sticky lg:top-6 lg:max-h-[calc(100vh-6rem)]">
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
-          {/* Job info */}
-          <div className="space-y-1.5">
-            <h1 className="text-sm font-bold text-[var(--ink)] truncate">
-              {filename}
-            </h1>
-            <div className="flex items-center gap-2">
-              <span
-                className="w-1.5 h-1.5 rounded-full shrink-0"
-                style={{ backgroundColor: statusColor }}
-              />
-              <span className="text-sm" style={{ color: statusColor }}>
-                {statusLabel}
-              </span>
+      {/* ─── DESKTOP LAYOUT (lg+) ─── */}
+      <div className="hidden lg:flex flex-row gap-5 items-start w-full">
+        {/* Left: player */}
+        <div
+          ref={playerContainerRef}
+          className="flex-1 min-w-0 min-h-[320px] overflow-hidden rounded-2xl border border-[var(--hair)] bg-black flex items-center justify-center p-2"
+        >
+          {playerSize.width > 0 ? (
+            <Player
+              component={CaptionRoot as unknown as React.FC<Record<string, unknown>>}
+              inputProps={inputProps as unknown as Record<string, unknown>}
+              durationInFrames={durationInFrames}
+              compositionWidth={width}
+              compositionHeight={height}
+              fps={30}
+              style={{ width: playerSize.width, height: playerSize.height }}
+              controls
+              clickToPlay
+              showVolumeControls
+            />
+          ) : (
+            <div className="w-full aspect-[9/16] max-h-[55vh] flex items-center justify-center text-xs text-[var(--mute)]">
+              Loading preview...
             </div>
+          )}
+        </div>
+
+        {/* Right: info + controls sidebar */}
+        <div className="w-80 shrink-0 rounded-2xl border border-[var(--hair)] bg-[var(--panel)] flex flex-col sticky top-6 max-h-[calc(100vh-6rem)]">
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            {/* Job info */}
+            <div className="space-y-1.5">
+              <h1 className="text-sm font-bold text-[var(--ink)] truncate">{filename}</h1>
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: statusColor }} />
+                <span className="text-sm" style={{ color: statusColor }}>{statusLabel}</span>
+              </div>
+            </div>
+
+            {transcriptSource && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[var(--mute)]">Transcript</span>
+                <span className="text-[var(--ink-dim)] text-xs">{transcriptSource === "user" ? "Uploaded SRT/VTT" : "AI · Deepgram"}</span>
+              </div>
+            )}
+            {createdAt && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[var(--mute)]">Created</span>
+                <span className="text-[var(--ink-dim)] text-xs">{createdAt}</span>
+              </div>
+            )}
+
+            <div className="border-t border-[var(--hair)]" />
+
+            {view === "styles" && (
+              <>
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)]">Caption Style</p>
+                  <button
+                    type="button"
+                    onClick={() => setView("appearance")}
+                    className="flex items-center gap-1.5 text-xs font-medium text-[var(--ink)] rounded-lg border border-[var(--hair)] px-2.5 py-1 hover:border-[var(--brand)] hover:text-[var(--brand)] transition-colors"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
+                    Edit colors & font
+                  </button>
+                </div>
+                <div className="space-y-4 pr-0.5">
+                  {CATEGORY_ORDER.map((cat) => (
+                    <div key={cat} className="space-y-2">
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--ink)]">{cat}</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {STYLES.filter((s) => s.category === cat).map((s) => {
+                          const active = style === s.id;
+                          return (
+                            <button
+                              key={s.id}
+                              type="button"
+                              onClick={() => setStyle(s.id)}
+                              className={["relative text-left transition-all overflow-hidden rounded-xl", active ? "ring-2 ring-inset ring-[var(--brand)]" : "ring-1 ring-inset ring-[var(--hair)] hover:ring-[var(--faint)]"].join(" ")}
+                            >
+                              <CaptionStylePreview id={s.id} />
+                              {active && (
+                                <span className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-[var(--brand)] flex items-center justify-center">
+                                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                                </span>
+                              )}
+                              <div className="px-2.5 py-2 bg-[var(--panel)]">
+                                <p className="text-xs text-[var(--ink)] font-medium">{s.label}</p>
+                                <p className="text-[10px] text-[var(--mute)] leading-tight mt-0.5">{s.desc}</p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {(view === "appearance" || view === "fonts") && stylePanelContent}
           </div>
 
-          {transcriptSource && (
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-[var(--mute)]">Transcript</span>
-              <span className="text-[var(--ink-dim)] text-xs">
-                {transcriptSource === "user"
-                  ? "Uploaded SRT/VTT"
-                  : "AI · Deepgram"}
-              </span>
-            </div>
-          )}
-          {createdAt && (
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-[var(--mute)]">Created</span>
-              <span className="text-[var(--ink-dim)] text-xs">{createdAt}</span>
-            </div>
-          )}
-
-          <div className="border-t border-[var(--hair)]" />
-
-          {view === "styles" && (
-            /* ── Style selection (categorized) ── */
-            <>
-              <div className="flex items-center justify-between">
-                <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)]">
-                  Caption Style
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setView("appearance")}
-                  className="flex items-center gap-1.5 text-xs font-medium text-[var(--ink)] rounded-lg border border-[var(--hair)] px-2.5 py-1 hover:border-[var(--brand)] hover:text-[var(--brand)] transition-colors"
-                >
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M12 20h9" />
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                  </svg>
-                  Edit colors & font
-                </button>
-              </div>
-              <div className="space-y-4 pr-0.5">
-                {CATEGORY_ORDER.map((cat) => (
-                  <div key={cat} className="space-y-2">
-                    <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--ink)]">
-                      {cat}
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {STYLES.filter((s) => s.category === cat).map((s) => {
-                        const active = style === s.id;
-                        return (
-                          <button
-                            key={s.id}
-                            type="button"
-                            onClick={() => setStyle(s.id)}
-                            className={[
-                              "relative text-left transition-all overflow-hidden rounded-xl",
-                              active
-                                ? "ring-2 ring-inset ring-[var(--brand)]"
-                                : "ring-1 ring-inset ring-[var(--hair)] hover:ring-[var(--faint)]",
-                            ].join(" ")}
-                          >
-                            <CaptionStylePreview id={s.id} />
-                            {active && (
-                              <span className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-[var(--brand)] flex items-center justify-center">
-                                <svg
-                                  width="8"
-                                  height="8"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="white"
-                                  strokeWidth="4"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M4.5 12.75l6 6 9-13.5"
-                                  />
-                                </svg>
-                              </span>
-                            )}
-                            <div className="px-2.5 py-2 bg-[var(--panel)]">
-                              <p className="text-xs text-[var(--ink)] font-medium">
-                                {s.label}
-                              </p>
-                              <p className="text-[10px] text-[var(--mute)] leading-tight mt-0.5">
-                                {s.desc}
-                              </p>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {view === "appearance" && (
-            /* ── Appearance (per-style) ── */
-            <>
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setView("styles")}
-                    className="flex items-center gap-1 text-xs text-[var(--ink-dim)] hover:text-[var(--ink)] transition-colors"
-                  >
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M15 18l-6-6 6-6" />
-                    </svg>
-                    Back
-                  </button>
-                  <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)]">
-                    {STYLES.find((s) => s.id === style)?.label}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={resetStyle}
-                  className="flex items-center gap-1 text-[10px] text-[var(--mute)] hover:text-[var(--brand)] rounded-md border border-[var(--hair)] px-2 py-1 transition-colors"
-                >
-                  <svg
-                    width="11"
-                    height="11"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
-                    <path d="M3 3v5h5" />
-                  </svg>
-                  Reset
-                </button>
-              </div>
-
-              <ColorSwatch
-                label={
-                  style === "BoxHighlight"
-                    ? "Box"
-                    : style === "Pill"
-                      ? "Pill Background"
-                      : "Highlight"
-                }
-                value={cur.activeColor}
-                onChange={(v) => update("activeColor", v)}
-                presets={HIGHLIGHT_PRESETS}
-              />
-              <ColorSwatch
-                label="Text"
-                value={cur.textColor}
-                onChange={(v) => update("textColor", v)}
-                presets={TEXT_PRESETS}
-              />
-              {style === "BoxHighlight" && (
-                <ColorSwatch
-                  label="Accent"
-                  value={cur.accentColor}
-                  onChange={(v) => update("accentColor", v)}
-                  presets={HIGHLIGHT_PRESETS}
-                />
-              )}
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-[var(--mute)]">Font</p>
-                  <button
-                    type="button"
-                    onClick={() => setView("fonts")}
-                    className="flex items-center gap-0.5 text-[10px] text-[var(--mute)] hover:text-[var(--ink-dim)] transition-colors"
-                  >
-                    More
-                    <svg
-                      width="10"
-                      height="10"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M9 18l6-6-6-6" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {FONTS.slice(0, FONTS_INITIAL).map((f) => (
-                    <button
-                      key={f.value}
-                      type="button"
-                      onClick={() => update("fontFamily", f.value)}
-                      className={[
-                        "px-2.5 py-1 rounded-lg border text-xs transition-all",
-                        cur.fontFamily === f.value
-                          ? "border-[var(--brand)] bg-[var(--brand-soft)] text-[var(--ink)]"
-                          : "border-[var(--hair)] text-[var(--ink-dim)] hover:border-[var(--faint)] hover:text-[var(--ink)]",
-                      ].join(" ")}
-                      style={{ fontFamily: f.value }}
-                    >
-                      {f.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-[var(--mute)]">Size</p>
-                  <p className="text-xs text-[var(--ink-dim)] tabular-nums">
-                    {cur.fontSizeMultiplier.toFixed(2)}×
-                  </p>
-                </div>
-                <input
-                  type="range"
-                  min={0.5}
-                  max={2.0}
-                  step={0.05}
-                  value={cur.fontSizeMultiplier}
-                  onChange={(e) =>
-                    update("fontSizeMultiplier", parseFloat(e.target.value))
-                  }
-                  className="w-full accent-[var(--brand)] cursor-pointer"
-                />
-                <div className="flex justify-between text-[10px] text-[var(--mute)]">
-                  <span>Small</span>
-                  <span>Large</span>
-                </div>
-              </div>
-
-              {/* Caption position — % of frame, so preview matches render exactly */}
-              <div className="space-y-2.5">
-                <p className="text-xs text-[var(--mute)]">Position</p>
-
-                <div className="space-y-1">
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    step={1}
-                    value={cur.posY}
-                    onChange={(e) =>
-                      update("posY", parseInt(e.target.value, 10))
-                    }
-                    className="w-full accent-[var(--brand)] cursor-pointer"
-                    aria-label="Vertical position"
-                  />
-                  <div className="flex justify-between text-[10px] text-[var(--mute)]">
-                    <span>Top</span>
-                    <span>Bottom</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    step={1}
-                    value={cur.posX}
-                    onChange={(e) =>
-                      update("posX", parseInt(e.target.value, 10))
-                    }
-                    className="w-full accent-[var(--brand)] cursor-pointer"
-                    aria-label="Horizontal position"
-                  />
-                  <div className="flex justify-between text-[10px] text-[var(--mute)]">
-                    <span>Left</span>
-                    <span>Right</span>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          {view === "fonts" && (
-            /* ── Font browser (full panel) ── */
-            <>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setView("appearance")}
-                  className="flex items-center gap-1 text-xs text-[var(--ink-dim)] hover:text-[var(--ink)] transition-colors"
-                >
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M15 18l-6-6 6-6" />
-                  </svg>
-                  Back
-                </button>
-                <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)]">
-                  Font Family
-                </p>
-              </div>
-              <div className="overflow-y-auto max-h-64 pr-0.5">
-                <div className="grid grid-cols-2 gap-2">
-                  {FONTS.map((f) => (
-                    <button
-                      key={f.value}
-                      type="button"
-                      onClick={() => update("fontFamily", f.value)}
-                      className={[
-                        "rounded-lg border p-3 text-left transition-all space-y-1",
-                        cur.fontFamily === f.value
-                          ? "border-[var(--brand)] bg-[var(--brand-soft)]"
-                          : "border-[var(--hair)] hover:border-[var(--faint)]",
-                      ].join(" ")}
-                    >
-                      <p
-                        className="text-lg leading-none text-[var(--ink)]"
-                        style={{ fontFamily: f.value }}
-                      >
-                        Aa
-                      </p>
-                      <p className="text-[10px] text-[var(--mute)]">
-                        {f.label}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className="shrink-0 border-t border-[var(--hair)] p-5 pt-4 space-y-3">
-          {!isPaid && (
-            <p className="text-xs text-[var(--mute)]">
-              {willWatermark
-                ? `${rendersRemaining} free render${rendersRemaining === 1 ? "" : "s"} left this month · watermarked`
-                : "Free limit reached this month"}
-            </p>
-          )}
-
-          {error && <p className="text-xs text-[var(--brand)]">{error}</p>}
-          <button
-            type="button"
-            onClick={handleExportClick}
-            disabled={exporting}
-            className="w-full rounded-lg bg-[var(--brand)] text-white text-sm font-bold py-2.5 hover:brightness-[1.08] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {exporting
-              ? "Starting export…"
-              : blocked
-                ? "Upgrade to export"
-                : `Export · ${STYLES.find((s) => s.id === style)?.label ?? style}`}
-          </button>
+          <div className="shrink-0 border-t border-[var(--hair)] p-5 pt-4 space-y-3">
+            {exportBar}
+          </div>
         </div>
       </div>
-    </div>
+
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(100%); }
+          to   { transform: translateY(0); }
+        }
+      `}</style>
+    </>
   );
 }
