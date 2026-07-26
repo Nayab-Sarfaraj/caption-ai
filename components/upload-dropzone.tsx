@@ -264,22 +264,31 @@ export function UploadDropzone({
   }, [batchMode, batchUploadMutation, uploadMutation]);
 
   const handleGenerateClick = useCallback(() => {
-    if (!isPaid) {
+    if (blocked) {
       setShowPaywall(true);
     } else {
       runGenerate();
     }
-  }, [isPaid, runGenerate]);
+  }, [blocked, runGenerate]);
 
   return (
     <div className="space-y-6">
       {showPaywall && (
         <PaywallModal
           onClose={() => setShowPaywall(false)}
-          onContinueFree={() => {
-            setShowPaywall(false);
-            runGenerate();
-          }}
+          onContinueFree={
+            blocked
+              ? undefined
+              : () => {
+                  setShowPaywall(false);
+                  runGenerate();
+                }
+          }
+          blockedMessage={
+            blocked
+              ? "Free render limit reached this month — upgrade for unlimited, watermark-free exports."
+              : undefined
+          }
         />
       )}
 
