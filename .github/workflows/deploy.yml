@@ -33,41 +33,14 @@ jobs:
     environment: production
 
     steps:
-      - name: Verify secrets
-        env:
-          VM_HOST: ${{ secrets.VM_HOST }}
-          VM_USER: ${{ secrets.VM_USER }}
-          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
-        run: |
-          echo "Host length: ${#VM_HOST}"
-          echo "User length: ${#VM_USER}"
-          echo "Key length: ${#VM_SSH_KEY}"
-
-      - name: Create SSH key
+      - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
-
           cat > ~/.ssh/id_ed25519 << 'EOF'
           ${{ secrets.VM_SSH_KEY }}
           EOF
-
           chmod 600 ~/.ssh/id_ed25519
-
-      - name: Validate key
-        run: |
-          ssh-keygen -y -f ~/.ssh/id_ed25519
-
-      - name: Add server to known_hosts
-        run: |
           ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Test SSH
-        run: |
-          ssh -vvv \
-            -i ~/.ssh/id_ed25519 \
-            -o StrictHostKeyChecking=yes \
-            ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} \
-            "whoami && hostname"
 
       - name: Deploy
         run: |
