@@ -37,7 +37,7 @@ export function PlanCards({ status, compact = false }: { status: SubscriptionSta
       )}
       {error && <p className="text-xs text-[var(--brand)]">{error}</p>}
 
-      <div className={compact ? 'grid grid-cols-3 gap-2' : 'grid gap-3 sm:grid-cols-3'}>
+      <div className={compact ? 'grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-2' : 'grid gap-3 sm:grid-cols-3'}>
         {PRICING_TIERS.map((t) => {
           const featured = Boolean(t.badge)
           return (
@@ -47,51 +47,39 @@ export function PlanCards({ status, compact = false }: { status: SubscriptionSta
                 'relative flex flex-col rounded-2xl border',
                 compact ? 'p-3' : 'p-4',
                 featured
-                  ? 'border-[var(--brand)] shadow-[0_16px_40px_-24px_var(--brand)]'
-                  : 'border-[var(--hair)]',
+                  ? 'border-[var(--brand)] shadow-[0_16px_40px_-24px_var(--brand)] bg-[var(--brand-soft)]/20'
+                  : 'border-[var(--hair)] bg-[var(--card)]',
               ].join(' ')}
             >
-              {t.badge && !compact && (
-                <span className="absolute -top-2.5 left-4 rounded-full bg-[var(--brand)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                  {t.badge}
-                </span>
-              )}
-              <p className="text-[11px] uppercase tracking-wide text-[var(--mute)] font-[family-name:var(--font-geist-mono)]">
-                {t.label}
-              </p>
-              <p className={`mt-1 font-bold text-[var(--ink)] tabular-nums ${compact ? 'text-lg' : 'text-2xl'}`}>
-                {t.price}
-                <span className="text-xs font-normal text-[var(--mute)]">{t.period}</span>
-              </p>
-              <p className="text-[11px] text-[var(--mute)] min-h-[14px] leading-tight">{t.note ?? ''}</p>
+              <div className="flex sm:flex-col justify-between items-start sm:items-stretch gap-1">
+                <div>
+                  <p className="text-[11px] uppercase tracking-wide text-[var(--mute)] font-[family-name:var(--font-geist-mono)]">
+                    {t.label}
+                  </p>
+                  <p className={`mt-0.5 font-bold text-[var(--ink)] tabular-nums ${compact ? 'text-base sm:text-lg' : 'text-2xl'}`}>
+                    {t.price}
+                    <span className="text-xs font-normal text-[var(--mute)]">{t.period}</span>
+                  </p>
+                  {t.note && (
+                    <p className="text-[10px] text-[var(--mute)] leading-tight mt-0.5">{t.note}</p>
+                  )}
+                </div>
 
-              {!compact && (
-                <ul className="mt-3 mb-4 space-y-1.5">
-                  {FEATURES.map((f) => (
-                    <li key={f} className="flex items-center gap-1.5 text-xs text-[var(--ink-dim)]">
-                      <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="var(--brand)" strokeWidth="2.4" aria-hidden="true">
-                        <path d="M4 10l4 4 8-9" />
-                      </svg>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              <button
-                type="button"
-                onClick={() => subscribe(t.id)}
-                disabled={loading !== null}
-                className={[
-                  'mt-auto w-full rounded-lg font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed',
-                  compact ? 'py-1.5 text-xs mt-2.5' : 'py-2 text-sm',
-                  featured
-                    ? 'bg-[var(--brand)] text-white hover:brightness-110'
-                    : 'border border-[var(--hair)] text-[var(--ink)] hover:border-[var(--brand)] hover:text-[var(--brand)]',
-                ].join(' ')}
-              >
-                {loading === t.id ? '…' : `Get ${t.label}`}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => subscribe(t.id)}
+                  disabled={loading !== null}
+                  className={[
+                    'rounded-lg font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0',
+                    compact ? 'py-1.5 px-3 text-xs sm:w-full sm:mt-2.5' : 'mt-auto w-full py-2 text-sm',
+                    featured
+                      ? 'bg-[var(--brand)] text-white hover:brightness-110'
+                      : 'border border-[var(--hair)] text-[var(--ink)] hover:border-[var(--brand)] hover:text-[var(--brand)]',
+                  ].join(' ')}
+                >
+                  {loading === t.id ? '…' : `Get ${t.label}`}
+                </button>
+              </div>
             </div>
           )
         })}
