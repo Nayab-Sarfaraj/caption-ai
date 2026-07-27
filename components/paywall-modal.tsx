@@ -40,14 +40,14 @@ export function PaywallModal({
   return (
     <div
       className={[
-        "fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 transition-opacity duration-150",
+        "fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 sm:p-4 overflow-y-auto transition-opacity duration-150",
         visible ? "opacity-100" : "opacity-0",
       ].join(" ")}
       onClick={onClose}
     >
       <div
         className={[
-          "bg-[var(--panel)] rounded-2xl max-w-md w-full p-6 sm:p-7 space-y-5 relative transition-all duration-200",
+          "bg-[var(--panel)] rounded-2xl max-w-md w-full p-5 sm:p-7 space-y-4 sm:space-y-5 relative my-auto max-h-[90vh] overflow-y-auto transition-all duration-200",
           visible ? "opacity-100 scale-100" : "opacity-0 scale-95",
         ].join(" ")}
         onClick={(e) => e.stopPropagation()}
