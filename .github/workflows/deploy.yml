@@ -84,7 +84,7 @@ jobs:
           npm run worker:build
           npm run build
 
-          pm2 restart caption-worker caption-web
+          sudo -u nayabsarfaraj pm2 restart caption-worker caption-web
 
           echo "Deployment completed."
           EOF
