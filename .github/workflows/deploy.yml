@@ -48,8 +48,8 @@ jobs:
           mkdir -p ~/.ssh
 
           cat > ~/.ssh/id_ed25519 << 'EOF'
-${{ secrets.VM_SSH_KEY }}
-EOF
+          ${{ secrets.VM_SSH_KEY }}
+          EOF
 
           chmod 600 ~/.ssh/id_ed25519
 
