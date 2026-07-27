@@ -14,23 +14,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Type Check
-        run: npx tsc --noEmit
-
-      - name: Lint
-        run: npm run lint
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run lint
 
   deploy:
     name: Deploy to VM
@@ -40,7 +33,7 @@ jobs:
     environment: production
 
     steps:
-      - name: Check secrets
+      - name: Verify secrets
         env:
           VM_HOST: ${{ secrets.VM_HOST }}
           VM_USER: ${{ secrets.VM_USER }}
@@ -50,29 +43,48 @@ jobs:
           echo "User length: ${#VM_USER}"
           echo "Key length: ${#VM_SSH_KEY}"
 
-      - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.VM_SSH_KEY }}
-          port: 22
-          timeout: 60s
-          command_timeout: 30m
-          script_stop: true
-          debug: true
-          script: |
-            set -e
+      - name: Create SSH key
+        run: |
+          mkdir -p ~/.ssh
 
-            whoami
-            hostname
+          cat > ~/.ssh/id_ed25519 << 'EOF'
+${{ secrets.VM_SSH_KEY }}
+EOF
 
-            cd /home/nayabsarfaraj/captions
+          chmod 600 ~/.ssh/id_ed25519
 
-            git pull origin main
-            npm install
-            npm run worker:build
-            npm run build
-            pm2 restart caption-worker caption-web
+      - name: Validate key
+        run: |
+          ssh-keygen -y -f ~/.ssh/id_ed25519
 
-            echo "Deployment completed successfully."
+      - name: Add server to known_hosts
+        run: |
+          ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Test SSH
+        run: |
+          ssh -vvv \
+            -i ~/.ssh/id_ed25519 \
+            -o StrictHostKeyChecking=yes \
+            ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} \
+            "whoami && hostname"
+
+      - name: Deploy
+        run: |
+          ssh \
+            -i ~/.ssh/id_ed25519 \
+            -o StrictHostKeyChecking=yes \
+            ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
+          set -e
+
+          cd /home/nayabsarfaraj/captions
+
+          git pull origin main
+          npm install
+          npm run worker:build
+          npm run build
+
+          pm2 restart caption-worker caption-web
+
+          echo "Deployment completed."
+          EOF
