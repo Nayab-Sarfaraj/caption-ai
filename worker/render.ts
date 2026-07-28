@@ -1,43 +1,46 @@
-import os from 'os'
-import { rm, mkdir } from 'fs/promises'
-import path from 'path'
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-import { Upload } from '@aws-sdk/lib-storage'
-import { createReadStream } from 'fs'
-import type { Job } from 'bullmq'
-import type { RenderJobPayload } from '../src/types/job.types'
-import type { Transcript } from '../src/types/transcript.types'
+import os from "os";
+import { rm, mkdir } from "fs/promises";
+import path from "path";
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { Upload } from "@aws-sdk/lib-storage";
+import { createReadStream } from "fs";
+import type { Job } from "bullmq";
+import type { RenderJobPayload } from "../src/types/job.types";
+import type { Transcript } from "../src/types/transcript.types";
 import {
   updateJobStatus,
   updateJobDone,
   updateJobFailed,
   findJobById,
   updateJobTranscript,
-} from '../src/repositories/job.repository'
-import { getBundle } from '../src/services/render.service'
-import { getTranscriptionProvider } from '../src/services/transcription.service'
-import { getRedis } from '../src/lib/redis'
-import { findByClerkId } from '../src/repositories/user.repository'
-import { notifyDiscord, DISCORD_COLOR } from '../src/lib/discord'
+} from "../src/repositories/job.repository";
+import { getBundle } from "../src/services/render.service";
+import { getTranscriptionProvider } from "../src/services/transcription.service";
+import { getRedis } from "../src/lib/redis";
+import { findByClerkId } from "../src/repositories/user.repository";
+import { notifyDiscord, DISCORD_COLOR } from "../src/lib/discord";
 
 function getS3(): S3Client {
   return new S3Client({
-    region: 'auto',
+    region: "auto",
     endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
     credentials: {
       accessKeyId: process.env.R2_ACCESS_KEY_ID!,
       secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
     },
-  })
+  });
 }
 
-async function getPresignedUrl(key: string, expiresIn: number): Promise<string> {
+async function getPresignedUrl(
+  key: string,
+  expiresIn: number,
+): Promise<string> {
   return getSignedUrl(
     getS3(),
     new GetObjectCommand({ Bucket: process.env.R2_BUCKET_NAME!, Key: key }),
-    { expiresIn }
-  )
+    { expiresIn },
+  );
 }
 
 async function uploadToR2(localPath: string, key: string): Promise<void> {
@@ -47,70 +50,96 @@ async function uploadToR2(localPath: string, key: string): Promise<void> {
       Bucket: process.env.R2_BUCKET_NAME!,
       Key: key,
       Body: createReadStream(localPath),
-      ContentType: 'video/mp4',
+      ContentType: "video/mp4",
     },
     queueSize: 4,
     partSize: 10 * 1024 * 1024,
-  })
-  await upload.done()
+  });
+  await upload.done();
 }
 
 // ─── Transcribe phase ────────────────────────────────────────────────────────
 
-async function processTranscribePhase(bullJob: Job<RenderJobPayload>): Promise<void> {
-  const { jobId, videoKey } = bullJob.data
+async function processTranscribePhase(
+  bullJob: Job<RenderJobPayload>,
+): Promise<void> {
+  const { jobId, videoKey } = bullJob.data;
 
   try {
-    const jobDoc = await findJobById(jobId)
-    if (!jobDoc) throw new Error(`Job ${jobId} not found`)
+    const jobDoc = await findJobById(jobId);
+    if (!jobDoc) throw new Error(`Job ${jobId} not found`);
 
     if (jobDoc.transcript) {
       // User uploaded SRT/VTT — skip Deepgram
-      await updateJobStatus(jobId, 'transcript_ready')
-      console.log(`[worker] job ${jobId} transcript already exists → transcript_ready`)
-      return
+      await updateJobStatus(jobId, "transcript_ready");
+      console.log(
+        `[worker] job ${jobId} transcript already exists → transcript_ready`,
+      );
+      return;
     }
 
-    console.log(`[worker] transcribing job ${jobId} via Deepgram`)
-    await updateJobStatus(jobId, 'transcribing')
+    console.log(`[worker] transcribing job ${jobId} via Deepgram`);
+    await updateJobStatus(jobId, "transcribing");
 
-    const audioUrl = await getPresignedUrl(videoKey, 900)
-    const transcript = await getTranscriptionProvider().transcribe(audioUrl)
+    const audioUrl = await getPresignedUrl(videoKey, 900);
+    const transcript = await getTranscriptionProvider().transcribe(audioUrl);
 
-    await updateJobTranscript(jobId, transcript)
-    await updateJobStatus(jobId, 'transcript_ready')
-    console.log(`[worker] job ${jobId} → transcript_ready (${transcript.words.length} words)`)
+    await updateJobTranscript(jobId, transcript);
+    await updateJobStatus(jobId, "transcript_ready");
+    console.log(
+      `[worker] job ${jobId} → transcript_ready (${transcript.words.length} words)`,
+    );
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    console.error(`[worker] transcription failed for job ${jobId}:`, message)
-    await updateJobFailed(jobId, message)
-    throw err
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`[worker] transcription failed for job ${jobId}:`, message);
+    await updateJobFailed(jobId, message);
+    throw err;
   }
 }
 
 // ─── Render phase ────────────────────────────────────────────────────────────
 
-async function processRenderPhase(bullJob: Job<RenderJobPayload>): Promise<void> {
-  const { jobId, userId, videoKey, compositionId, fps, activeColor = '#FACC15', textColor = '#FFFFFF', accentColor, fontFamily, fontSizeMultiplier, posX, posY, watermark } = bullJob.data
-  const tmpDir = `/tmp/${jobId}`
+async function processRenderPhase(
+  bullJob: Job<RenderJobPayload>,
+): Promise<void> {
+  const {
+    jobId,
+    userId,
+    videoKey,
+    compositionId,
+    fps,
+    activeColor = "#FACC15",
+    textColor = "#FFFFFF",
+    accentColor,
+    fontFamily,
+    fontSizeMultiplier,
+    posX,
+    posY,
+    watermark,
+  } = bullJob.data;
+  const tmpDir = `/tmp/${jobId}`;
 
   try {
-    await mkdir(tmpDir, { recursive: true })
+    await mkdir(tmpDir, { recursive: true });
 
-    const jobDoc = await findJobById(jobId)
-    if (!jobDoc) throw new Error(`Job ${jobId} not found`)
-    if (!jobDoc.transcript) throw new Error(`Job ${jobId} has no transcript — cannot render`)
+    const jobDoc = await findJobById(jobId);
+    if (!jobDoc) throw new Error(`Job ${jobId} not found`);
+    if (!jobDoc.transcript)
+      throw new Error(`Job ${jobId} has no transcript — cannot render`);
 
-    const transcript = jobDoc.transcript as Transcript
-    const videoSrc = await getPresignedUrl(videoKey, 1800)
-    const compWidth = jobDoc.width ?? 1920
-    const compHeight = jobDoc.height ?? 1080
+    const transcript = jobDoc.transcript as Transcript;
+    const videoSrc = await getPresignedUrl(videoKey, 1800);
+    const compWidth = jobDoc.width ?? 1920;
+    const compHeight = jobDoc.height ?? 1080;
 
-    await updateJobStatus(jobId, 'rendering')
-    console.log(`[worker] rendering job ${jobId} (${compositionId}) ${compWidth}×${compHeight}`)
+    await updateJobStatus(jobId, "rendering");
+    console.log(
+      `[worker] rendering job ${jobId} (${compositionId}) ${compWidth}×${compHeight}`,
+    );
 
-    const serveUrl = await getBundle()
-    const { selectComposition, renderMedia } = await import('@remotion/renderer')
+    const serveUrl = await getBundle();
+    const { selectComposition, renderMedia } =
+      await import("@remotion/renderer");
 
     // Render through the CaptionRoot dispatcher (id: 'CaptionRoot' + style
     // prop) rather than selecting the style composition directly — that's the
@@ -118,17 +147,29 @@ async function processRenderPhase(bullJob: Job<RenderJobPayload>): Promise<void>
     // so worker and preview can't silently diverge on props one of them
     // forgets to pass (this already happened once: fontFamily reached the
     // preview but not the worker until it was explicitly wired through).
-    const inputProps = { style: compositionId, transcript, videoSrc, activeColor, textColor, accentColor, fontFamily, fontSizeMultiplier, posX, posY, watermark }
+    const inputProps = {
+      style: compositionId,
+      transcript,
+      videoSrc,
+      activeColor,
+      textColor,
+      accentColor,
+      fontFamily,
+      fontSizeMultiplier,
+      posX,
+      posY,
+      watermark,
+    };
 
     const composition = await selectComposition({
       serveUrl,
-      id: 'CaptionRoot',
+      id: "CaptionRoot",
       inputProps,
-    })
+    });
 
     // Override dimensions to match actual video aspect ratio
-    composition.width = compWidth
-    composition.height = compHeight
+    composition.width = compWidth;
+    composition.height = compHeight;
 
     // CaptionRoot is registered in Root.tsx with a fixed 6s SAMPLE_DURATION_FRAMES
     // for Remotion Studio preview only — every real render must override it to
@@ -136,84 +177,104 @@ async function processRenderPhase(bullJob: Job<RenderJobPayload>): Promise<void>
     // regardless of the source video's real duration. Same +3s tail buffer
     // formula already used client-side for the live preview Player
     // (app/dashboard/jobs/[id]/page.tsx) — keeps both in sync.
-    const lastWordEnd = transcript.words?.length ? transcript.words[transcript.words.length - 1].end : 0
-    composition.durationInFrames = Math.ceil(lastWordEnd * fps) + fps * 3
+    const lastWordEnd = transcript.words?.length
+      ? transcript.words[transcript.words.length - 1].end
+      : 0;
+    composition.durationInFrames = Math.ceil(lastWordEnd * fps) + fps * 3;
 
-    const outputPath = path.join(tmpDir, 'output.mp4')
+    const outputPath = path.join(tmpDir, "output.mp4");
 
     await renderMedia({
       composition,
       serveUrl,
-      codec: 'h264',
-      // Maximize parallel frame rendering by using all available CPU cores
-      concurrency: os.cpus().length,
-      // Adjusted CRF from 18 to 22. CRF 22 remains visually high quality for web/social,
-      // but generates the file much faster and produces a smaller MP4.
-      crf: 22,
+      codec: "h264",
+      // Cap concurrency to avoid exhausting memory on 16GB VMs.
+      concurrency: Math.min(os.cpus().length, 4),
+      // Recover quality from the previous lower-quality encode.
+      crf: 20,
+      // Use a slightly slower x264 preset for better visual quality.
+      x264Preset: "faster",
       // No GPU on this VM — swangle (SwiftShader via ANGLE) benchmarks faster than
       // the default autodetect for headless software rendering on Linux servers.
-      chromiumOptions: { gl: 'swangle' },
-      // Default x264 preset is 'medium'; 'veryfast' trades a bit of file size
-      // for meaningfully faster encode with crf22 quality held constant.
-      x264Preset: 'veryfast',
-      pixelFormat: 'yuv420p',
+      chromiumOptions: { gl: "swangle" },
+      pixelFormat: "yuv420p",
       outputLocation: outputPath,
       inputProps,
       onProgress: ({ renderedFrames, progress }) => {
-        const totalFrames = composition.durationInFrames
-        const pct = Math.round(progress * 100)
-        bullJob.updateProgress(pct)
+        const totalFrames = composition.durationInFrames;
+        const pct = Math.round(progress * 100);
+        bullJob.updateProgress(pct);
         // The SSE route (app/api/jobs/[id]/stream/route.ts) subscribes to this
         // exact channel — bullJob.updateProgress alone never reaches it, that's
         // BullMQ's own internal tracking, not a Redis pub/sub message. Without
         // this publish the client never receives a 'progress' event and the
         // bar sits at 0% until the terminal-status poll fires on done/failed.
-        getRedis().publish(`job:${jobId}:progress`, JSON.stringify({ renderedFrames, totalFrames })).catch((err) => {
-          console.error(`[worker] failed to publish progress for job ${jobId}:`, err)
-        })
+        getRedis()
+          .publish(
+            `job:${jobId}:progress`,
+            JSON.stringify({ renderedFrames, totalFrames }),
+          )
+          .catch((err) => {
+            console.error(
+              `[worker] failed to publish progress for job ${jobId}:`,
+              err,
+            );
+          });
         if (renderedFrames % 30 === 0) {
-          console.log(`[worker] job ${jobId} render progress: ${pct}%`)
+          console.log(`[worker] job ${jobId} render progress: ${pct}%`);
         }
       },
-    })
+    });
 
-    const outputKey = `outputs/${userId}/${jobId}/output.mp4`
-    await uploadToR2(outputPath, outputKey)
-    await updateJobDone(jobId, outputKey)
-    console.log(`[worker] job ${jobId} done → ${outputKey}`)
+    const outputKey = `outputs/${userId}/${jobId}/output.mp4`;
+    await uploadToR2(outputPath, outputKey);
+    await updateJobDone(jobId, outputKey);
+    console.log(`[worker] job ${jobId} done → ${outputKey}`);
 
-    const renderedUser = await findByClerkId(userId).catch(() => null)
+    const renderedUser = await findByClerkId(userId).catch(() => null);
     // 7-day expiry matches the storage retention window (CLAUDE.md: original +
     // rendered output auto-deleted 7 days after creation) — link stays valid
     // for exactly as long as the file itself still exists.
-    const videoUrl = await getPresignedUrl(outputKey, 60 * 60 * 24 * 7).catch(() => null)
+    const videoUrl = await getPresignedUrl(outputKey, 60 * 60 * 24 * 7).catch(
+      () => null,
+    );
     notifyDiscord({
-      title: '✅ Video rendered successfully',
+      title: "✅ Video rendered successfully",
       color: DISCORD_COLOR.success,
       fields: [
-        { name: 'User Name', value: renderedUser?.name ?? 'Unknown', inline: true },
-        { name: 'Email', value: renderedUser?.email ?? 'Unknown', inline: true },
-        { name: 'User ID', value: userId, inline: true },
-        { name: 'Job ID', value: jobId, inline: true },
-        { name: 'Style', value: compositionId, inline: true },
-        ...(videoUrl ? [{ name: 'Video URL', value: videoUrl }] : []),
+        {
+          name: "User Name",
+          value: renderedUser?.name ?? "Unknown",
+          inline: true,
+        },
+        {
+          name: "Email",
+          value: renderedUser?.email ?? "Unknown",
+          inline: true,
+        },
+        { name: "User ID", value: userId, inline: true },
+        { name: "Job ID", value: jobId, inline: true },
+        { name: "Style", value: compositionId, inline: true },
+        ...(videoUrl ? [{ name: "Video URL", value: videoUrl }] : []),
       ],
-    })
+    });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    console.error(`[worker] render failed for job ${jobId}:`, message)
-    await updateJobFailed(jobId, message)
-    throw err
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`[worker] render failed for job ${jobId}:`, message);
+    await updateJobFailed(jobId, message);
+    throw err;
   } finally {
-    await rm(tmpDir, { recursive: true, force: true })
+    await rm(tmpDir, { recursive: true, force: true });
   }
 }
 
 // ─── Entry point ─────────────────────────────────────────────────────────────
 
-export async function processRenderJob(bullJob: Job<RenderJobPayload>): Promise<void> {
-  if (bullJob.data.phase === 'render') {
-    return processRenderPhase(bullJob)
+export async function processRenderJob(
+  bullJob: Job<RenderJobPayload>,
+): Promise<void> {
+  if (bullJob.data.phase === "render") {
+    return processRenderPhase(bullJob);
   }
-  return processTranscribePhase(bullJob)
+  return processTranscribePhase(bullJob);
 }
