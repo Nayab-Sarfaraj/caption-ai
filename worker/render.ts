@@ -145,17 +145,15 @@ async function processRenderPhase(bullJob: Job<RenderJobPayload>): Promise<void>
       composition,
       serveUrl,
       codec: 'h264',
-      // Maximize parallel frame rendering by using all available CPU cores
-      concurrency: os.cpus().length,
-      // Adjusted CRF from 18 to 22. CRF 22 remains visually high quality for web/social,
-      // but generates the file much faster and produces a smaller MP4.
-      crf: 22,
+      // Cap concurrency to avoid exhausting memory on 16GB VMs.
+      concurrency: Math.min(os.cpus().length, 4),
+      // Recover quality from the previous lower-quality encode.
+      crf: 20,
+      // Use a slightly slower x264 preset for better visual quality.
+      x264Preset: 'faster',
       // No GPU on this VM — swangle (SwiftShader via ANGLE) benchmarks faster than
       // the default autodetect for headless software rendering on Linux servers.
       chromiumOptions: { gl: 'swangle' },
-      // Default x264 preset is 'medium'; 'veryfast' trades a bit of file size
-      // for meaningfully faster encode with crf22 quality held constant.
-      x264Preset: 'veryfast',
       pixelFormat: 'yuv420p',
       outputLocation: outputPath,
       inputProps,
