@@ -36,7 +36,7 @@ export function JobProgress({ jobId, initialStatus, onDone, onFailed }: JobProgr
           if (job.status === 'done') {
             if (pollInterval) clearInterval(pollInterval)
             queryClient.invalidateQueries({ queryKey: ['job', jobId] })
-            if (job.outputKey) onDone?.(job.outputKey)
+            if (job.downloadUrl) onDone?.(job.downloadUrl)
             router.refresh()
           } else if (job.status === 'failed') {
             if (pollInterval) clearInterval(pollInterval)

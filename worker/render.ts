@@ -137,10 +137,6 @@ async function processRenderPhase(
       `[worker] rendering job ${jobId} (${compositionId}) ${compWidth}×${compHeight}`,
     );
 
-    const serveUrl = await getBundle();
-    const { selectComposition, renderMedia } =
-      await import("@remotion/renderer");
-
     // Render through the CaptionRoot dispatcher (id: 'CaptionRoot' + style
     // prop) rather than selecting the style composition directly — that's the
     // same component the live preview uses (components/preview-player.tsx),
@@ -161,16 +157,6 @@ async function processRenderPhase(
       watermark,
     };
 
-    const composition = await selectComposition({
-      serveUrl,
-      id: "CaptionRoot",
-      inputProps,
-    });
-
-    // Override dimensions to match actual video aspect ratio
-    composition.width = compWidth;
-    composition.height = compHeight;
-
     // CaptionRoot is registered in Root.tsx with a fixed 6s SAMPLE_DURATION_FRAMES
     // for Remotion Studio preview only — every real render must override it to
     // the actual transcript length, or output gets hard-capped at 6 seconds
@@ -180,15 +166,20 @@ async function processRenderPhase(
     const lastWordEnd = transcript.words?.length
       ? transcript.words[transcript.words.length - 1].end
       : 0;
-    composition.durationInFrames = Math.ceil(lastWordEnd * fps) + fps * 3;
+    const durationInFrames = Math.ceil(lastWordEnd * fps) + fps * 3;
 
     const outputPath = path.join(tmpDir, "output.mp4");
 
     const functionName = process.env.REMOTION_LAMBDA_FUNCTION_NAME;
-    const siteName = process.env.REMOTION_LAMBDA_SITE_NAME || "caption-ai";
+    const lambdaServeUrl = process.env.REMOTION_LAMBDA_SERVE_URL;
     const region = (process.env.REMOTION_AWS_REGION as any) || "us-east-1";
 
     if (functionName) {
+      if (!lambdaServeUrl) {
+        throw new Error(
+          "REMOTION_LAMBDA_SERVE_URL is required when REMOTION_LAMBDA_FUNCTION_NAME is set"
+        );
+      }
       console.log(
         `[worker] rendering job ${jobId} via @remotion/lambda (${functionName})`
       );
@@ -198,16 +189,17 @@ async function processRenderPhase(
       const { renderId, bucketName } = await renderMediaOnLambda({
         region,
         functionName,
-        serveUrl: siteName,
+        serveUrl: lambdaServeUrl,
         composition: "CaptionRoot",
         inputProps: {
           ...inputProps,
-          durationInFrames: composition.durationInFrames,
-          width: compWidth,
-          height: compHeight,
         },
         codec: "h264",
         crf: 20,
+        forceWidth: compWidth,
+        forceHeight: compHeight,
+        forceFps: fps,
+        forceDurationInFrames: durationInFrames,
       });
 
       let completed = false;
@@ -219,7 +211,7 @@ async function processRenderPhase(
           region,
         });
 
-        const totalFrames = composition.durationInFrames;
+        const totalFrames = durationInFrames;
         const renderedFrames = Math.round(
           progress.overallProgress * totalFrames
         );
@@ -261,6 +253,18 @@ async function processRenderPhase(
         await new Promise((r) => setTimeout(r, 1000));
       }
     } else {
+      const serveUrl = await getBundle();
+      const { selectComposition, renderMedia } =
+        await import("@remotion/renderer");
+      const composition = await selectComposition({
+        serveUrl,
+        id: "CaptionRoot",
+        inputProps,
+      });
+      composition.width = compWidth;
+      composition.height = compHeight;
+      composition.durationInFrames = durationInFrames;
+
       await renderMedia({
         composition,
         serveUrl,

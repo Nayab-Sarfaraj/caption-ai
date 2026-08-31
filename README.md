@@ -374,6 +374,11 @@ Copy `.env.example` → `.env.local` and fill in all values.
 | `NEXT_PUBLIC_POSTHOG_KEY` | PostHog project API key (`phc_...`) — optional, analytics disabled if absent |
 | `NEXT_PUBLIC_POSTHOG_HOST` | PostHog ingest host, defaults to `https://us.i.posthog.com` |
 
+For Remotion Lambda rendering, add `REMOTION_LAMBDA_FUNCTION_NAME`,
+`REMOTION_LAMBDA_SERVE_URL` (the `serveUrl` returned by site deployment),
+`REMOTION_AWS_REGION`, `AWS_ACCESS_KEY_ID`, and `AWS_SECRET_ACCESS_KEY` to
+`worker/.env`. Omit the function name to use local Remotion rendering.
+
 > **Worker** reads from `worker/.env` — same variable names, no `NEXT_PUBLIC_*` vars needed.
 
 > **R2 CORS** — configure a CORS policy on the R2 bucket allowing `PUT` and `Content-Type` from your app domain before presigned uploads will work.
