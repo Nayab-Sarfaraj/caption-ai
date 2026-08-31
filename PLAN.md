@@ -924,6 +924,4 @@ TRANSCRIPTION_PROVIDER=deepgram
 7. **`file://` prefix:** Remotion's Chromium needs `file:///absolute/path` for local video files.
 8. **Transcript Mixed type:** `Schema.Types.Mixed` not `Map` for transcript field. Serialize with `JSON.parse(JSON.stringify(...))` before write.
 9. **SSE Node runtime:** `export const runtime = 'nodejs'` on SSE route — ioredis is TCP, fails on Vercel Edge.
-10. **BullMQ enqueue timeout:** Wrap `queue.add()` in `Promise.race` with 10s timeout — hangs silently on Redis disconnect.
-
-
+10. **BullMQ enqueue timeout:** Wrap `queue.add()` in `Promise.race` with 10s timeout — hangs silently on Redis disconnect .
