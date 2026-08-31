@@ -23,37 +23,78 @@ export function JobProgress({ jobId, initialStatus, onDone, onFailed }: JobProgr
   useEffect(() => {
     if (isTerminal) return
 
-    const sse = new EventSource(`/api/jobs/${jobId}/stream`)
+    let sse: EventSource | null = null
+    let pollInterval: NodeJS.Timeout | null = null
 
-    sse.onmessage = (e: MessageEvent) => {
-      try {
-        const event = JSON.parse(e.data as string) as JobProgressEvent
-        if (event.type === 'progress') {
-          const pct =
-            event.totalFrames && event.totalFrames > 0
-              ? Math.round(((event.renderedFrames ?? 0) / event.totalFrames) * 100)
-              : 0
-          setPercent(pct)
-          setStatusLabel(`Rendering ${pct}%`)
-        } else if (event.type === 'done') {
-          queryClient.invalidateQueries({ queryKey: ['job', jobId] })
-          sse.close()
-          if (event.outputKey) onDone?.(event.outputKey)
-          router.refresh()
-        } else if (event.type === 'failed') {
-          queryClient.invalidateQueries({ queryKey: ['job', jobId] })
-          sse.close()
-          if (event.errorMessage) onFailed?.(event.errorMessage)
-          router.refresh()
+    const startPolling = () => {
+      if (pollInterval) return
+      pollInterval = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/jobs/${jobId}`)
+          if (!res.ok) return
+          const job = await res.json()
+          if (job.status === 'done') {
+            if (pollInterval) clearInterval(pollInterval)
+            queryClient.invalidateQueries({ queryKey: ['job', jobId] })
+            if (job.outputKey) onDone?.(job.outputKey)
+            router.refresh()
+          } else if (job.status === 'failed') {
+            if (pollInterval) clearInterval(pollInterval)
+            queryClient.invalidateQueries({ queryKey: ['job', jobId] })
+            if (job.errorMessage) onFailed?.(job.errorMessage)
+            router.refresh()
+          } else if (job.status === 'transcript_ready') {
+            if (pollInterval) clearInterval(pollInterval)
+            queryClient.invalidateQueries({ queryKey: ['job', jobId] })
+            router.refresh()
+          }
+        } catch {
+          // ignore transient poll errors
         }
-      } catch {
-        // ignore parse errors
-      }
+      }, 1500)
     }
 
-    sse.onerror = () => sse.close()
+    try {
+      sse = new EventSource(`/api/jobs/${jobId}/stream`)
 
-    return () => sse.close()
+      sse.onmessage = (e: MessageEvent) => {
+        try {
+          const event = JSON.parse(e.data as string) as JobProgressEvent
+          if (event.type === 'progress') {
+            const pct =
+              event.totalFrames && event.totalFrames > 0
+                ? Math.round(((event.renderedFrames ?? 0) / event.totalFrames) * 100)
+                : 0
+            setPercent(pct)
+            setStatusLabel(`Rendering ${pct}%`)
+          } else if (event.type === 'done') {
+            queryClient.invalidateQueries({ queryKey: ['job', jobId] })
+            sse?.close()
+            if (event.outputKey) onDone?.(event.outputKey)
+            router.refresh()
+          } else if (event.type === 'failed') {
+            queryClient.invalidateQueries({ queryKey: ['job', jobId] })
+            sse?.close()
+            if (event.errorMessage) onFailed?.(event.errorMessage)
+            router.refresh()
+          }
+        } catch {
+          // ignore parse errors
+        }
+      }
+
+      sse.onerror = () => {
+        sse?.close()
+        startPolling()
+      }
+    } catch {
+      startPolling()
+    }
+
+    return () => {
+      sse?.close()
+      if (pollInterval) clearInterval(pollInterval)
+    }
   }, [jobId, isTerminal, queryClient, router, onDone, onFailed])
 
   if (isTerminal) return null

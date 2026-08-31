@@ -184,47 +184,126 @@ async function processRenderPhase(
 
     const outputPath = path.join(tmpDir, "output.mp4");
 
-    await renderMedia({
-      composition,
-      serveUrl,
-      codec: "h264",
-      // Cap concurrency to avoid exhausting memory on 16GB VMs.
-      concurrency: Math.min(os.cpus().length, 4),
-      // Recover quality from the previous lower-quality encode.
-      crf: 20,
-      // Use a slightly slower x264 preset for better visual quality.
-      x264Preset: "faster",
-      // No GPU on this VM — swangle (SwiftShader via ANGLE) benchmarks faster than
-      // the default autodetect for headless software rendering on Linux servers.
-      chromiumOptions: { gl: "swangle" },
-      pixelFormat: "yuv420p",
-      outputLocation: outputPath,
-      inputProps,
-      onProgress: ({ renderedFrames, progress }) => {
+    const functionName = process.env.REMOTION_LAMBDA_FUNCTION_NAME;
+    const siteName = process.env.REMOTION_LAMBDA_SITE_NAME || "caption-ai";
+    const region = (process.env.REMOTION_AWS_REGION as any) || "us-east-1";
+
+    if (functionName) {
+      console.log(
+        `[worker] rendering job ${jobId} via @remotion/lambda (${functionName})`
+      );
+      const { renderMediaOnLambda, getRenderProgress, downloadMedia } =
+        await import("@remotion/lambda");
+
+      const { renderId, bucketName } = await renderMediaOnLambda({
+        region,
+        functionName,
+        serveUrl: siteName,
+        composition: "CaptionRoot",
+        inputProps: {
+          ...inputProps,
+          durationInFrames: composition.durationInFrames,
+          width: compWidth,
+          height: compHeight,
+        },
+        codec: "h264",
+        crf: 20,
+      });
+
+      let completed = false;
+      while (!completed) {
+        const progress = await getRenderProgress({
+          renderId,
+          bucketName,
+          functionName,
+          region,
+        });
+
         const totalFrames = composition.durationInFrames;
-        const pct = Math.round(progress * 100);
+        const renderedFrames = Math.round(
+          progress.overallProgress * totalFrames
+        );
+        const pct = Math.round(progress.overallProgress * 100);
         bullJob.updateProgress(pct);
-        // The SSE route (app/api/jobs/[id]/stream/route.ts) subscribes to this
-        // exact channel — bullJob.updateProgress alone never reaches it, that's
-        // BullMQ's own internal tracking, not a Redis pub/sub message. Without
-        // this publish the client never receives a 'progress' event and the
-        // bar sits at 0% until the terminal-status poll fires on done/failed.
+
         getRedis()
           .publish(
             `job:${jobId}:progress`,
-            JSON.stringify({ renderedFrames, totalFrames }),
+            JSON.stringify({ renderedFrames, totalFrames, progress: pct })
           )
-          .catch((err) => {
+          .catch((err) =>
             console.error(
               `[worker] failed to publish progress for job ${jobId}:`,
-              err,
-            );
+              err
+            )
+          );
+
+        if (progress.done) {
+          console.log(
+            `[worker] Lambda render complete for job ${jobId}, downloading output...`
+          );
+          await downloadMedia({
+            bucketName,
+            renderId,
+            region,
+            outPath: outputPath,
           });
-        if (renderedFrames % 30 === 0) {
-          console.log(`[worker] job ${jobId} render progress: ${pct}%`);
+          completed = true;
+          break;
         }
-      },
-    });
+
+        if (progress.fatalErrorEncountered) {
+          throw new Error(
+            progress.errors[0]?.message || "Remotion Lambda render failed"
+          );
+        }
+
+        await new Promise((r) => setTimeout(r, 1000));
+      }
+    } else {
+      await renderMedia({
+        composition,
+        serveUrl,
+        codec: "h264",
+        // Cap concurrency to avoid exhausting memory on 16GB VMs.
+        concurrency: Math.min(os.cpus().length, 4),
+        // Recover quality from the previous lower-quality encode.
+        crf: 20,
+        // Use a slightly slower x264 preset for better visual quality.
+        x264Preset: "faster",
+        // No GPU on this VM — swangle (SwiftShader via ANGLE) benchmarks faster than
+        // the default autodetect for headless software rendering on Linux servers.
+        chromiumOptions: { gl: "swangle" },
+        pixelFormat: "yuv420p",
+        outputLocation: outputPath,
+        inputProps,
+        onProgress: ({
+          renderedFrames,
+          progress,
+        }: {
+          renderedFrames: number;
+          progress: number;
+        }) => {
+          const totalFrames = composition.durationInFrames;
+          const pct = Math.round(progress * 100);
+          bullJob.updateProgress(pct);
+          getRedis()
+            .publish(
+              `job:${jobId}:progress`,
+              JSON.stringify({ renderedFrames, totalFrames })
+            )
+            .catch((err) => {
+              console.error(
+                `[worker] failed to publish progress for job ${jobId}:`,
+                err
+              );
+            });
+          if (renderedFrames % 30 === 0) {
+            console.log(`[worker] job ${jobId} render progress: ${pct}%`);
+          }
+        },
+      });
+    }
 
     const outputKey = `outputs/${userId}/${jobId}/output.mp4`;
     await uploadToR2(outputPath, outputKey);
