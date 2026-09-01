@@ -1,4 +1,8 @@
-# GCP VM Setup — Instacap (Next.js app + worker, same VM)
+# Legacy GCP VM Setup — Instacap (Next.js app + worker, same VM)
+
+> This guide describes the former single-GCP-VM architecture. For the current
+> Vercel web app + EC2 worker + AWS Remotion Lambda deployment, use
+> [`deployment.md`](deployment.md).
 
 Both processes run here, not just the worker. Next.js is NOT deployed to
 Vercel — its SSE progress route (`app/api/jobs/[id]/stream/route.ts`) holds a

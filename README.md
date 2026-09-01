@@ -425,27 +425,33 @@ All 4 compositions load with a hardcoded sample transcript. Use this to tune ani
 
 ---
 
-## Worker Deployment (GCP VM)
+## Production Deployment
 
-Full step-by-step in [`docs/vm-setup.md`](docs/vm-setup.md). Quick summary:
+The current production target is Vercel for the Next.js web app, EC2 for the
+BullMQ worker, AWS Remotion Lambda for rendering, and Cloudflare R2 for
+permanent storage. Follow the complete guide in
+[`docs/deployment.md`](docs/deployment.md).
+
+`docs/vm-setup.md` is retained only as a reference for the former single-GCP-VM
+deployment.
+
+Quick worker update summary:
 
 ```
-1. Create VM: e2-standard-2, Ubuntu 22.04 LTS, 50 GB SSD
-2. Install Chromium system deps + ffmpeg via apt
-3. Install Node.js 20, pm2
-4. Clone repo, npm install
-5. Fill in worker/.env
-6. npx tsc --project worker/tsconfig.json
-7. pm2 start ecosystem.config.js && pm2 save
+1. Deploy the Remotion function and site in AWS.
+2. Deploy the Next.js app to Vercel.
+3. Create `worker/.env` on EC2 with shared backend and Lambda variables.
+4. Run `npm ci && npm run worker:build`.
+5. Start the worker with `pm2 start ecosystem.config.js && pm2 save`.
 ```
 
 **Deploying updates:**
 
 ```bash
 git pull origin main
-npm install
-npx tsc --project worker/tsconfig.json
-pm2 restart caption-worker
+npm ci
+npm run worker:build
+pm2 restart caption-worker --update-env
 ```
 
 **Disk cleanup** (if a crashed job left zombie `/tmp` dirs):
