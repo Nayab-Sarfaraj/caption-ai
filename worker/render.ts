@@ -173,6 +173,10 @@ async function processRenderPhase(
     const functionName = process.env.REMOTION_LAMBDA_FUNCTION_NAME;
     const lambdaServeUrl = process.env.REMOTION_LAMBDA_SERVE_URL;
     const region = (process.env.REMOTION_AWS_REGION as any) || "us-east-1";
+    const lambdaConcurrency = Number.parseInt(
+      process.env.REMOTION_LAMBDA_CONCURRENCY ?? "6",
+      10
+    );
 
     if (functionName) {
       if (!lambdaServeUrl) {
@@ -180,8 +184,13 @@ async function processRenderPhase(
           "REMOTION_LAMBDA_SERVE_URL is required when REMOTION_LAMBDA_FUNCTION_NAME is set"
         );
       }
+      if (!Number.isInteger(lambdaConcurrency) || lambdaConcurrency < 1) {
+        throw new Error(
+          "REMOTION_LAMBDA_CONCURRENCY must be a positive integer"
+        );
+      }
       console.log(
-        `[worker] rendering job ${jobId} via @remotion/lambda (${functionName})`
+        `[worker] rendering job ${jobId} via @remotion/lambda (${functionName}, concurrency ${lambdaConcurrency})`
       );
       const { renderMediaOnLambda, getRenderProgress, downloadMedia } =
         await import("@remotion/lambda");
@@ -200,6 +209,7 @@ async function processRenderPhase(
         forceHeight: compHeight,
         forceFps: fps,
         forceDurationInFrames: durationInFrames,
+        concurrency: lambdaConcurrency,
       });
 
       let completed = false;

@@ -146,6 +146,7 @@ DISCORD_WEBHOOK_URL=
 REMOTION_LAMBDA_FUNCTION_NAME=
 REMOTION_LAMBDA_SERVE_URL=
 REMOTION_AWS_REGION=us-east-1
+REMOTION_LAMBDA_CONCURRENCY=6
 AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
 AWS_SESSION_TOKEN=
@@ -155,6 +156,10 @@ AWS_SESSION_TOKEN=
 (for example, AWS SSO credentials). The current Remotion client requires these
 AWS values in the worker environment; a local AWS CLI login does not transfer to
 EC2 automatically.
+
+`REMOTION_LAMBDA_CONCURRENCY=6` is a conservative starting point for a new AWS
+account that may have a Lambda concurrency limit of 10. Increase it only after
+checking the quota with `npx remotion lambda quotas`.
 
 Start and persist the worker:
 
