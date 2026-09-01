@@ -5,6 +5,7 @@ import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Upload } from "@aws-sdk/lib-storage";
 import { createReadStream } from "fs";
+import { Input, MP4, QTFF, UrlSource } from "mediabunny";
 import type { Job } from "bullmq";
 import type { RenderJobPayload } from "../src/types/job.types";
 import type { Transcript } from "../src/types/transcript.types";
@@ -56,6 +57,67 @@ async function uploadToR2(localPath: string, key: string): Promise<void> {
     partSize: 10 * 1024 * 1024,
   });
   await upload.done();
+}
+
+const DEFAULT_RENDER_FPS = 30;
+
+function capRenderFps(sourceFps: number | null, fallbackFps: number): number {
+  const safeFallback =
+    Number.isFinite(fallbackFps) && fallbackFps > 0
+      ? Math.min(Math.round(fallbackFps), DEFAULT_RENDER_FPS)
+      : DEFAULT_RENDER_FPS;
+
+  if (!sourceFps || !Number.isFinite(sourceFps) || sourceFps <= 0) {
+    return safeFallback;
+  }
+
+  const roundedSourceFps = Math.round(sourceFps);
+
+  // Keep normal source frame rates unchanged. High-frame-rate phone videos
+  // render at half rate: 50fps becomes 25fps and 60fps becomes 30fps.
+  if (roundedSourceFps >= 49 && roundedSourceFps <= 51) return 25;
+  if (roundedSourceFps >= 59 && roundedSourceFps <= 61) return 30;
+
+  return Math.min(Math.max(roundedSourceFps, 1), DEFAULT_RENDER_FPS);
+}
+
+async function getRenderFps(videoSrc: string, fallbackFps: number): Promise<{
+  sourceFps: number | null;
+  renderFps: number;
+}> {
+  const input = new Input({
+    source: new UrlSource(videoSrc),
+    formats: [MP4, QTFF],
+  });
+
+  try {
+    const track = await input.getPrimaryVideoTrack();
+    if (!track) {
+      console.warn("[worker] no video track found while detecting source FPS");
+      return { sourceFps: null, renderFps: capRenderFps(null, fallbackFps) };
+    }
+
+    // Probe actual frame timestamps instead of trusting container metadata.
+    // 128 packets is enough to distinguish common 24/25/30/50/60fps clips
+    // without adding a full-video scan before each render.
+    const metrics = await track.computeFrameRateMetrics({
+      targetPacketCount: 128,
+    });
+    const sourceFps = metrics.bestGuessFrameRate;
+
+    return {
+      sourceFps,
+      renderFps: capRenderFps(sourceFps, fallbackFps),
+    };
+  } catch (error) {
+    console.warn(
+      "[worker] source FPS detection failed; using fallback FPS:",
+      error,
+    );
+    return { sourceFps: null, renderFps: capRenderFps(null, fallbackFps) };
+  } finally {
+    input.dispose();
+  }
 }
 
 // ─── Transcribe phase ────────────────────────────────────────────────────────
@@ -131,10 +193,11 @@ async function processRenderPhase(
     const videoSrc = await getPresignedUrl(videoKey, 1800);
     const compWidth = jobDoc.width ?? 1920;
     const compHeight = jobDoc.height ?? 1080;
+    const { sourceFps, renderFps } = await getRenderFps(videoSrc, fps);
 
     await updateJobStatus(jobId, "rendering");
     console.log(
-      `[worker] rendering job ${jobId} (${compositionId}) ${compWidth}×${compHeight}`,
+      `[worker] rendering job ${jobId} (${compositionId}) ${compWidth}×${compHeight} at ${renderFps}fps${sourceFps ? ` (source ${sourceFps.toFixed(3)}fps)` : " (fallback)"}`,
     );
 
     // Render through the CaptionRoot dispatcher (id: 'CaptionRoot' + style
@@ -166,7 +229,8 @@ async function processRenderPhase(
     const lastWordEnd = transcript.words?.length
       ? transcript.words[transcript.words.length - 1].end
       : 0;
-    const durationInFrames = Math.ceil(lastWordEnd * fps) + fps * 3;
+    const durationInFrames =
+      Math.ceil(lastWordEnd * renderFps) + renderFps * 3;
 
     const outputPath = path.join(tmpDir, "output.mp4");
 
@@ -207,7 +271,7 @@ async function processRenderPhase(
         crf: 20,
         forceWidth: compWidth,
         forceHeight: compHeight,
-        forceFps: fps,
+        forceFps: renderFps,
         forceDurationInFrames: durationInFrames,
         concurrency: lambdaConcurrency,
       });
@@ -273,6 +337,7 @@ async function processRenderPhase(
       });
       composition.width = compWidth;
       composition.height = compHeight;
+      composition.fps = renderFps;
       composition.durationInFrames = durationInFrames;
 
       await renderMedia({

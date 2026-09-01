@@ -161,6 +161,19 @@ EC2 automatically.
 account that may have a Lambda concurrency limit of 10. Increase it only after
 checking the quota with `npx remotion lambda quotas`.
 
+### Render frame-rate policy
+
+The worker keeps the stored upload width and height unchanged. Before each
+render, it reads the uploaded MP4/MOV's actual frame timestamps from R2:
+
+- Source videos at 30fps or below keep their source frame rate.
+- 50fps inputs render at 25fps.
+- 60fps inputs render at 30fps.
+- If frame-rate detection cannot read the input, the worker safely falls back
+  to the queued frame rate (currently 30fps).
+
+This lowers Lambda work for high-frame-rate uploads without resizing the video.
+
 Start and persist the worker:
 
 ```bash
