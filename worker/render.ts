@@ -223,14 +223,14 @@ async function processRenderPhase(
     // CaptionRoot is registered in Root.tsx with a fixed 6s SAMPLE_DURATION_FRAMES
     // for Remotion Studio preview only — every real render must override it to
     // the actual transcript length, or output gets hard-capped at 6 seconds
-    // regardless of the source video's real duration. Same +3s tail buffer
+    // regardless of the source video's real duration. Use a one-second tail buffer
     // formula already used client-side for the live preview Player
     // (app/dashboard/jobs/[id]/page.tsx) — keeps both in sync.
     const lastWordEnd = transcript.words?.length
       ? transcript.words[transcript.words.length - 1].end
       : 0;
     const durationInFrames =
-      Math.ceil(lastWordEnd * renderFps) + renderFps * 3;
+      Math.ceil(lastWordEnd * renderFps) + renderFps;
 
     const outputPath = path.join(tmpDir, "output.mp4");
 

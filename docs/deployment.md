@@ -174,6 +174,8 @@ render, it reads the uploaded MP4/MOV's actual frame timestamps from R2:
 
 This lowers Lambda work for high-frame-rate uploads without resizing the video.
 
+Rendered videos include a one-second buffer after the final transcribed word.
+
 Start and persist the worker:
 
 ```bash
