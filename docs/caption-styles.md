@@ -372,6 +372,8 @@ new recommendation here.
 | Bilingual Stack | build as a product capability + style | two synchronised languages with hierarchy | L | translation pipeline and persisted translated segments |
 | Speaker Card | build as a product capability + style | labels the active speaker for interview/podcast footage | L | diarization or manual speaker assignment |
 | Semantic Emphasis | build as an opt-in layer, not a style | only selected important words receive emphasis, regardless of base style | L | stable word references + editor override |
+| Impact Keyword | build after Semantic Emphasis | one editorially selected word becomes substantially larger while the phrase remains stable | M after emphasis layer | semantic/manual word selection |
+| Speaker Follow | future advanced treatment | a speech bubble is positioned near and follows the active visible speaker | XL | diarization, active-speaker detection, face tracking and collision-safe placement |
 | Progressive Reveal | **do not add separately** | current `Typewriter` already reveals complete words as each word starts | S | design/rename decision only |
 | Whisper / quiet subtitle | **do not add now** | overlaps `Minimal` + `Fade`; make it a saved preset later if users request it | S | no new data |
 
@@ -597,7 +599,139 @@ opt-in overlay over a base caption style, not another gallery thumbnail.
 - Manual user edits always override suggestions.
 - A job with no emphasis metadata renders exactly as the base style does today.
 
-### 6. Progressive Reveal and Whisper — explicit non-additions
+### 6. Impact Keyword — supersized semantic word
+
+**Purpose:** keep a short phrase readable while making one genuinely important
+word dramatically larger. Typical candidates are a number, price, result,
+warning, name or punchline. Popular short-form editors expose this as
+"Supersize" or per-word sizing because it creates hierarchy without making
+every spoken word bounce.
+
+**Evidence classification:** this is strongly established as an editor feature,
+and independent eye-tracking/learning research supports the narrower principle
+that visually enhanced keywords attract attention. It is **not** independently
+proven that supersizing a word increases Reel/TikTok watch time. That outcome
+must be A/B tested on Instacap videos.
+
+**Difference from current styles:** `Hype`, `Hormozi`, `Spring` and `Pulse`
+animate whichever word is currently spoken. Impact Keyword enlarges only an
+editorially selected semantic word and keeps that hierarchy visible for the
+whole caption segment. It therefore depends on the Semantic Emphasis capability
+described above; implementing it as another active-word scale animation would
+be a duplicate.
+
+| Property | Proposed default |
+|---|---|
+| id / label | `ImpactKeyword` / Impact Keyword |
+| Caption unit | 2-5 words; maximum one supersized word per segment |
+| Layout | selected word on its own line when space requires it; surrounding words remain 55-70% of its size |
+| Text | heavy sans, 850-900 weight, uppercase optional rather than forced |
+| Key word | `activeColor` or `accentColor`, 1.35-1.65x base size, strong outline/shadow |
+| Supporting words | `textColor`, stable size and position |
+| Motion | selected word scales 0.92 -> 1.0 over 4-6 frames when first revealed; no repeated pulsing |
+| Position | centre or lower-centre depending on footage; preserve platform safe zones |
+| Best footage | finance figures, fitness results, listicles, product claims, punchlines and strong hooks |
+| Avoid for | every sentence, long technical terms, sensitive claims not reviewed by the user |
+
+**Selection rules**
+
+- Default to zero or one candidate per segment and no more than 1-2 strong
+  supersize moments in a short video. If everything is large, the hierarchy
+  disappears.
+- Prefer concrete transcript tokens: amounts, percentages, dates, quantities,
+  named entities and explicit contrast words.
+- An LLM may suggest candidates, but the user must be able to add/remove the
+  effect. Never let the model invent replacement wording.
+- Keep selection references by durable word ID or segment index + word index;
+  never match on raw word text because repeated words are ambiguous.
+
+**Layout algorithm**
+
+1. Measure the complete phrase at the base size.
+2. Measure the selected word at the proposed multiplier.
+3. Use inline layout only when the complete group remains inside the safe width;
+   otherwise put the selected word on a dedicated line.
+4. Reduce the multiplier down to 1.25 before reducing the normal caption font.
+   If it still overflows, re-chunk the segment.
+5. Lock the selected layout for the complete segment so words do not jump when
+   the active-word timing advances.
+
+**Acceptance criteria**
+
+- The preview and Lambda output choose the same line break and key-word size.
+- A selected 15-character word cannot escape the caption safe area.
+- Segments without emphasis metadata render with the ordinary base style.
+- Colour, scale and outline together provide sufficient contrast over both
+  bright and dark footage.
+
+### 7. Speaker Follow — tracked speech bubble
+
+**Purpose:** place the caption in a compact bubble near the person currently
+speaking and move it only when the speaker or shot changes. This reduces the
+distance between the text and the relevant face, which is useful for interviews,
+podcasts, reaction videos and dialogue-heavy Shorts.
+
+**Evidence classification:** unlike most vendor claims about "viral" styles,
+speaker-following subtitles have controlled usability and eye-tracking research
+behind them. Studies reported more attention on relevant image regions and
+shorter eye movements than fixed bottom subtitles. Those studies support visual
+attention and reduced eye strain; they do not prove higher social-media watch
+time or conversion.
+
+**Difference from Speaker Card:** Speaker Card adds a `HOST`/`GUEST` label to a
+mostly fixed caption position. Speaker Follow spatially associates the text with
+the visible speaker and therefore needs video analysis, safe placement and
+tracking. It should be a premium/experimental capability rather than bundled
+into the first Speaker Card implementation.
+
+| Property | Proposed default |
+|---|---|
+| id / label | `SpeakerFollow` / Speaker Follow |
+| Caption unit | short phrase, 2-5 words, maximum 2 lines |
+| Bubble | dark translucent rounded rectangle with a small pointer; no comic balloon cloud |
+| Text | white, bold sans, high contrast, optional active-word colour |
+| Placement | beside or below the active face, never over eyes or mouth; clamp to video safe area |
+| Movement | hold position within a shot; ease to a new anchor over 6-10 frames only on speaker/shot change |
+| Fallback | fixed lower-centre Focus Card when tracking confidence is low or the speaker is off-screen |
+| Best footage | two-person podcasts, interviews, debates and reaction clips |
+| Avoid for | rapid montage, voice-over B-roll, crowded group scenes or videos with no visible speaker |
+
+**Required pipeline**
+
+1. Enable speaker diarization so every caption segment has a speaker identity.
+2. Detect faces and shots, then track face boxes through each shot.
+3. Determine the active visible speaker by correlating diarized audio with mouth
+   movement/active-speaker detection. A face detector alone cannot identify who
+   is talking.
+4. Store time-ranged normalized anchors (`x`, `y`, confidence, speaker ID) so
+   browser preview and Lambda render consume identical tracking output.
+5. Run a placement solver that avoids faces, platform UI zones, existing
+   graphics and frame edges.
+6. Use the fixed-position fallback whenever identity or placement confidence
+   drops below an agreed threshold.
+
+**Performance and product risks**
+
+- This requires a separate computer-vision preprocessing job and materially
+  increases processing time and infrastructure cost. Do not run it for every
+  upload by default.
+- Fast cuts, profile faces, masks, off-screen speech and overlapping speakers
+  can produce unstable anchors. Smoothing alone cannot correct wrong identity.
+- Constantly moving text can increase distraction. Position should remain
+  stable inside a shot and change only when necessary.
+- User preview needs an override to drag a bubble or choose the fixed fallback.
+
+**Acceptance criteria**
+
+- A bubble never covers the active speaker's eyes or mouth.
+- Tracking does not cross-assign a caption when two visible speakers exchange
+  turns.
+- Low-confidence and off-screen speech always fall back deterministically.
+- The bubble remains stable inside a shot with no single-frame jumps.
+- Tracking metadata is reusable on retry and does not need to be recomputed for
+  every style-only render.
+
+### 8. Progressive Reveal and Whisper — explicit non-additions
 
 **Progressive Reveal:** do not build a new composition. Current `Typewriter`
 already reveals whole words when each word starts and keeps the revealed phrase
@@ -619,9 +753,50 @@ rendering treatment.
    low rendering risk.
 3. **Semantic Emphasis** — high product value, but needs data/editor work;
    implement after an edit model exists for word-level metadata.
-4. **Bilingual Stack** — build as a planned translation feature with user
+4. **Impact Keyword** — ship as the first opinionated preset powered by
+   Semantic Emphasis, with manual selection available before AI suggestions.
+5. **Bilingual Stack** — build as a planned translation feature with user
    review, not as a quick preset.
-5. **Speaker Card** — build alongside an explicit diarization/editor project.
+6. **Speaker Card** — build alongside an explicit diarization/editor project.
+7. **Speaker Follow** — keep experimental/premium until tracking accuracy,
+   processing cost and fixed-position fallback have been validated.
+
+### Market evidence, independent evidence and rejected additions
+
+No major editor publishes audited counts showing which individual caption
+template editors select most often, and no independent study found in this
+research directly compares commercial Reel/TikTok presets by watch time. Claims
+such as "highest-impact," "viral" or "boosts watch time" on product pages are
+vendor guidance, not proof of causation.
+
+What can be stated safely:
+
+- Captions documents 75+ platform-oriented templates and recommends bold,
+  high-contrast, short-phrase/word-highlight treatments for TikTok and readable
+  highlighted treatments for Shorts. This establishes product adoption and
+  workflow convention, not measured performance.
+- Captions and VEED both expose semantic/manual per-word emphasis; Captions also
+  exposes Supersize. This is evidence that editors expect these controls in a
+  serious short-form workflow.
+- Submagic groups themes around speakers, trends and emoji, supporting Speaker
+  Card and the already-deferred Emoji Pop as recognizable creator use cases.
+- Controlled eye-tracking studies show that visual/textual cues direct attention
+  and that enhanced keywords can receive more fixation. The strongest safe
+  product inference is to emphasize a small number of meaningful words, not to
+  animate every element continuously.
+- Speaker-following subtitle studies support reduced eye travel and stronger
+  association with the relevant speaker. They do not establish social-media
+  retention gains.
+
+| Market-common mechanic reviewed | Decision | Reason |
+|---|---|---|
+| AI emoji next to keywords | keep in existing Emoji Pop backlog | recognizable creator feature, but font/render support and distraction need separate work |
+| Per-word GIF, stock image or B-roll | do not call it a caption style | this is a media-overlay/editor feature with asset licensing and moderation concerns |
+| Sound effect attached to a keyword | do not call it a caption style | belongs to the audio timeline and needs volume/licensing controls |
+| Random caption rotation/movement | do not add globally | `Sticker` already provides controlled rotation; randomness harms consistency and readability |
+| Another bold active-word preset | reject | already covered by WordByWord, Hype, Hormozi, Spring and Pulse |
+| Platform-specific font recolours | offer saved presets later | configuration packaging, not a new Remotion mechanic |
+| Fully kinetic typography scene | out of caption scope | changes the complete edit, pacing and scene layout rather than styling subtitles |
 
 ### Measurement and release guardrails
 
@@ -698,8 +873,17 @@ dependencies. See `docs/deployment.md` for the complete release sequence.
 - Animation modes (including progressive and fill): https://zvid.io/features/subtitles
 - Bilingual captions and separate language styling: https://www.capcut.com/resource/caption-style
 - Word-specific emphasis guidance: https://support.veed.io/en/articles/12000003-how-to-use-dynamic-subtitles
+- Short-form platform style guidance and template catalog: https://captions.ai/help/guides/engagement/caption-styles-by-platform
+- Supersize, manual emphasis and AI emoji workflow: https://captions.ai/help/guides/engagement/highlight-keywords
+- Captions per-word effects reference: https://help.captions.ai/docs/captions/word-effects
+- Captions style controls and transition options: https://help.captions.ai/docs/captions/styles
+- Submagic speaker/trend/emoji theme categories: https://care.submagic.co/en/article/what-are-themes-and-themes-categories-1pv8wvz/
 - Timestamps, utterances and diarization overview: https://deepgram.com/learn/working-with-timestamps-utterances-and-speaker-diarization-in-deepgram
 - Speaker-identification convention: https://cf-public.rev.com/styleguide/caption/Rev%20Captioning%20Style%20Guide%203.2.pdf
+- Eye-tracking study of textual/visual cues in short instructional video: https://www.sciencedirect.com/science/article/pii/S0747563220300352
+- Eye-tracking research on enhanced captions and highlighted target words: https://benjamins.com/catalog/lllt.61.03fin
+- Eye-tracking evaluation of speaker-following subtitles: https://herohuyongtao.github.io/research/publications/eye-tracking-evaluation/paper.pdf
+- Speaker-following subtitle usability research: https://arxiv.org/abs/1407.5145
 
 - Word-highlight / karaoke mechanics: https://keyweaver.io/blog/karaoke-captions-after-effects
 - Remotion word-highlight implementation overview: https://www.remotionvideo.com/blog/remotion-captions-animated

@@ -11,7 +11,7 @@ Flat pricing · No credit system · Captions that are real React components
 
 [![Next.js](https://img.shields.io/badge/Next.js_16-black?style=flat-square&logo=next.js)](https://nextjs.org)
 [![Remotion](https://img.shields.io/badge/Remotion_4-blueviolet?style=flat-square)](https://remotion.dev)
-[![Deepgram](https://img.shields.io/badge/Deepgram_Nova--2-1a1a2e?style=flat-square)](https://deepgram.com)
+[![Deepgram](https://img.shields.io/badge/Deepgram_Nova--3-1a1a2e?style=flat-square)](https://deepgram.com)
 [![BullMQ](https://img.shields.io/badge/BullMQ-red?style=flat-square)](https://bullmq.io)
 [![Cloudflare R2](https://img.shields.io/badge/Cloudflare_R2-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/r2)
 [![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat-square&logo=mongodb&logoColor=white)](https://mongodb.com)
@@ -22,7 +22,7 @@ Flat pricing · No credit system · Captions that are real React components
 
 ## What it does
 
-Upload a `.mp4` or `.mov`, choose a caption style, and get back a rendered video with frame-accurate animated captions. Deepgram Nova-2 handles AI transcription with word-level timestamps. Or skip AI entirely by uploading your own `.srt` / `.vtt` file. 27 caption styles — all real Remotion React components, not config-driven black boxes.
+Upload a `.mp4` or `.mov`, choose a caption style, and get back a rendered video with frame-accurate animated captions. Deepgram Nova-3 handles AI transcription with word-level timestamps and multi-language code switching. Or skip AI entirely by uploading your own `.srt` / `.vtt` file. There are 27 implemented caption styles — all real Remotion React components, not config-driven black boxes.
 
 ---
 
@@ -35,7 +35,7 @@ graph TB
     subgraph Browser["Browser"]
         UI["Upload + style editor"]
         Player["@remotion/player\nLive preview"]
-        Progress["Job polling\nSSE fallback"]
+        Progress["Job status polling\nSSE enhancement"]
     end
 
     subgraph Vercel["Vercel"]
@@ -44,7 +44,7 @@ graph TB
 
     subgraph EC2["AWS EC2"]
         Worker["BullMQ worker\nqueue concurrency = 1"]
-        Deepgram["Deepgram Nova-2\ntranscription"]
+        Deepgram["Deepgram Nova-3\ntranscription"]
     end
 
     subgraph Lambda["AWS Remotion Lambda"]
@@ -112,14 +112,14 @@ sequenceDiagram
     User->>Browser: Drop video and pick caption style
     Browser->>Next: POST /api/upload filename size type
     Next-->>Browser: uploadUrl presigned PUT and jobId
-    Note over Browser,R2: Video bytes go direct to R2; Vercel never proxies the file
+    Note over Browser,R2: Video uploads directly to R2 and bypasses the Vercel file proxy
     Browser->>R2: PUT video bytes direct via XHR with progress events
     Browser->>Next: POST /api/upload/captions optional SRT or VTT
     Browser->>Next: POST /api/jobs jobId to confirm upload
     Next->>Queue: queue.add render payload phase transcribe
     Note over Next: Job status changes to processing
     Queue->>Worker: Job dequeued concurrency 1
-    Worker->>Deepgram: transcribeUrl presignedGET nova-2 word timestamps
+    Worker->>Deepgram: transcribeUrl presigned GET, Nova-3 word timestamps
     Deepgram-->>Worker: Word-level timestamps JSON
     Worker->>Worker: Store transcript and update status transcript_ready
     Note over Browser: User opens job detail page
@@ -173,7 +173,7 @@ All 27 styles are Remotion React components in `/remotion/compositions/`. Shared
 <tr><td><strong>Glide</strong></td><td>Caption words glide into position.</td></tr>
 <tr><td><strong>Caption Bar</strong></td><td>Solid caption strip suited to podcast-style clips.</td></tr>
 <tr><td><strong>Outline</strong></td><td>Hollow outlined text fills for the active word.</td></tr>
-<tr><td><strong>Typewriter</strong></td><td>Caption text types in with a cursor effect.</td></tr>
+<tr><td><strong>Typewriter</strong></td><td>Complete words reveal in time with speech, with a blinking cursor.</td></tr>
 <tr><td><strong>Meme</strong></td><td>Impact-style all-caps captions at the top of the frame.</td></tr>
 <tr><td><strong>Pulse</strong></td><td>Active word pulses rhythmically.</td></tr>
 <tr><td><strong>Sticker</strong></td><td>Active word pops on a playful sticker label.</td></tr>
@@ -189,10 +189,9 @@ All 27 styles are Remotion React components in `/remotion/compositions/`. Shared
 
 ## Project Structure
 
-> Deployment note: this tree describes the source layout. Any legacy GCP or
-> local-renderer labels within it are historical; production runs the Next.js
-> app on Vercel, the BullMQ worker on EC2, and renders through AWS Remotion
-> Lambda.
+> Deployment note: this tree describes the current source layout. Production
+> runs the Next.js app on Vercel, the BullMQ worker on EC2, and renders through
+> AWS Remotion Lambda. The local renderer remains a development fallback only.
 
 ```
 instacap/
@@ -224,7 +223,7 @@ instacap/
 │   ├── services/
 │   │   ├── upload.service.ts
 │   │   ├── transcription.service.ts  # Deepgram/Whisper abstraction
-│   │   ├── render.service.ts         # bundle() + cache
+│   │   ├── render.service.ts         # Local-render fallback bundle cache
 │   │   ├── job.service.ts
 │   │   └── billing.service.ts        # Polar checkout, webhooks, canRender gate
 │   ├── repositories/                 # DB access only — no business logic
@@ -244,7 +243,7 @@ instacap/
 │   └── types/                        # Shared TS types (Transcript, RenderJobPayload)
 │
 ├── remotion/                         # Remotion compositions
-│   ├── Root.tsx                      # registerRoot — all 11 compositions
+│   ├── Root.tsx                      # registerRoot — Studio entries for all 27 styles
 │   ├── types.ts                      # Transcript types (duplicated — bundler isolation)
 │   └── compositions/
 │       ├── CaptionRoot.tsx           # Style-switching dispatcher (used by preview + worker)
@@ -259,8 +258,9 @@ instacap/
 │       ├── Comic.tsx
 │       ├── Pill.tsx
 │       └── Script.tsx
+│       ├── ...                        # 15 more styles; see Caption Styles above
 │
-├── worker/                           # Separate Node process — GCP VM
+├── worker/                           # Separate Node process — EC2 queue consumer
 │   ├── index.ts                      # BullMQ Worker, SIGTERM graceful shutdown
 │   └── render.ts                     # Two-phase: transcribe → transcript_ready → render → done
 │
@@ -268,7 +268,7 @@ instacap/
 │   ├── upload-dropzone.tsx           # Video + SRT/VTT drop, style picker, upload flow
 │   ├── preview-player-wrapper.tsx    # dynamic() ssr:false wrapper
 │   ├── preview-player.tsx            # @remotion/player + style switcher + export
-│   ├── job-progress.tsx              # SSE consumer, live progress bar
+│   ├── job-progress.tsx              # Polling baseline + SSE-enhanced progress UI
 │   ├── download-button.tsx           # Fetches fresh presigned GET, browser download
 │   ├── billing-actions.tsx           # Subscribe / cancel / portal buttons
 │   ├── paywall-modal.tsx             # Shown when free render cap is hit
@@ -278,9 +278,10 @@ instacap/
 │
 ├── instrumentation-client.ts         # PostHog browser SDK init (Next.js instrumentation)
 ├── config/env.ts                     # Zod-validated env — fails loudly at startup
-├── docs/vm-setup.md                  # GCP VM setup checklist
+├── docs/deployment.md                # Current Vercel + EC2 + Lambda deployment guide
+├── docs/vm-setup.md                  # Former GCP deployment reference only
 ├── docker-compose.yml                # Local MongoDB + Redis
-├── ecosystem.config.js               # pm2 config for Next.js + worker
+├── ecosystem.config.js               # PM2 config for caption-worker
 └── proxy.ts                          # Clerk auth middleware (repo root)
 ```
 
@@ -363,10 +364,15 @@ Copy `.env.example` → `.env.local` and fill in all values.
 | `NEXT_PUBLIC_POSTHOG_KEY` | PostHog project API key (`phc_...`) — optional, analytics disabled if absent |
 | `NEXT_PUBLIC_POSTHOG_HOST` | PostHog ingest host, defaults to `https://us.i.posthog.com` |
 
+`GROQ_API_KEY` is optional and server-only; it enables News Bar headline
+suggestions. Do not use a `NEXT_PUBLIC_` prefix for it.
+
 For Remotion Lambda rendering, add `REMOTION_LAMBDA_FUNCTION_NAME`,
 `REMOTION_LAMBDA_SERVE_URL` (the `serveUrl` returned by site deployment),
 `REMOTION_AWS_REGION`, `AWS_ACCESS_KEY_ID`, and `AWS_SECRET_ACCESS_KEY` to
-`worker/.env`. Omit the function name to use local Remotion rendering.
+`worker/.env`. Set `REMOTION_LAMBDA_CONCURRENCY=6` as the current conservative
+default. Omit the function name only to use local Remotion rendering during
+development.
 
 > **Worker** reads from `worker/.env` — same variable names, no `NEXT_PUBLIC_*` vars needed.
 
@@ -427,20 +433,26 @@ deployment.
 Quick worker update summary:
 
 ```
-1. Deploy the Remotion function and site in AWS.
+1. Deploy the Remotion function and site in AWS `us-east-1`.
 2. Deploy the Next.js app to Vercel.
 3. Create `worker/.env` on EC2 with shared backend and Lambda variables.
 4. Run `npm ci && npm run worker:build`.
 5. Start the worker with `pm2 start ecosystem.config.js && pm2 save`.
 ```
 
-**Deploying updates:**
+**Deploying worker changes:**
 
 ```bash
-git pull origin main
+git pull
 npm ci
 npm run worker:build
 pm2 restart caption-worker --update-env
+```
+
+For any change under `remotion/`, redeploy the Remotion site as well:
+
+```bash
+npx remotion lambda sites create remotion/Root.tsx --site-name=caption-ai
 ```
 
 **Disk cleanup** (if a crashed job left zombie `/tmp` dirs):
@@ -467,14 +479,20 @@ find /tmp -maxdepth 1 -name '[0-9a-f]*' -type d -mmin +60 -exec rm -rf {} +
 Remotion Lambda. The legacy local-renderer note below is not the production
 render path.
 
-`render.service.ts` stores the Remotion bundle URL in a module-level variable (`let bundleCache`). `bundle()` takes 10–30 seconds the first time; subsequent jobs on the same worker process reuse the cached serve URL. This is safe because compositions don't change between job runs without a worker restart.
+`worker/render.ts` sends `CaptionRoot` props to the deployed Remotion site and
+uses `renderMediaOnLambda`, `getRenderProgress`, and `downloadMedia`. Lambda's
+temporary S3 result is copied back to Cloudflare R2 as the permanent output.
+Redeploy the Remotion site after every change under `remotion/`.
 
 </details>
 
 <details>
 <summary><strong>Transcript storage strategy</strong></summary>
 
-Transcripts are stored inline on the Job document as a `Schema.Types.Mixed` field (not `Map` — Mongoose Map fields serialize oddly). For transcripts with many words (long videos), they are stored as JSON in R2 at `transcripts/{jobId}/transcript.json` and referenced via `transcriptKey`. Always serialized through `JSON.parse(JSON.stringify(...))` before writing to strip non-serializable objects from the Deepgram SDK response.
+Transcripts are currently stored inline on the Job document as a
+`Schema.Types.Mixed` field (not `Map`). `transcriptKey` remains available on the
+job payload for a future external-transcript strategy, but it is not the normal
+current storage path. Transcript data is JSON-serialized before persistence.
 
 </details>
 
@@ -493,7 +511,10 @@ then asks Remotion Lambda to render frames at the configured
 `REMOTION_LAMBDA_CONCURRENCY` (default: 6). The historical VM note below does
 not describe the production renderer.
 
-The worker runs at `concurrency: 1` — one render at a time. Remotion's headless Chromium render is memory-intensive. Running parallel renders on a standard `e2-standard-2` VM (8 GB RAM) would exhaust memory. Revisit if queue wait times become a problem by either increasing VM size or running multiple worker processes.
+The worker runs at `concurrency: 1` — one queue job at a time. Lambda frame
+concurrency is controlled independently with `REMOTION_LAMBDA_CONCURRENCY`
+(default: 6). Increase it only after checking the AWS account quota and testing
+real render reliability.
 
 </details>
 
@@ -535,7 +556,10 @@ Style-specific props (`activeColor`, `textColor`, `accentColor`, `fontFamily`, `
 <details>
 <summary><strong>Render performance — CRF and concurrency</strong></summary>
 
-The worker renders with `crf: 22` (H.264) and `concurrency: os.cpus().length`. CRF 22 is visually high quality for web/social while producing smaller files faster than the previous CRF 18. Full CPU concurrency replaces the old hardcoded `1` — Remotion parallelises frame rendering across all available cores, which significantly cuts render time on multi-core VMs.
+Production renders run on AWS Remotion Lambda. The worker preserves source
+resolution, reads source frame timing, and caps high-frame-rate input at 30 fps
+to limit render work; lower frame rates are preserved. The local renderer is a
+development fallback only and caps CPU concurrency at 4 to protect the host.
 
 </details>
 
@@ -551,7 +575,7 @@ The worker renders with `crf: 22` (H.264) and `concurrency: os.cpus().length`. C
 | **Database** | MongoDB + Mongoose | Flexible schema for transcript Mixed field |
 | **Storage** | Cloudflare R2 | S3-compatible, zero egress fees |
 | **Queue** | BullMQ + Upstash Redis | Reliable job queue, pub/sub for SSE |
-| **Transcription** | Deepgram Nova-2 | Word-level timestamps, fast batch API |
+| **Transcription** | Deepgram Nova-3 | Word-level timestamps and multi-language code switching |
 | **Rendering** | AWS Remotion Lambda | Serverless React-based video rendering |
 | **Preview** | `@remotion/player` | Real-time in-browser composition preview |
 | **Billing** | Polar | Subscription checkout, webhooks, customer portal |
@@ -586,7 +610,6 @@ Billing is handled entirely by **Polar** — checkout sessions, subscription lif
 | Daily uploads (free tier) | 5 per user |
 | Free renders per month | 3 (+ any bonus renders granted) |
 | Queue-worker concurrency | 1 per EC2 worker (Lambda frame concurrency is configurable) |
-| Storage retention | 7 days |
 | BullMQ retry on failure | 1 automatic retry |
 | SSE stream max duration | 10 minutes |
 
@@ -600,6 +623,7 @@ npm run build            # Production build
 npm run start            # Production server
 npm run lint             # ESLint
 npm run worker:dev       # Worker with tsx + .env.local (development)
+npm run worker:build     # Compile the worker for EC2 / PM2
 npm run remotion:studio  # Remotion Studio for composition development
 ```
 
