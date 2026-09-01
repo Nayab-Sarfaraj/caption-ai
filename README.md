@@ -33,74 +33,45 @@ Upload a `.mp4` or `.mov`, choose a caption style, and get back a rendered video
 ```mermaid
 graph TB
     subgraph Browser["Browser"]
-        UI["Upload Dropzone\n+ Style Picker"]
-        Player["remotion/player\nLive Preview"]
-        SSE_Client["EventSource\nProgress Stream"]
+        UI["Upload + style editor"]
+        Player["@remotion/player\nLive preview"]
+        Progress["Job polling\nSSE fallback"]
     end
 
-    subgraph NextJS["Next.js App"]
-        API_Upload["POST /api/upload\nPresigned PUT URL"]
-        API_Captions["POST /api/upload/captions\nSRT / VTT Parser"]
-        API_Jobs["POST /api/jobs\nConfirm Upload"]
-        API_Enqueue["POST /api/jobs/:id/enqueue\nAdd to Queue"]
-        API_Render["POST /api/jobs/:id/render\nTrigger Render"]
-        API_Stream["GET /api/jobs/:id/stream\nSSE Endpoint"]
-        API_Job["GET /api/jobs/:id\nStatus + Download URL"]
+    subgraph Vercel["Vercel"]
+        Next["Next.js app + API routes"]
     end
 
-    subgraph Worker["Node Worker - GCP VM"]
-        BullWorker["BullMQ Consumer\nconcurrency = 1"]
-        Transcribe["Transcribe Phase\nDeepgram Nova-2"]
-        Render["Render Phase\nRemotion + Chromium"]
-        Upload_Out["Upload Output\nMultipart to R2"]
+    subgraph EC2["AWS EC2"]
+        Worker["BullMQ worker\nqueue concurrency = 1"]
+        Deepgram["Deepgram Nova-2\ntranscription"]
     end
 
-    subgraph Storage["Cloudflare R2"]
-        Bucket_In["uploads/userId/jobId/video"]
-        Bucket_Out["outputs/userId/jobId/output.mp4"]
-        Bucket_Tr["transcripts/jobId/transcript.json"]
+    subgraph Lambda["AWS Remotion Lambda"]
+        Renderer["Render Lambda\nframe concurrency configurable"]
+        TempS3["Temporary render output"]
     end
 
-    subgraph Data["Data Layer"]
-        Mongo[("MongoDB Atlas\nJob + User docs")]
-        Redis[("Upstash Redis\nQueue + Pub/Sub")]
+    subgraph Data["Managed data services"]
+        R2["Cloudflare R2\nsource videos + final MP4s"]
+        Mongo[("MongoDB Atlas\nJobs + transcripts + users")]
+        Redis[("Upstash Redis\nBullMQ + progress")]
     end
 
-    UI -->|1 presign request| API_Upload
-    API_Upload -->|2 presigned PUT URL| UI
-    UI -->|3 PUT bytes direct| Bucket_In
-    UI -->|4 optional SRT/VTT| API_Captions
-    UI -->|5 confirm upload| API_Jobs
-    API_Jobs -->|6 enqueue job| API_Enqueue
-    API_Enqueue -->|add to queue| Redis
-    BullWorker -->|dequeue| Redis
-    BullWorker --> Transcribe
-    Transcribe -->|presigned GET| Bucket_In
-    Transcribe -->|store transcript| Mongo
-    Transcribe -->|large transcripts| Bucket_Tr
-    Transcribe -->|status transcript_ready| Mongo
-    Player -->|load transcript| Mongo
-    Player -->|presigned GET video| Bucket_In
-    API_Render -->|re-enqueue render| Redis
-    BullWorker --> Render
-    Render -->|read transcript| Mongo
-    Render -->|presigned GET video| Bucket_In
-    Render -->|publish frame progress| Redis
-    Render --> Upload_Out
-    Upload_Out -->|multipart upload| Bucket_Out
-    Upload_Out -->|status done| Mongo
-    SSE_Client -->|connect| API_Stream
-    API_Stream -->|subscribe pub/sub| Redis
-    API_Stream -->|poll terminal status| Mongo
-    API_Stream -->|frame events| SSE_Client
-    UI -->|9 download click| API_Job
-    API_Job -->|presigned GET URL| Bucket_Out
-
-    style Browser fill:#1a1a2e,stroke:#6366f1,color:#e2e8f0
-    style NextJS fill:#0f172a,stroke:#3b82f6,color:#e2e8f0
-    style Worker fill:#1a0a00,stroke:#f97316,color:#e2e8f0
-    style Storage fill:#0a1628,stroke:#f38020,color:#e2e8f0
-    style Data fill:#0a1a0a,stroke:#22c55e,color:#e2e8f0
+    UI -->|presign / confirm| Next
+    UI -->|direct upload| R2
+    Next --> Mongo
+    Next --> Redis
+    Progress --> Next
+    Worker -->|dequeue| Redis
+    Worker --> Deepgram
+    Worker -->|read/write job state| Mongo
+    Worker -->|presigned source URL| R2
+    Worker -->|render request + poll progress| Renderer
+    Renderer --> TempS3
+    Worker -->|download result, upload final MP4| R2
+    Worker -->|publish progress| Redis
+    Next -->|presigned download URL| R2
 ```
 
 ---
@@ -117,7 +88,7 @@ stateDiagram-v2
     rendering --> done : MP4 uploaded to R2
     done --> [*]
     transcribing --> failed : Deepgram error or empty audio
-    rendering --> failed : Remotion or Chromium error
+    rendering --> failed : Lambda or render error
     failed --> processing : BullMQ auto-retry x1
     failed --> [*] : Max retries exceeded
 ```
@@ -131,16 +102,17 @@ sequenceDiagram
     autonumber
     actor User
     participant Browser
-    participant Next as Next.js API
+    participant Next as Next.js on Vercel
     participant R2 as Cloudflare R2
     participant Queue as BullMQ Redis
-    participant Worker
+    participant Worker as EC2 worker
     participant Deepgram
+    participant Lambda as Remotion Lambda
 
     User->>Browser: Drop video and pick caption style
     Browser->>Next: POST /api/upload filename size type
     Next-->>Browser: uploadUrl presigned PUT and jobId
-    Note over Browser,R2: Video bytes go direct to R2 - Next.js never proxies the file
+    Note over Browser,R2: Video bytes go direct to R2; Vercel never proxies the file
     Browser->>R2: PUT video bytes direct via XHR with progress events
     Browser->>Next: POST /api/upload/captions optional SRT or VTT
     Browser->>Next: POST /api/jobs jobId to confirm upload
@@ -149,7 +121,7 @@ sequenceDiagram
     Queue->>Worker: Job dequeued concurrency 1
     Worker->>Deepgram: transcribeUrl presignedGET nova-2 word timestamps
     Deepgram-->>Worker: Word-level timestamps JSON
-    Worker->>Next: updateJobTranscript status transcript_ready
+    Worker->>Worker: Store transcript and update status transcript_ready
     Note over Browser: User opens job detail page
     Browser->>Next: GET /api/jobs/:id
     Next-->>Browser: transcript and video presigned URL
@@ -158,21 +130,17 @@ sequenceDiagram
     Browser->>Next: POST /api/jobs/:id/render compositionId
     Next->>Queue: queue.add render payload phase render
     Note over Next: Job status changes to rendering
-    Browser->>Next: GET /api/jobs/:id/stream SSE connect
+    Browser->>Next: Poll job status and progress
     Queue->>Worker: Render job dequeued
     Worker->>R2: GET original video via presigned URL
-    Worker->>Worker: getBundle Remotion compositions cached after first run
-    Worker->>Worker: renderMedia headless Chromium frame by frame
-    loop Every 30 frames
-        Worker->>Queue: redis.publish job progress renderedFrames totalFrames
-        Queue-->>Next: SSE subscriber receives event
-        Next-->>Browser: data type progress renderedFrames totalFrames
-        Browser->>Browser: Update progress bar
+    Worker->>Lambda: renderMediaOnLambda with CaptionRoot props
+    loop Until Lambda completes
+        Worker->>Lambda: getRenderProgress
+        Worker->>Queue: publish progress
     end
-    Worker->>R2: Multipart upload output.mp4
-    Worker->>Next: status done outputKey saved
-    Note over Worker: rm -rf /tmp/jobId runs in finally block always
-    Next-->>Browser: SSE data type done stream closes
+    Lambda-->>Worker: temporary S3 output location
+    Worker->>R2: Download Lambda output and upload final MP4
+    Worker->>Worker: Save output key and status done
     Browser->>Next: GET /api/jobs/:id fresh presigned GET URL
     User->>Browser: Click Download
     Browser->>R2: GET output.mp4 triggers browser save dialog
@@ -182,7 +150,7 @@ sequenceDiagram
 
 ## Caption Styles
 
-All 11 styles are Remotion React components in `/remotion/compositions/`. Every style accepts `{ transcript, videoSrc, activeColor, textColor, accentColor, fontFamily, watermark }` through the `CaptionRoot` dispatcher — the same props reach both the live preview and the worker render, so what you see is exactly what exports.
+All 27 styles are Remotion React components in `/remotion/compositions/`. Shared visual settings flow through the `CaptionRoot` dispatcher to both the live preview and the Lambda render; News Bar also accepts its category and headline fields.
 
 <table>
 <tr><th>Style</th><th>Description</th></tr>
@@ -197,13 +165,34 @@ All 11 styles are Remotion React components in `/remotion/compositions/`. Every 
 <tr><td><strong>Comic</strong></td><td>Speech-bubble style with chunky strokes.</td></tr>
 <tr><td><strong>Pill</strong></td><td>Active word wrapped in a rounded pill badge.</td></tr>
 <tr><td><strong>Script</strong></td><td>Flowing script-font style for lifestyle/vlog content.</td></tr>
+<tr><td><strong>Single Word</strong></td><td>One giant active word at a time with punchy scaling.</td></tr>
+<tr><td><strong>Neon Glow</strong></td><td>Active word lights up with a neon glow.</td></tr>
+<tr><td><strong>Gradient</strong></td><td>Animated gradient-fill caption text.</td></tr>
+<tr><td><strong>Highlighter</strong></td><td>Marker swipe appears behind the active word.</td></tr>
+<tr><td><strong>Underline</strong></td><td>Animated underline sweeps beneath the active word.</td></tr>
+<tr><td><strong>Glide</strong></td><td>Caption words glide into position.</td></tr>
+<tr><td><strong>Caption Bar</strong></td><td>Solid caption strip suited to podcast-style clips.</td></tr>
+<tr><td><strong>Outline</strong></td><td>Hollow outlined text fills for the active word.</td></tr>
+<tr><td><strong>Typewriter</strong></td><td>Caption text types in with a cursor effect.</td></tr>
+<tr><td><strong>Meme</strong></td><td>Impact-style all-caps captions at the top of the frame.</td></tr>
+<tr><td><strong>Pulse</strong></td><td>Active word pulses rhythmically.</td></tr>
+<tr><td><strong>Sticker</strong></td><td>Active word pops on a playful sticker label.</td></tr>
+<tr><td><strong>Glitch</strong></td><td>RGB split and jitter effect for high-energy edits.</td></tr>
+<tr><td><strong>Wave</strong></td><td>Letters bob in a playful wave.</td></tr>
+<tr><td><strong>Handwritten</strong></td><td>Marker-style handwritten active-word annotation.</td></tr>
+<tr><td><strong>News Bar</strong></td><td>Broadcast lower third with an editable category and headline.</td></tr>
 </table>
 
-`CaptionRoot` wraps all 11 and switches via a `style` prop — the `@remotion/player` reference stays stable while you swap styles without remounting.
+`CaptionRoot` dispatches all 27 styles via a `style` prop — the `@remotion/player` reference stays stable while you swap styles without remounting.
 
 ---
 
 ## Project Structure
+
+> Deployment note: this tree describes the source layout. Any legacy GCP or
+> local-renderer labels within it are historical; production runs the Next.js
+> app on Vercel, the BullMQ worker on EC2, and renders through AWS Remotion
+> Lambda.
 
 ```
 instacap/
@@ -299,7 +288,7 @@ instacap/
 
 ## Data Types
 
-The `Transcript` type is the **central contract** that locks every pipeline stage together. Deepgram adapter, SRT parser, and all four Remotion compositions produce or consume this exact shape.
+The `Transcript` type is the **central contract** that locks every pipeline stage together. The Deepgram adapter, SRT parser, and all Remotion caption compositions consume this exact shape.
 
 ```typescript
 // src/types/transcript.types.ts
@@ -332,7 +321,7 @@ interface RenderJobPayload {
   userId: string
   videoKey: string
   transcriptKey?: string        // R2 key for large transcripts stored externally
-  compositionId: 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring' | 'Hype' | 'Hormozi' | 'Minimal' | 'BoxHighlight' | 'Comic' | 'Pill' | 'Script'
+  compositionId: CompositionId // one of the 27 supported caption style IDs
   fps: number
   outputFormat: 'mp4'
   phase: 'transcribe' | 'render'
@@ -421,7 +410,7 @@ Develop and preview caption compositions in isolation with sample data:
 npm run remotion:studio
 ```
 
-All 4 compositions load with a hardcoded sample transcript. Use this to tune animation timing and style before connecting to real data.
+All caption compositions load with a hardcoded sample transcript. Use this to tune animation timing and style before connecting to real data.
 
 ---
 
@@ -472,7 +461,11 @@ find /tmp -maxdepth 1 -name '[0-9a-f]*' -type d -mmin +60 -exec rm -rf {} +
 </details>
 
 <details>
-<summary><strong>Remotion bundle caching</strong></summary>
+<summary><strong>Remotion deployment and local fallback</strong></summary>
+
+**Current production:** the worker uses the deployed Remotion site and AWS
+Remotion Lambda. The legacy local-renderer note below is not the production
+render path.
 
 `render.service.ts` stores the Remotion bundle URL in a module-level variable (`let bundleCache`). `bundle()` takes 10–30 seconds the first time; subsequent jobs on the same worker process reuse the cached serve URL. This is safe because compositions don't change between job runs without a worker restart.
 
@@ -493,7 +486,12 @@ The SSE route opens a **separate** ioredis connection in `SUBSCRIBE` mode via `c
 </details>
 
 <details>
-<summary><strong>Worker concurrency</strong></summary>
+<summary><strong>Worker and Lambda concurrency</strong></summary>
+
+**Current production:** the EC2 BullMQ worker consumes one queue job at a time,
+then asks Remotion Lambda to render frames at the configured
+`REMOTION_LAMBDA_CONCURRENCY` (default: 6). The historical VM note below does
+not describe the production renderer.
 
 The worker runs at `concurrency: 1` — one render at a time. Remotion's headless Chromium render is memory-intensive. Running parallel renders on a standard `e2-standard-2` VM (8 GB RAM) would exhaust memory. Revisit if queue wait times become a problem by either increasing VM size or running multiple worker processes.
 
@@ -554,13 +552,13 @@ The worker renders with `crf: 22` (H.264) and `concurrency: os.cpus().length`. C
 | **Storage** | Cloudflare R2 | S3-compatible, zero egress fees |
 | **Queue** | BullMQ + Upstash Redis | Reliable job queue, pub/sub for SSE |
 | **Transcription** | Deepgram Nova-2 | Word-level timestamps, fast batch API |
-| **Rendering** | Remotion 4 | React-based video rendering, headless Chromium |
+| **Rendering** | AWS Remotion Lambda | Serverless React-based video rendering |
 | **Preview** | `@remotion/player` | Real-time in-browser composition preview |
 | **Billing** | Polar | Subscription checkout, webhooks, customer portal |
 | **Analytics** | PostHog | Event capture, session replay, funnel analysis |
 | **Data fetching** | TanStack Query v5 | Mutations for upload flow |
 | **Validation** | Zod | Request validation + env schema |
-| **Worker runtime** | Node.js + pm2 | Long-running process, GCP VM |
+| **Worker runtime** | Node.js + pm2 on EC2 | Long-running queue consumer and Lambda orchestrator |
 
 ---
 
@@ -587,7 +585,7 @@ Billing is handled entirely by **Polar** — checkout sessions, subscription lif
 | Accepted formats | MP4, MOV |
 | Daily uploads (free tier) | 5 per user |
 | Free renders per month | 3 (+ any bonus renders granted) |
-| Render concurrency | 1 (single worker) |
+| Queue-worker concurrency | 1 per EC2 worker (Lambda frame concurrency is configurable) |
 | Storage retention | 7 days |
 | BullMQ retry on failure | 1 automatic retry |
 | SSE stream max duration | 10 minutes |
