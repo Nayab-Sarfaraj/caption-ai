@@ -6,19 +6,9 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { CaptionStylePreview } from "@/components/caption-style-preview";
 import { PaywallModal } from "@/components/paywall-modal";
+import { STYLES } from "@/src/helpers/style-options";
+import type { CompositionId } from "@/remotion/compositions/CaptionRoot";
 
-type CompositionId =
-  | "WordByWord"
-  | "Karaoke"
-  | "Fade"
-  | "Spring"
-  | "Hype"
-  | "Hormozi"
-  | "Minimal"
-  | "BoxHighlight"
-  | "Comic"
-  | "Pill"
-  | "Script";
 type UploadStep =
   | "idle"
   | "getting-url"
@@ -34,28 +24,6 @@ const ACCEPTED_CAPTION = {
 };
 const MAX_VIDEO_SIZE = 500 * 1024 * 1024;
 const MAX_BATCH_FILES = 10; // matches batchUploadRequestSchema server-side cap
-
-const STYLES: { id: CompositionId; label: string; desc: string }[] = [
-  { id: "WordByWord", label: "Word by Word", desc: "Active word scales up" },
-  { id: "Karaoke", label: "Karaoke", desc: "Words shift color" },
-  { id: "Fade", label: "Fade", desc: "Line fades per segment" },
-  { id: "Spring", label: "Spring", desc: "Words spring from below" },
-  { id: "Hype", label: "Hype", desc: "MrBeast-style bounce + glow" },
-  { id: "Hormozi", label: "Hormozi", desc: "Yellow-stroke pop-in, Anton font" },
-  {
-    id: "Minimal",
-    label: "Minimal",
-    desc: "Restrained, single-color, no hype",
-  },
-  {
-    id: "BoxHighlight",
-    label: "Box Highlight",
-    desc: "Captions.ai-style keyword box pop",
-  },
-  { id: "Comic", label: "Comic", desc: "Cartoon font, keyword color swap" },
-  { id: "Pill", label: "Pill", desc: "Clean dark pill badge, no hype" },
-  { id: "Script", label: "Script", desc: "Gold italic script accent word" },
-];
 
 export function UploadDropzone({
   isPaid,

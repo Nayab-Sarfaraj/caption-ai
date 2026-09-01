@@ -96,12 +96,23 @@ export async function handleTriggerRender(
   }
 
   const brandKit = await getBrandKit(userId)
+  const compositionId = parsed.data.compositionId ?? brandKit?.defaultCompositionId ?? 'WordByWord'
+
+  if (
+    compositionId === 'NewsBar' &&
+    (!parsed.data.newsHeadline || !parsed.data.newsCategory)
+  ) {
+    return NextResponse.json(
+      { error: 'News Bar needs both a category and a headline before rendering.' },
+      { status: 400 },
+    )
+  }
 
   const payload: RenderJobPayload = {
     jobId,
     userId,
     videoKey: job.videoKey,
-    compositionId: parsed.data.compositionId ?? brandKit?.defaultCompositionId ?? 'WordByWord',
+    compositionId,
     fps: 30,
     outputFormat: 'mp4',
     phase: 'render',

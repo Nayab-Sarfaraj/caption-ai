@@ -274,6 +274,13 @@ export function PreviewPlayer({
   }, [jobId]);
 
   const runExport = useCallback(async () => {
+    const trimmedHeadline = newsHeadline.trim();
+    const trimmedCategory = newsCategory.trim();
+    if (style === "NewsBar" && (!trimmedHeadline || !trimmedCategory)) {
+      setError("News Bar needs both a category and a headline before export.");
+      return;
+    }
+
     setExporting(true);
     setError(null);
     try {
@@ -289,8 +296,8 @@ export function PreviewPlayer({
           fontSizeMultiplier: cur.fontSizeMultiplier,
           posX: cur.posX,
           posY: cur.posY,
-          newsHeadline: style === "NewsBar" ? newsHeadline.trim() || undefined : undefined,
-          newsCategory: style === "NewsBar" ? newsCategory.trim() || undefined : undefined,
+          newsHeadline: style === "NewsBar" ? trimmedHeadline : undefined,
+          newsCategory: style === "NewsBar" ? trimmedCategory : undefined,
         }),
       });
       if (!res.ok) {
@@ -415,7 +422,7 @@ export function PreviewPlayer({
               </div>
               <input value={newsCategory} onChange={(event) => setNewsCategory(event.target.value.slice(0, 24))} maxLength={24} placeholder="Category (e.g. TECH UPDATE)" className="w-full rounded-lg border border-[var(--hair)] bg-[var(--bg)] px-2.5 py-2 text-xs text-[var(--ink)] outline-none focus:border-[var(--brand)]" />
               <input value={newsHeadline} onChange={(event) => setNewsHeadline(event.target.value.slice(0, 70))} maxLength={70} placeholder="Headline" className="w-full rounded-lg border border-[var(--hair)] bg-[var(--bg)] px-2.5 py-2 text-xs text-[var(--ink)] outline-none focus:border-[var(--brand)]" />
-              <p className="text-[10px] text-[var(--mute)]">Optional. You can edit the AI suggestion or type both fields yourself.</p>
+              <p className="text-[10px] text-[var(--mute)]">Both fields are required for News Bar. You can edit the AI suggestion or type them yourself.</p>
             </div>
           )}
           <div className="space-y-2 mt-4">

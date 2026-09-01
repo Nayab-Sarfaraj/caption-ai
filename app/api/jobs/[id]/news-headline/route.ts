@@ -7,6 +7,7 @@ import { connectDB } from '@/src/lib/mongo'
 import {
   findJobById,
   incrementNewsHeadlineSuggestionIfUnderCap,
+  releaseNewsHeadlineSuggestion,
 } from '@/src/repositories/job.repository'
 import type { Transcript } from '@/src/types/transcript.types'
 
@@ -71,6 +72,7 @@ export async function POST(
     )
   }
 
+  let releaseSuggestion = true
   try {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -114,6 +116,7 @@ export async function POST(
       throw new Error('Groq returned an invalid suggestion')
     }
 
+    releaseSuggestion = false
     return NextResponse.json({ headline, category })
   } catch (error) {
     console.error('Groq headline suggestion error:', error)
@@ -121,5 +124,13 @@ export async function POST(
       { error: 'Could not generate a suggestion. Please enter a headline manually.' },
       { status: 502 },
     )
+  } finally {
+    if (releaseSuggestion) {
+      try {
+        await releaseNewsHeadlineSuggestion(id)
+      } catch (error) {
+        console.error('Could not release failed headline suggestion reservation:', error)
+      }
+    }
   }
 }

@@ -144,6 +144,18 @@ export async function incrementNewsHeadlineSuggestionIfUnderCap(
   )
 }
 
+// Releases a reservation when Groq fails. The request takes the reservation
+// before calling the provider so simultaneous clicks cannot race past the cap.
+export async function releaseNewsHeadlineSuggestion(
+  id: string,
+): Promise<void> {
+  await connectDB()
+  await Job.findOneAndUpdate(
+    { _id: id, newsHeadlineSuggestionCount: { $gt: 0 } },
+    { $inc: { newsHeadlineSuggestionCount: -1 } },
+  )
+}
+
 export async function incrementManualRetryIfUnderCap(id: string, cap: number): Promise<IJob | null> {
   await connectDB()
   return Job.findOneAndUpdate(

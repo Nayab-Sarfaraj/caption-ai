@@ -22,6 +22,8 @@ Flat pricing · No credit system · Captions that are real React components
 
 ## What it does
 
+**Current style count: 27.**
+
 Upload a `.mp4` or `.mov`, choose a caption style, and get back a rendered video with frame-accurate animated captions. Deepgram Nova-2 handles AI transcription with word-level timestamps. Or skip AI entirely by uploading your own `.srt` / `.vtt` file. 11 caption styles — all real Remotion React components, not config-driven black boxes.
 
 ---
@@ -612,7 +614,7 @@ npm run remotion:studio  # Remotion Studio for composition development
 **Shipped (Phase 2)**
 - Polar billing — Weekly / Monthly / Yearly subscriptions, customer portal
 - Watermarked free-tier renders with paywall modal
-- 11 caption styles (up from 4)
+- 27 caption styles (up from 4)
 - PostHog analytics (browser + server-side)
 - Landing page with pricing, style showcase, SEO metadata
 

@@ -124,10 +124,21 @@ hardcoded unions and the `Record<CompositionId, …>` maps must be edited by han
    `selectComposition({ id: 'CaptionRoot', inputProps })` → `renderStill`). Renders
    locally on macOS via the native `@remotion/compositor-darwin-arm64`.
 
-**Deploy:** the worker bundles these compositions, so shipping a style needs
+**Obsolete note — do not follow:** the worker bundles these compositions, so shipping a style needs
 `npm run build` **and** `pm2 restart all` on the VM (restart clears the cached
 Remotion bundle) — not just a Next rebuild. No new deps unless the style pulls a
 new font.
+
+**Current deployment:** a style change usually touches both the web picker and
+the Remotion bundle. Deploy the web app to Vercel, then redeploy the Remotion
+site so Lambda receives the new compositions:
+
+```powershell
+npx remotion lambda sites create remotion/Root.tsx --site-name=caption-ai
+```
+
+Also rebuild and restart the EC2 worker when a change touches `worker/` or its
+dependencies. See `docs/deployment.md` for the complete release sequence.
 
 ---
 
