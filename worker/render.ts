@@ -178,6 +178,8 @@ async function processRenderPhase(
     posX,
     posY,
     watermark,
+    newsHeadline,
+    newsCategory,
   } = bullJob.data;
   const tmpDir = `/tmp/${jobId}`;
 
@@ -218,6 +220,8 @@ async function processRenderPhase(
       posX,
       posY,
       watermark,
+      newsHeadline,
+      newsCategory,
     };
 
     // CaptionRoot is registered in Root.tsx with a fixed 6s SAMPLE_DURATION_FRAMES

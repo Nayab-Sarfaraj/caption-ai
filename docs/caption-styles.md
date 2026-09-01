@@ -5,7 +5,7 @@ not built, and the exact steps to add a new one. Caption styles are real
 Remotion compositions (not config-driven presets) — that's the product's
 differentiator, keep it that way.
 
-Last updated: 2026-07-22.
+Last updated: 2026-09-01.
 
 ---
 
@@ -22,7 +22,7 @@ Last updated: 2026-07-22.
 
 ---
 
-## Implemented (21)
+## Implemented (27)
 
 | Style | id | Mechanic | Category |
 |---|---|---|---|
@@ -47,6 +47,12 @@ Last updated: 2026-07-22.
 | Typewriter | `Typewriter` | chars type in with blinking cursor | Editorial |
 | Script | `Script` | gold italic script accent word | Editorial |
 | Meme | `Meme` | white Impact all-caps, defaults top of frame | Editorial |
+| Pulse | `Pulse` | active word pulses rhythmically | Highlight |
+| Sticker | `Sticker` | active word pops on a rotated label | Trending |
+| Glitch | `Glitch` | RGB split / jitter on active word | Hype |
+| Wave | `Wave` | letters bob in a wave | Trending |
+| Handwritten | `Handwritten` | Caveat marker annotation on active word | Editorial |
+| News Bar | `NewsBar` | broadcast lower-third with editable headline | Editorial |
 
 ---
 
@@ -67,18 +73,14 @@ Ranked within each tier by impact ÷ effort. "Echoes" = which tool/creator uses 
 ### ~~Recommended 6-pack~~ — SHIPPED 2026-07-22
 
 Gradient, Highlighter, Underline, Glide, Outline, Meme are now implemented (see
-the table above). Took the set to 21 styles.
+the table above). The subsequent visual packs took the set to 27 styles.
 
-### Phase-after (exhaustive coverage)
+### News Bar headline flow
 
-| Style | What it is | Echoes | Effort |
-|---|---|---|---|
-| **Pulse** | active word pulses (rhythmic scale) | VEED "Pulse" | Low |
-| **Glitch** | RGB-split / jitter on active word | tech/edgy | Med |
-| **Wave** | letters bob in a wave | playful | Med (per-letter) |
-| **Sticker** | word on a rotated colored tape/label | scrapbook/fun | Med |
-| **News Bar** | broadcast lower-third bar | commentary/news | Med |
-| **Handwritten** | Caveat marker annotation | VEED "Handwritten" | Med (differs from Script) |
+Users can type a category and headline directly in the editor. The optional
+"Suggest with AI" button sends the completed transcript to Groq from a
+server-side route, returns a factual JSON suggestion, and is rate-limited to
+three requests per job. The user can always edit or replace the suggestion.
 
 ### Considered and skipped
 

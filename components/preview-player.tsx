@@ -32,6 +32,8 @@ interface PreviewPlayerProps {
   createdAt?: string;
   isPaid: boolean;
   rendersRemaining: number; // 0 when isPaid — unlimited stops being a meaningful count
+  initialNewsHeadline?: string;
+  initialNewsCategory?: string;
 }
 
 interface StyleSettings {
@@ -165,6 +167,12 @@ const INITIAL_SETTINGS: SettingsMap = {
     fontFamily: 'Impact, "Arial Black", sans-serif',
     posY: 15,
   },
+  Pulse: { ...DEFAULT, activeColor: "#F43F5E", fontFamily: "Montserrat, sans-serif" },
+  Sticker: { ...DEFAULT, activeColor: "#22C55E", fontFamily: "Fredoka, sans-serif" },
+  Glitch: { ...DEFAULT, activeColor: "#FFFFFF", fontFamily: "Anton, Impact, sans-serif" },
+  Wave: { ...DEFAULT, activeColor: "#A855F7", fontFamily: "Fredoka, sans-serif" },
+  Handwritten: { ...DEFAULT, activeColor: "#FACC15", fontFamily: "Inter, system-ui, sans-serif" },
+  NewsBar: { ...DEFAULT, activeColor: "#DC2626", fontFamily: "Montserrat, sans-serif", posY: 62 },
 };
 
 export function PreviewPlayer({
@@ -181,6 +189,8 @@ export function PreviewPlayer({
   createdAt,
   isPaid,
   rendersRemaining,
+  initialNewsHeadline,
+  initialNewsCategory,
 }: PreviewPlayerProps) {
   const router = useRouter();
   const [style, setStyle] = useState<CompositionId>("WordByWord");
@@ -191,6 +201,9 @@ export function PreviewPlayer({
   const [showPaywall, setShowPaywall] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [isSwitchingStyle, setIsSwitchingStyle] = useState(false);
+  const [newsHeadline, setNewsHeadline] = useState(initialNewsHeadline ?? "");
+  const [newsCategory, setNewsCategory] = useState(initialNewsCategory ?? "");
+  const [suggestingHeadline, setSuggestingHeadline] = useState(false);
 
   const handleStyleChange = useCallback((newStyle: CompositionId) => {
     if (newStyle === style) return;
@@ -238,9 +251,27 @@ export function PreviewPlayer({
       posX: cur.posX,
       posY: cur.posY,
       watermark: willWatermark,
+      newsHeadline: newsHeadline.trim() || undefined,
+      newsCategory: newsCategory.trim() || undefined,
     }),
-    [style, transcript, videoSrc, cur, willWatermark],
+    [style, transcript, videoSrc, cur, willWatermark, newsHeadline, newsCategory],
   );
+
+  const suggestNewsHeadline = useCallback(async () => {
+    setSuggestingHeadline(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/jobs/${jobId}/news-headline`, { method: "POST" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "Could not generate a headline suggestion");
+      setNewsHeadline(data.headline);
+      setNewsCategory(data.category);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not generate a headline suggestion");
+    } finally {
+      setSuggestingHeadline(false);
+    }
+  }, [jobId]);
 
   const runExport = useCallback(async () => {
     setExporting(true);
@@ -258,6 +289,8 @@ export function PreviewPlayer({
           fontSizeMultiplier: cur.fontSizeMultiplier,
           posX: cur.posX,
           posY: cur.posY,
+          newsHeadline: style === "NewsBar" ? newsHeadline.trim() || undefined : undefined,
+          newsCategory: style === "NewsBar" ? newsCategory.trim() || undefined : undefined,
         }),
       });
       if (!res.ok) {
@@ -274,7 +307,7 @@ export function PreviewPlayer({
       setError(err instanceof Error ? err.message : "Export failed");
       setExporting(false);
     }
-  }, [jobId, style, cur, router]);
+  }, [jobId, style, cur, router, newsHeadline, newsCategory]);
 
   const handleExportClick = useCallback(() => {
     if (!isPaid && blocked) {
@@ -371,6 +404,19 @@ export function PreviewPlayer({
           <ColorSwatch label="Text" value={cur.textColor} onChange={(v) => update("textColor", v)} presets={TEXT_PRESETS} />
           {style === "BoxHighlight" && (
             <ColorSwatch label="Accent" value={cur.accentColor} onChange={(v) => update("accentColor", v)} presets={HIGHLIGHT_PRESETS} />
+          )}
+          {style === "NewsBar" && (
+            <div className="mt-4 space-y-2.5 rounded-xl border border-[var(--hair)] p-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs text-[var(--mute)]">Lower-third text</p>
+                <button type="button" onClick={suggestNewsHeadline} disabled={suggestingHeadline} className="text-[10px] font-medium text-[var(--brand)] hover:brightness-110 disabled:opacity-50">
+                  {suggestingHeadline ? "Suggesting..." : "Suggest with AI"}
+                </button>
+              </div>
+              <input value={newsCategory} onChange={(event) => setNewsCategory(event.target.value.slice(0, 24))} maxLength={24} placeholder="Category (e.g. TECH UPDATE)" className="w-full rounded-lg border border-[var(--hair)] bg-[var(--bg)] px-2.5 py-2 text-xs text-[var(--ink)] outline-none focus:border-[var(--brand)]" />
+              <input value={newsHeadline} onChange={(event) => setNewsHeadline(event.target.value.slice(0, 70))} maxLength={70} placeholder="Headline" className="w-full rounded-lg border border-[var(--hair)] bg-[var(--bg)] px-2.5 py-2 text-xs text-[var(--ink)] outline-none focus:border-[var(--brand)]" />
+              <p className="text-[10px] text-[var(--mute)]">Optional. You can edit the AI suggestion or type both fields yourself.</p>
+            </div>
           )}
           <div className="space-y-2 mt-4">
             <div className="flex items-center justify-between">

@@ -34,6 +34,12 @@ const STYLE_LABELS: Record<CompositionId, string> = {
   Glide: "Glide",
   Outline: "Outline",
   Meme: "Meme",
+  Pulse: "Pulse",
+  Sticker: "Sticker",
+  Glitch: "Glitch",
+  Wave: "Wave",
+  Handwritten: "Handwritten",
+  NewsBar: "News Bar",
 };
 
 const STYLE_IDS = Object.keys(STYLE_PREVIEW_META) as CompositionId[];
@@ -129,7 +135,7 @@ const COMPARE: {
 const FAQS = [
   {
     q: "How does Instacap increase video retention?",
-    a: "85%+ of social video is watched muted. Instacap provides 21+ high-impact, word-by-word animated caption styles (Hormozi, Hype, Neon Glow, etc.) that grab viewer attention immediately and boost watch time.",
+    a: "85%+ of social video is watched muted. Instacap provides 27+ high-impact, word-by-word animated caption styles (Hormozi, Hype, Neon Glow, etc.) that grab viewer attention immediately and boost watch time.",
   },
   {
     q: "How fast is the transcription and rendering?",
@@ -195,7 +201,7 @@ const JSON_LD = {
   applicationCategory: "MultimediaApplication",
   operatingSystem: "Web",
   description:
-    "High-retention animated captions for viral videos in seconds. Fast AI transcription, 21+ creator caption styles, studio 4K exports, and flat pricing with no credits.",
+    "High-retention animated captions for viral videos in seconds. Fast AI transcription, 27+ creator caption styles, studio 4K exports, and flat pricing with no credits.",
   offers: [
     { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD" },
     { "@type": "Offer", name: "Weekly", price: "6.99", priceCurrency: "USD" },
@@ -254,7 +260,7 @@ export default async function RootPage() {
             </h1>
             <p className={s.sub}>
               Boost watch time on Reels, TikTok, and Shorts. Powered by ultra-fast
-              AI transcription, 21+ studio caption styles, and flat pricing with zero credit limits.
+              AI transcription, 27+ studio caption styles, and flat pricing with zero credit limits.
             </p>
             <div className={s.heroActions}>
               <Link href="/sign-up" className={`${s.btn} ${s.btnPrimary}`}>
@@ -332,7 +338,7 @@ export default async function RootPage() {
             <span className={s.eyebrow}>Viral Caption Styles</span>
             <h2>Designed to stop the scroll and boost watch time.</h2>
             <p>
-              Over 85% of social video is watched muted. Choose from 21+ high-converting
+              Over 85% of social video is watched muted. Choose from 27+ high-converting
               animated styles tuned specifically for Reels, Shorts, and TikTok.
             </p>
           </div>
