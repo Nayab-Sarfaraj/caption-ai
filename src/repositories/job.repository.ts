@@ -118,7 +118,7 @@ export async function updateJobFailed(id: string, errorMessage: string): Promise
 // retry can reuse exactly what was attempted, not today's brand kit values.
 export async function updateJobRenderConfig(
   id: string,
-  config: { compositionId: string; activeColor?: string; textColor?: string; accentColor?: string; fontFamily?: string; fontSizeMultiplier?: number; captionPosX?: number; captionPosY?: number; watermarked: boolean }
+  config: { compositionId: string; activeColor?: string; textColor?: string; accentColor?: string; fontFamily?: string; fontSizeMultiplier?: number; captionPosX?: number; captionPosY?: number; newsHeadline?: string; newsCategory?: string; watermarked: boolean }
 ): Promise<void> {
   await connectDB()
   await Job.findByIdAndUpdate(id, { $set: config })
@@ -126,6 +126,36 @@ export async function updateJobRenderConfig(
 
 // Atomic — guards against a double-click racing past the cap. Returns null if
 // the job isn't 'failed' or manualRetryCount is already at/over the cap.
+export async function incrementNewsHeadlineSuggestionIfUnderCap(
+  id: string,
+  cap: number,
+): Promise<IJob | null> {
+  await connectDB()
+  return Job.findOneAndUpdate(
+    {
+      _id: id,
+      $or: [
+        { newsHeadlineSuggestionCount: { $lt: cap } },
+        { newsHeadlineSuggestionCount: { $exists: false } },
+      ],
+    },
+    { $inc: { newsHeadlineSuggestionCount: 1 } },
+    { returnDocument: 'after' },
+  )
+}
+
+// Releases a reservation when Groq fails. The request takes the reservation
+// before calling the provider so simultaneous clicks cannot race past the cap.
+export async function releaseNewsHeadlineSuggestion(
+  id: string,
+): Promise<void> {
+  await connectDB()
+  await Job.findOneAndUpdate(
+    { _id: id, newsHeadlineSuggestionCount: { $gt: 0 } },
+    { $inc: { newsHeadlineSuggestionCount: -1 } },
+  )
+}
+
 export async function incrementManualRetryIfUnderCap(id: string, cap: number): Promise<IJob | null> {
   await connectDB()
   return Job.findOneAndUpdate(

@@ -82,10 +82,15 @@ npx remotion lambda sites create remotion/Root.tsx --site-name=caption-ai
 
 Import the Git repository into Vercel and configure the Production environment
 from `.env.example`. The web app needs the Clerk, MongoDB, Upstash, R2,
-Deepgram, Polar, PostHog, and `NEXT_PUBLIC_APP_URL` variables.
+Deepgram, Groq (optional, for News Bar headline suggestions), Polar, PostHog,
+and `NEXT_PUBLIC_APP_URL` variables.
 
 The web app does **not** need the AWS/Remotion Lambda credentials because it
 does not render videos itself.
+
+To enable the optional News Bar suggestion button, set `GROQ_API_KEY` in
+Vercel's server-side Production environment. Do not use a `NEXT_PUBLIC_`
+prefix and do not add this key to the EC2 worker environment.
 
 Set `NEXT_PUBLIC_APP_URL` to the final HTTPS domain, then deploy. Confirm these
 routes work before changing DNS:
