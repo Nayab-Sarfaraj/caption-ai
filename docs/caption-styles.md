@@ -5,7 +5,7 @@ not built, and the exact steps to add a new one. Caption styles are real
 Remotion compositions (not config-driven presets) — that's the product's
 differentiator, keep it that way.
 
-Last updated: 2026-09-01.
+Last updated: 2026-09-02.
 
 ---
 
@@ -22,7 +22,7 @@ Last updated: 2026-09-01.
 
 ---
 
-## Implemented (27)
+## Implemented (33)
 
 | Style | id | Mechanic | Category |
 |---|---|---|---|
@@ -53,6 +53,12 @@ Last updated: 2026-09-01.
 | Wave | `Wave` | letters bob in a wave | Trending |
 | Handwritten | `Handwritten` | Caveat marker annotation on active word | Editorial |
 | News Bar | `NewsBar` | broadcast lower-third with editable headline | Editorial |
+| Word Highlight | `WordHighlight` | calm outlined phrase with active-word fill | Highlight |
+| Karaoke Fill | `KaraokeFill` | active glyph fills across its spoken duration | Highlight |
+| Focus Card | `FocusCard` | adaptive phrase-level card | Clean |
+| Comic Strip | `ComicStrip` | outlined comic-print lettering with sticker shadow | Hype |
+| Soft Candy | `SoftCandy` | pastel editorial caption strips | Editorial |
+| Retro Script | `RetroScript` | layered retro script treatment | Editorial |
 
 ---
 
@@ -73,7 +79,7 @@ Ranked within each tier by impact ÷ effort. "Echoes" = which tool/creator uses 
 ### ~~Recommended 6-pack~~ — SHIPPED 2026-07-22
 
 Gradient, Highlighter, Underline, Glide, Outline, Meme are now implemented (see
-the table above). The subsequent visual packs took the set to 27 styles.
+the table above). The subsequent visual packs took the set to 33 styles.
 
 ### News Bar headline flow
 
@@ -86,8 +92,7 @@ three requests per job. The user can always edit or replace the suggestion.
 
 ## Visual research report — Retro Script, Comic Strip, Soft Candy, Word Highlight
 
-**Status:** researched from supplied visual references on 2026-09-01; not
-implemented. The four names appear to be preset labels rather than stable,
+**Status:** implemented as original Instacap treatments on 2026-09-02. The four names appear to be preset labels rather than stable,
 industry-standard categories. The specifications below therefore separate
 what is visibly observable from the proposed Instacap implementation. They are
 original interpretations, not a request to pixel-copy a competitor's work.
@@ -323,9 +328,8 @@ original interpretations, not a request to pixel-copy a competitor's work.
 
 1. **Ship names:** use the proposed labels or choose clearly original product
    names. Do not present the screenshot labels as copied branded presets.
-2. **Font choice:** approve the one new Retro Script face and the Soft Candy
-   editorial face before code work. Word Highlight and Comic Strip can reuse
-   existing loaded display fonts.
+2. **Font choice:** Retro Script now uses Lobster and Soft Candy uses Montserrat;
+   Word Highlight and Comic Strip reuse existing loaded display fonts.
 3. **Customisation level:** expose only active/text/accent colours, font size
    and position in v1. Keep outline widths, strip spacing, motion duration and
    safe-zone logic locked to preserve the intended look.
@@ -346,7 +350,8 @@ original interpretations, not a request to pixel-copy a competitor's work.
 
 ## Research report — additional editor-common caption treatments
 
-**Status:** researched on 2026-09-01; none of the items below are implemented.
+**Status:** researched on 2026-09-01. Karaoke Fill and Focus Card were implemented
+on 2026-09-02; the remaining items below are product-capability work.
 This is a product-gap report, not a claim that a visual effect automatically
 increases engagement. Editor vendors commonly offer word-level emphasis,
 dynamic themes and bilingual treatments, but their retention figures are

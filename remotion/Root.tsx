@@ -27,6 +27,12 @@ import { Glitch } from './compositions/Glitch'
 import { Wave } from './compositions/Wave'
 import { Handwritten } from './compositions/Handwritten'
 import { NewsBar } from './compositions/NewsBar'
+import { WordHighlight } from './compositions/WordHighlight'
+import { KaraokeFill } from './compositions/KaraokeFill'
+import { FocusCard } from './compositions/FocusCard'
+import { ComicStrip } from './compositions/ComicStrip'
+import { SoftCandy } from './compositions/SoftCandy'
+import { RetroScript } from './compositions/RetroScript'
 import { CaptionRoot } from './compositions/CaptionRoot'
 import { SAMPLE_TRANSCRIPT, SAMPLE_DURATION_FRAMES } from './sample-transcript'
 
@@ -239,6 +245,12 @@ const RemotionRoot: React.FC = () => {
       <Composition id="Wave" component={Wave} fps={FPS} width={WIDTH} height={HEIGHT} durationInFrames={SAMPLE_DURATION_FRAMES} defaultProps={{ ...defaultProps, activeColor: '#A855F7' }} />
       <Composition id="Handwritten" component={Handwritten} fps={FPS} width={WIDTH} height={HEIGHT} durationInFrames={SAMPLE_DURATION_FRAMES} defaultProps={defaultProps} />
       <Composition id="NewsBar" component={NewsBar} fps={FPS} width={WIDTH} height={HEIGHT} durationInFrames={SAMPLE_DURATION_FRAMES} defaultProps={{ ...defaultProps, activeColor: '#DC2626', newsHeadline: 'Your headline goes here', newsCategory: 'LATEST UPDATE' }} />
+      <Composition id="WordHighlight" component={WordHighlight} fps={FPS} width={WIDTH} height={HEIGHT} durationInFrames={SAMPLE_DURATION_FRAMES} defaultProps={{ ...defaultProps, activeColor: '#FFD329', fontFamily: 'Anton, Impact, sans-serif' }} />
+      <Composition id="KaraokeFill" component={KaraokeFill} fps={FPS} width={WIDTH} height={HEIGHT} durationInFrames={SAMPLE_DURATION_FRAMES} defaultProps={{ ...defaultProps, activeColor: '#FFD60A' }} />
+      <Composition id="FocusCard" component={FocusCard} fps={FPS} width={WIDTH} height={HEIGHT} durationInFrames={SAMPLE_DURATION_FRAMES} defaultProps={defaultProps} />
+      <Composition id="ComicStrip" component={ComicStrip} fps={FPS} width={WIDTH} height={HEIGHT} durationInFrames={SAMPLE_DURATION_FRAMES} defaultProps={{ ...defaultProps, activeColor: '#F05268', textColor: '#FFF4C7' }} />
+      <Composition id="SoftCandy" component={SoftCandy} fps={FPS} width={WIDTH} height={HEIGHT} durationInFrames={SAMPLE_DURATION_FRAMES} defaultProps={{ ...defaultProps, activeColor: '#D63D61', textColor: '#34231F' }} />
+      <Composition id="RetroScript" component={RetroScript} fps={FPS} width={WIDTH} height={HEIGHT} durationInFrames={SAMPLE_DURATION_FRAMES} defaultProps={{ ...defaultProps, activeColor: '#FF9A3E', textColor: '#FFE08A' }} />
       <Composition
         id="CaptionRoot"
         component={CaptionRoot}

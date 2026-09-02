@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono, Bricolage_Grotesque, Bangers, Anton, Fredoka, Montserrat, Roboto, Caveat } from 'next/font/google'
+import { Geist, Geist_Mono, Bricolage_Grotesque, Bangers, Anton, Fredoka, Montserrat, Roboto, Caveat, Lobster } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
 import { clerkAppearance } from '@/src/lib/clerk-appearance'
 import { Providers } from '@/components/providers'
@@ -31,8 +31,9 @@ const fredoka = Fredoka({ variable: '--font-fredoka', weight: '700', subsets: ['
 const montserrat = Montserrat({ variable: '--font-montserrat', weight: '900', subsets: ['latin'] })
 const roboto = Roboto({ variable: '--font-roboto', weight: '700', subsets: ['latin'] })
 const caveat = Caveat({ variable: '--font-caveat', weight: '700', subsets: ['latin'] })
+const lobster = Lobster({ variable: '--font-lobster', weight: '400', subsets: ['latin'] })
 
-const PREVIEW_FONT_VARS = [bangers, anton, fredoka, montserrat, roboto, caveat]
+const PREVIEW_FONT_VARS = [bangers, anton, fredoka, montserrat, roboto, caveat, lobster]
   .map((f) => f.variable)
   .join(' ')
 

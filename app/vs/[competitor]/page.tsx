@@ -22,7 +22,7 @@ const COMPARISON_MAP: Record<string, CompetitorMeta> = {
     title: 'Instacap vs VEED.io — Best Unlimited Alternative | Instacap',
     h1: 'Instacap vs VEED.io: The Flat-Rate Caption Alternative',
     metaDescription:
-      'Looking for a VEED.io alternative with no credit meters or per-render limits? Instacap offers 27 animated caption styles for a flat price.',
+      'Looking for a VEED.io alternative with no credit meters or per-render limits? Instacap offers 33 animated caption styles for a flat price.',
     headline: 'Tired of VEED.io credit limits & high subscription tiers?',
     subhead:
       'Instacap gives creators unlimited 4K video exports with word-by-word animated captions for one predictable flat price.',
@@ -33,7 +33,7 @@ const COMPARISON_MAP: Record<string, CompetitorMeta> = {
     ],
     ourAdvantages: [
       'Flat price with zero credit meters',
-      '27 real animated caption styles (Hormozi, Hype, Neon, etc.)',
+      '33 real animated caption styles (Hormozi, Hype, Neon, etc.)',
       'Sub-second Deepgram AI word timestamps',
     ],
     faqs: [
@@ -49,7 +49,7 @@ const COMPARISON_MAP: Record<string, CompetitorMeta> = {
     title: 'Instacap vs Captions.ai — Transparent Video Caption Generator | Instacap',
     h1: 'Instacap vs Captions.ai: Transparent Rendering & Pricing',
     metaDescription:
-      'Compare Instacap and Captions.ai. Get 27 real customizable caption styles, direct SRT/VTT import, and unlimited exports with no credits.',
+      'Compare Instacap and Captions.ai. Get 33 real customizable caption styles, direct SRT/VTT import, and unlimited exports with no credits.',
     headline: 'Looking for a Captions.ai web alternative with flat pricing?',
     subhead:
       'Instacap provides real customizable React caption compositions with zero credit limits and 100% transparent exports.',
@@ -88,7 +88,7 @@ const COMPARISON_MAP: Record<string, CompetitorMeta> = {
     ourAdvantages: [
       'Unlimited video renders on all paid plans',
       'Full SRT/VTT file import support',
-      '27 high-retention caption styles built-in',
+      '33 high-retention caption styles built-in',
     ],
     faqs: [
       {
