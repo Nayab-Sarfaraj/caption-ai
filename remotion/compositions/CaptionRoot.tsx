@@ -27,9 +27,15 @@ import { Glitch } from './Glitch'
 import { Wave } from './Wave'
 import { Handwritten } from './Handwritten'
 import { NewsBar } from './NewsBar'
+import { WordHighlight } from './WordHighlight'
+import { KaraokeFill } from './KaraokeFill'
+import { FocusCard } from './FocusCard'
+import { ComicStrip } from './ComicStrip'
+import { SoftCandy } from './SoftCandy'
+import { RetroScript } from './RetroScript'
 import type { Transcript } from '../types'
 
-export type CompositionId = 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring' | 'Hype' | 'Hormozi' | 'Minimal' | 'BoxHighlight' | 'Comic' | 'Pill' | 'Script' | 'SingleWord' | 'Typewriter' | 'NeonGlow' | 'CaptionBar' | 'Gradient' | 'Highlighter' | 'Underline' | 'Glide' | 'Outline' | 'Meme' | 'Pulse' | 'Sticker' | 'Glitch' | 'Wave' | 'Handwritten' | 'NewsBar'
+export type CompositionId = 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring' | 'Hype' | 'Hormozi' | 'Minimal' | 'BoxHighlight' | 'Comic' | 'Pill' | 'Script' | 'SingleWord' | 'Typewriter' | 'NeonGlow' | 'CaptionBar' | 'Gradient' | 'Highlighter' | 'Underline' | 'Glide' | 'Outline' | 'Meme' | 'Pulse' | 'Sticker' | 'Glitch' | 'Wave' | 'Handwritten' | 'NewsBar' | 'WordHighlight' | 'KaraokeFill' | 'FocusCard' | 'ComicStrip' | 'SoftCandy' | 'RetroScript'
 
 export interface CaptionRootProps {
   style: CompositionId
@@ -102,6 +108,12 @@ export const CaptionRoot: React.FC<CaptionRootProps> = ({ style, transcript, vid
   else if (style === 'Wave')         composition = <Wave         transcript={transcript} videoSrc={videoSrc} {...shared} />
   else if (style === 'Handwritten')  composition = <Handwritten  transcript={transcript} videoSrc={videoSrc} {...shared} />
   else if (style === 'NewsBar')      composition = <NewsBar      transcript={transcript} videoSrc={videoSrc} {...shared} newsHeadline={newsHeadline} newsCategory={newsCategory} />
+  else if (style === 'WordHighlight') composition = <WordHighlight transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'KaraokeFill')   composition = <KaraokeFill transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'FocusCard')     composition = <FocusCard transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'ComicStrip')    composition = <ComicStrip transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'SoftCandy')     composition = <SoftCandy transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'RetroScript')   composition = <RetroScript transcript={transcript} videoSrc={videoSrc} {...shared} />
   else composition = <WordByWord transcript={transcript} videoSrc={videoSrc} {...shared} />
 
   return (

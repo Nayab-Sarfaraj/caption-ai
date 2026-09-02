@@ -59,6 +59,12 @@ const DEFAULT: StyleSettings = {
 };
 
 const INITIAL_SETTINGS: SettingsMap = {
+  WordHighlight: { ...DEFAULT, activeColor: '#FFD329', fontFamily: 'Anton, Impact, sans-serif', posY: 76 },
+  KaraokeFill: { ...DEFAULT, activeColor: '#FFD60A', fontFamily: 'Montserrat, sans-serif', posY: 76 },
+  FocusCard: { ...DEFAULT, activeColor: '#FACC15', fontFamily: 'Montserrat, sans-serif', posY: 72 },
+  ComicStrip: { ...DEFAULT, activeColor: '#F05268', textColor: '#FFF4C7', fontFamily: 'Bangers, "Comic Sans MS", cursive', posY: 70 },
+  SoftCandy: { ...DEFAULT, activeColor: '#D63D61', textColor: '#34231F', fontFamily: 'Montserrat, sans-serif', posY: 66 },
+  RetroScript: { ...DEFAULT, activeColor: '#FF9A3E', textColor: '#FFE08A', fontFamily: 'Caveat, cursive', posY: 72 },
   WordByWord: { ...DEFAULT },
   Karaoke: { ...DEFAULT },
   Fade: { ...DEFAULT },

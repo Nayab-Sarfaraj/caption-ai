@@ -1,6 +1,12 @@
 import type { CompositionId } from '@/remotion/compositions/CaptionRoot'
 
 export const STYLES: { id: CompositionId; label: string; desc: string; category: string }[] = [
+  { id: 'WordHighlight', label: 'Word Highlight', desc: 'Crisp outlined active-word emphasis', category: 'Highlight' },
+  { id: 'KaraokeFill', label: 'Karaoke Fill', desc: 'Active word fills as it is spoken', category: 'Highlight' },
+  { id: 'FocusCard', label: 'Focus Card', desc: 'Calm phrase card for clear explainers', category: 'Clean' },
+  { id: 'ComicStrip', label: 'Comic Strip', desc: 'Stacked comic lettering with sticker shadow', category: 'Hype' },
+  { id: 'SoftCandy', label: 'Soft Candy', desc: 'Pastel editorial caption strips', category: 'Editorial' },
+  { id: 'RetroScript', label: 'Retro Script', desc: 'Layered retro sign-painting script', category: 'Editorial' },
   { id: 'SingleWord', label: 'Single Word', desc: 'One giant word, punch-scaled',       category: 'Trending' },
   { id: 'NeonGlow',  label: 'Neon Glow',    desc: 'Active word lights up, no box',       category: 'Trending' },
   { id: 'Gradient',  label: 'Gradient',     desc: 'Gradient-fill text, animated sweep',  category: 'Trending' },

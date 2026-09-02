@@ -14,6 +14,12 @@ import { PRICING_TIERS } from "@/src/helpers/pricing-tiers";
 import s from "./page.module.css";
 
 const STYLE_LABELS: Record<CompositionId, string> = {
+  WordHighlight: "Word Highlight",
+  KaraokeFill: "Karaoke Fill",
+  FocusCard: "Focus Card",
+  ComicStrip: "Comic Strip",
+  SoftCandy: "Soft Candy",
+  RetroScript: "Retro Script",
   WordByWord: "Word by Word",
   Karaoke: "Karaoke",
   Fade: "Fade",
@@ -136,7 +142,7 @@ const COMPARE: {
 const FAQS = [
   {
     q: "How does Instacap increase video retention?",
-    a: "85%+ of social video is watched muted. Instacap provides 27+ high-impact, word-by-word animated caption styles (Hormozi, Hype, Neon Glow, etc.) that grab viewer attention immediately and boost watch time.",
+    a: "85%+ of social video is watched muted. Instacap provides 33 high-impact, word-by-word animated caption styles (Hormozi, Hype, Neon Glow, etc.) that grab viewer attention immediately and boost watch time.",
   },
   {
     q: "How fast is the transcription and rendering?",
@@ -202,7 +208,7 @@ const JSON_LD = {
   applicationCategory: "MultimediaApplication",
   operatingSystem: "Web",
   description:
-    "High-retention animated captions for viral videos in seconds. Fast AI transcription, 27+ creator caption styles, studio 4K exports, and flat pricing with no credits.",
+    "High-retention animated captions for viral videos in seconds. Fast AI transcription, 33 creator caption styles, studio 4K exports, and flat pricing with no credits.",
   offers: [
     { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD" },
     { "@type": "Offer", name: "Weekly", price: "6.99", priceCurrency: "USD" },
@@ -374,7 +380,7 @@ export default async function RootPage() {
             <span className={s.eyebrow}>Viral Caption Styles</span>
             <h2>Designed to stop the scroll and boost watch time.</h2>
             <p>
-              Over 85% of social video is watched muted. Choose from 27+ high-converting
+              Over 85% of social video is watched muted. Choose from 33 high-converting
               animated styles tuned specifically for Reels, Shorts, and TikTok.
             </p>
           </div>
