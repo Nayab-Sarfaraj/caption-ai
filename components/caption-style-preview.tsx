@@ -1,6 +1,6 @@
 import type { CompositionId } from '@/remotion/compositions/CaptionRoot'
 
-type Mechanic = 'plain' | 'stroke' | 'box' | 'pill' | 'script' | 'lowercase' | 'single' | 'typewriter' | 'neon' | 'bar' | 'gradient' | 'highlighter' | 'underline' | 'glide' | 'outline' | 'meme' | 'sticker' | 'glitch' | 'wave' | 'news'
+type Mechanic = 'plain' | 'stroke' | 'box' | 'pill' | 'script' | 'lowercase' | 'single' | 'typewriter' | 'neon' | 'bar' | 'gradient' | 'highlighter' | 'underline' | 'glide' | 'outline' | 'meme' | 'sticker' | 'glitch' | 'wave' | 'news' | 'softCandy'
 
 interface StyleMeta {
   mechanic: Mechanic
@@ -16,6 +16,12 @@ interface StyleMeta {
 // Mirrors the real per-composition look (remotion/compositions/*.tsx) so the
 // picker preview matches what actually renders, not an approximation.
 export const STYLE_PREVIEW_META: Record<CompositionId, StyleMeta> = {
+  WordHighlight: { mechanic: 'stroke', fontFamily: 'var(--font-anton), sans-serif', baseColor: '#fff', keywordColor: '#FFD329', uppercase: true, glow: '#FFD329' },
+  KaraokeFill: { mechanic: 'gradient', fontFamily: 'var(--font-montserrat), sans-serif', baseColor: '#fff', keywordColor: '#FFD60A', glow: '#FFD60A' },
+  FocusCard: { mechanic: 'bar', fontFamily: 'var(--font-montserrat), sans-serif', baseColor: '#fff', keywordColor: '#FACC15', glow: '#FACC15' },
+  ComicStrip: { mechanic: 'stroke', fontFamily: 'var(--font-bangers), cursive', baseColor: '#FFF4C7', keywordColor: '#F05268', uppercase: true, glow: '#F05268' },
+  SoftCandy: { mechanic: 'softCandy', fontFamily: 'var(--font-montserrat), sans-serif', baseColor: '#34231F', keywordColor: '#D63D61', glow: '#D63D61' },
+  RetroScript: { mechanic: 'script', fontFamily: 'var(--font-caveat), cursive', baseColor: '#FF9A3E', keywordColor: '#FFE08A', glow: '#B51D62' },
   WordByWord:   { mechanic: 'plain',     fontFamily: 'var(--font-geist-sans), sans-serif', baseColor: '#fff', keywordColor: '#FACC15', glow: '#FACC15' },
   Karaoke:      { mechanic: 'plain',     fontFamily: 'var(--font-geist-sans), sans-serif', baseColor: '#fff', keywordColor: '#FACC15', glow: '#FACC15' },
   Spring:       { mechanic: 'plain',     fontFamily: 'var(--font-geist-sans), sans-serif', baseColor: '#fff', keywordColor: '#FACC15', glow: '#FACC15' },
@@ -153,6 +159,11 @@ export function CaptionStylePreview({ id }: { id: CompositionId }) {
             style={{ fontFamily: meta.fontFamily, color: '#fff', backgroundColor: 'rgba(12,12,11,0.82)', boxShadow: '0 4px 12px rgba(0,0,0,0.45)' }}
           >
             Just like <span style={{ color: meta.keywordColor }}>this</span>
+          </span>
+        ) : meta.mechanic === 'softCandy' ? (
+          <span className="inline-flex flex-col items-center gap-1" style={{ fontFamily: meta.fontFamily }}>
+            <span className="px-2 py-0.5 font-bold" style={{ backgroundColor: '#FFF8DD', color: meta.baseColor }}>Just like</span>
+            <span className="px-2 py-0.5 font-bold" style={{ backgroundColor: '#FFE3E8', color: meta.keywordColor }}>this</span>
           </span>
         ) : meta.mechanic === 'sticker' ? (
           <span className="font-extrabold text-[16px] text-slate-900 border-2 border-white rounded-md px-2 py-0.5 rotate-[-3deg]" style={{ fontFamily: meta.fontFamily, backgroundColor: meta.keywordColor }}>this</span>
