@@ -25,7 +25,7 @@ export const RetroScript: React.FC<RetroScriptProps> = ({ transcript, videoSrc, 
   return <AbsoluteFill>
     {videoSrc && <OffthreadVideo src={videoSrc} crossOrigin="anonymous" pauseWhenBuffering style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
     {segment && <AbsoluteFill style={{ ...captionAnchorStyle(Math.round(height * 0.14), posX, posY), paddingLeft: width * 0.05, paddingRight: width * 0.05 }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.16em', justifyContent: 'center', maxWidth: width * 0.85, opacity: reveal }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3em', justifyContent: 'center', maxWidth: width * 0.85, opacity: reveal }}>
         {words.map((word, index) => {
           const isActive = index === active
           const pop = isActive ? spring({ frame: Math.max(0, frame - Math.floor(word.start * fps)), fps, config: { damping: 18, stiffness: 180 } }) : 1
