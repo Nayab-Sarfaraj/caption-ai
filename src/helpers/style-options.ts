@@ -2,7 +2,6 @@ import type { CompositionId } from '@/remotion/compositions/CaptionRoot'
 
 export const STYLES: { id: CompositionId; label: string; desc: string; category: string }[] = [
   { id: 'WordHighlight', label: 'Word Highlight', desc: 'Crisp outlined active-word emphasis', category: 'Highlight' },
-  { id: 'KaraokeFill', label: 'Karaoke Fill', desc: 'Active word fills as it is spoken', category: 'Highlight' },
   { id: 'FocusCard', label: 'Focus Card', desc: 'Calm phrase card for clear explainers', category: 'Clean' },
   { id: 'ComicStrip', label: 'Comic Strip', desc: 'Stacked comic lettering with sticker shadow', category: 'Hype' },
   { id: 'SoftCandy', label: 'Soft Candy', desc: 'Pastel editorial caption strips', category: 'Editorial' },
@@ -38,7 +37,7 @@ export const STYLES: { id: CompositionId; label: string; desc: string; category:
 
 export const CATEGORY_ORDER = ['Trending', 'Highlight', 'Hype', 'Clean', 'Editorial']
 
-export const COMPOSITION_IDS = STYLES.map((s) => s.id) as [CompositionId, ...CompositionId[]]
+export const COMPOSITION_IDS = [...STYLES.map((s) => s.id), 'KaraokeFill'] as unknown as [CompositionId, ...CompositionId[]]
 
 export const FONTS = [
   { label: 'System',       value: 'system-ui, -apple-system, sans-serif' },

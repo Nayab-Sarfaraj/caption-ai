@@ -49,7 +49,9 @@ const STYLE_LABELS: Record<CompositionId, string> = {
   NewsBar: "News Bar",
 };
 
-const STYLE_IDS = Object.keys(STYLE_PREVIEW_META) as CompositionId[];
+const STYLE_IDS = (Object.keys(STYLE_PREVIEW_META) as CompositionId[]).filter(
+  (id) => id !== "KaraokeFill",
+);
 
 // dot color per style — same source the previews render from
 const chipColor = (id: CompositionId) =>
