@@ -5,7 +5,7 @@ not built, and the exact steps to add a new one. Caption styles are real
 Remotion compositions (not config-driven presets) — that's the product's
 differentiator, keep it that way.
 
-Last updated: 2026-09-01.
+Last updated: 2026-09-02.
 
 ---
 
@@ -328,9 +328,8 @@ original interpretations, not a request to pixel-copy a competitor's work.
 
 1. **Ship names:** use the proposed labels or choose clearly original product
    names. Do not present the screenshot labels as copied branded presets.
-2. **Font choice:** approve the one new Retro Script face and the Soft Candy
-   editorial face before code work. Word Highlight and Comic Strip can reuse
-   existing loaded display fonts.
+2. **Font choice:** Retro Script now uses Lobster and Soft Candy uses Montserrat;
+   Word Highlight and Comic Strip reuse existing loaded display fonts.
 3. **Customisation level:** expose only active/text/accent colours, font size
    and position in v1. Keep outline widths, strip spacing, motion duration and
    safe-zone logic locked to preserve the intended look.

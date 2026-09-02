@@ -32,10 +32,10 @@ export const SoftCandy: React.FC<SoftCandyProps> = ({ transcript, videoSrc, acti
       <div style={{ alignItems: 'center', display: 'flex', flexDirection: 'column', gap: Math.round(fontSize * 0.22), maxWidth: width * 0.84 }}>
         {groups.map((group, groupIndex) => {
           const enter = interpolate(segmentFrame - groupIndex * 2, [0, 6], [0, 1], { extrapolateRight: 'clamp' })
-          return <div key={groupIndex} style={{ backgroundColor: STRIP_COLORS[groupIndex % STRIP_COLORS.length], borderRadius: Math.max(2, Math.round(fontSize * 0.08)), display: 'inline-flex', gap: '0.3em', opacity: enter, padding: `${Math.round(fontSize * 0.22)}px ${Math.round(fontSize * 0.45)}px`, transform: `translateY(${(1 - enter) * 8}px)` }}>
+          return <div key={groupIndex} style={{ backgroundColor: STRIP_COLORS[groupIndex % STRIP_COLORS.length], borderRadius: Math.max(2, Math.round(fontSize * 0.08)), display: 'inline-flex', flexWrap: 'wrap', gap: '0.3em', justifyContent: 'center', maxWidth: '100%', opacity: enter, padding: `${Math.round(fontSize * 0.22)}px ${Math.round(fontSize * 0.45)}px`, transform: `translateY(${(1 - enter) * 8}px)` }}>
             {group.map((word, index) => {
               const wordIndex = groupIndex * 2 + index
-              return <span key={`${word.start}-${index}`} style={{ color: wordIndex === active ? activeColor : textColor, fontFamily: withScriptFallback(fontFamily), fontSize, fontWeight: wordIndex === active ? 800 : 600, lineHeight: 1.2 }}>{word.word}</span>
+              return <span key={`${word.start}-${index}`} style={{ color: wordIndex === active ? activeColor : textColor, fontFamily: withScriptFallback(fontFamily), fontSize, fontWeight: wordIndex === active ? 800 : 600, lineHeight: 1.2, maxWidth: '100%', minWidth: 0, overflowWrap: 'anywhere', textAlign: 'center' }}>{word.word}</span>
             })}
           </div>
         })}

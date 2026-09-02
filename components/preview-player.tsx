@@ -64,7 +64,7 @@ const INITIAL_SETTINGS: SettingsMap = {
   FocusCard: { ...DEFAULT, activeColor: '#FACC15', fontFamily: 'Montserrat, sans-serif', posY: 72 },
   ComicStrip: { ...DEFAULT, activeColor: '#F05268', textColor: '#FFF4C7', fontFamily: 'Bangers, "Comic Sans MS", cursive', posY: 70 },
   SoftCandy: { ...DEFAULT, activeColor: '#D63D61', textColor: '#34231F', fontFamily: 'Montserrat, sans-serif', posY: 66 },
-  RetroScript: { ...DEFAULT, activeColor: '#FF9A3E', textColor: '#FFE08A', fontFamily: 'Caveat, cursive', posY: 72 },
+  RetroScript: { ...DEFAULT, activeColor: '#FF9A3E', textColor: '#FFE08A', fontFamily: 'Lobster, cursive', posY: 72 },
   WordByWord: { ...DEFAULT },
   Karaoke: { ...DEFAULT },
   Fade: { ...DEFAULT },

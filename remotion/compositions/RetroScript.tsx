@@ -1,18 +1,18 @@
 import React from 'react'
 import { AbsoluteFill, interpolate, OffthreadVideo, spring, useCurrentFrame, useVideoConfig } from 'remotion'
-import { loadFont } from '@remotion/google-fonts/Caveat'
+import { loadFont } from '@remotion/google-fonts/Lobster'
 import { withScriptFallback } from '../lib/fonts'
 import { captionAnchorStyle } from '../lib/caption-layout'
 import type { Transcript } from '../types'
 
-const { fontFamily: CAVEAT } = loadFont('normal', { weights: ['700'], subsets: ['latin'] })
+const { fontFamily: LOBSTER } = loadFont('normal', { weights: ['400'], subsets: ['latin'] })
 
 export interface RetroScriptProps {
   transcript: Transcript; videoSrc: string; activeColor?: string; textColor?: string; fontFamily?: string; fontSizeMultiplier?: number; posX?: number; posY?: number
 }
 
-/** A layered sign-painting treatment using an already bundled script face. */
-export const RetroScript: React.FC<RetroScriptProps> = ({ transcript, videoSrc, activeColor = '#FF9A3E', textColor = '#FFE08A', fontFamily = CAVEAT, fontSizeMultiplier = 1, posX, posY }) => {
+/** A layered sign-painting treatment using a bold connected display script. */
+export const RetroScript: React.FC<RetroScriptProps> = ({ transcript, videoSrc, activeColor = '#FF9A3E', textColor = '#FFE08A', fontFamily = LOBSTER, fontSizeMultiplier = 1, posX, posY }) => {
   const frame = useCurrentFrame()
   const { fps, width, height } = useVideoConfig()
   const time = frame / fps
