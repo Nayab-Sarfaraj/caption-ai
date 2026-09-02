@@ -42,6 +42,7 @@ export const COMPOSITION_IDS = STYLES.map((s) => s.id) as [CompositionId, ...Com
 
 export const FONTS = [
   { label: 'System',       value: 'system-ui, -apple-system, sans-serif' },
+  { label: 'Lobster',      value: 'Lobster, cursive' },
   { label: 'Bangers',      value: 'Bangers, "Comic Sans MS", cursive' },
   { label: 'Anton',        value: 'Anton, Impact, sans-serif' },
   { label: 'Montserrat',   value: 'Montserrat, sans-serif' },
