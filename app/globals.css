@@ -43,6 +43,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
+  --font-headline: var(--font-montserrat), sans-serif;
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -206,6 +207,16 @@ body {
 }
 @keyframes shimmer {
   100% { transform: translateX(100%); }
+}
+
+/* Kinetic Caption Word Animations */
+.caption-word {
+  display: inline-block;
+  transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform-origin: center center;
+}
+.caption-word.active-pop {
+  transform: scale(1.12) translateY(-2px);
 }
 
 /* Global reduced-motion safety net for the whole app. */
