@@ -84,10 +84,9 @@ export function HeroCaptionDemo() {
       {/* PRIMARY HERO REEL: High-Impact Vertical Phone Showcase */}
       <div className="relative z-20 w-[300px] sm:w-[380px] lg:w-[420px] aspect-[9/16] rounded-[36px] overflow-hidden bg-black border border-white/[0.14] shadow-[0_28px_85px_rgba(0,0,0,0.95)] flex flex-col group ring-1 ring-white/[0.08]">
         <div className="relative w-full h-full overflow-hidden">
-          {/* Main Looping Video from /hero-demo.mp4 */}
+          {/* Main Looping Video from Cloudflare CDN */}
           <video
             ref={videoRef}
-            src="/hero-demo.mp4"
             autoPlay
             muted
             loop
@@ -95,7 +94,10 @@ export function HeroCaptionDemo() {
             preload="auto"
             className="w-full h-full object-cover scale-[1.02] transition-transform duration-700 group-hover:scale-105"
             aria-hidden="true"
-          />
+          >
+            <source src="https://cdn.getinstacap.com/app_resources/hero-demo.mp4" type="video/mp4" />
+            <source src="/hero-demo.mp4" type="video/mp4" />
+          </video>
 
           {/* Gradient Scrims & Edge Borders */}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-black/40 pointer-events-none" />
