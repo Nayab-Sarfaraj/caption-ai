@@ -12,7 +12,6 @@ const WORDS = [
 
 export function HeroCaptionDemo() {
   const [step, setStep] = useState(0)
-  const [isVideoLoaded, setIsVideoLoaded] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
 
   // Kinetic Word-by-Word Loop (550ms interval matching mockup)
@@ -27,10 +26,14 @@ export function HeroCaptionDemo() {
     return () => clearInterval(interval)
   }, [])
 
-  // Muted auto-play video observer
+  // Muted auto-play video observer + immediate play on mount
   useEffect(() => {
     const v = videoRef.current
     if (!v) return
+
+    // Immediately trigger play (muted videos are allowed by all browsers)
+    v.play().catch(() => {})
+
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
     const io = new IntersectionObserver(
@@ -81,35 +84,24 @@ export function HeroCaptionDemo() {
       {/* PRIMARY HERO REEL: High-Impact Vertical Phone Showcase */}
       <div className="relative z-20 w-[300px] sm:w-[380px] lg:w-[420px] aspect-[9/16] rounded-[36px] overflow-hidden bg-black border border-white/[0.14] shadow-[0_28px_85px_rgba(0,0,0,0.95)] flex flex-col group ring-1 ring-white/[0.08]">
         <div className="relative w-full h-full overflow-hidden">
-          {/* Creator Imagery with Subtle Hover Zoom */}
-          <img
-            alt="Creator recording talking-head video"
-            className={`w-full h-full object-cover scale-[1.02] brightness-95 contrast-105 transition-transform duration-700 group-hover:scale-105 ${
-              isVideoLoaded ? 'opacity-0' : 'opacity-100'
-            }`}
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-ngYbxbcWNTdyVrc4W78I8v8KF9nr7HQztAxHwv-BiU5QypNoYuOL_52f3-Bb-3Hp3Wi9_ZTJtEPl4UE3d6G7DVcxiW4wXtQpsiWiWSoHlJjcyeODiPWLWEafUFG6wsiQw1Gi8duJ821DaNSPeR8iKQJ2em2G840w_lrZ937ZVou9nNfzYwTj2UL39ShBbfZN0-UckO8SHQOS9bZpgsEucB1XnenwWzNS2WAhCxWlO--ZuudHD4Gp"
-          />
-
-          {/* Optional Local Video Support */}
+          {/* Main Looping Video from /hero-demo.mp4 */}
           <video
             ref={videoRef}
             src="/hero-demo.mp4"
-            className={`absolute inset-0 w-full h-full object-cover scale-[1.02] transition-opacity duration-500 ${
-              isVideoLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
+            autoPlay
             muted
             loop
             playsInline
-            preload="metadata"
-            onLoadedData={() => setIsVideoLoaded(true)}
+            preload="auto"
+            className="w-full h-full object-cover scale-[1.02] transition-transform duration-700 group-hover:scale-105"
             aria-hidden="true"
           />
 
           {/* Gradient Scrims & Edge Borders */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/25 to-black/45 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-black/40 pointer-events-none" />
           <div className="absolute inset-0 rounded-[36px] border border-white/[0.08] pointer-events-none" />
 
-          {/* Dynamic Kinetic Caption Stage */}
+          {/* Dynamic Kinetic Caption Stage Layered Over Video */}
           <div
             className="absolute inset-x-3 sm:inset-x-4 bottom-14 sm:bottom-16 z-30 flex flex-col items-center text-center select-none"
             id="caption-stage"
