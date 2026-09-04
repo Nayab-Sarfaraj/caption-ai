@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
+import { ArrowRight, Sparkles } from "lucide-react";
 import {
   CaptionStylePreview,
   STYLE_PREVIEW_META,
@@ -244,33 +245,68 @@ export default async function RootPage() {
       </header>
 
       {/* Hero */}
-      <section className={s.hero}>
-        <div className={`${s.wrap} ${s.heroIn}`}>
-          <div>
-            <span className={s.eyebrow}>Lightning-fast AI video captions</span>
-            <h1 className={s.h1}>
-              AI Video Caption Generator for{" "}
-              <span className={s.hl}>viral videos in seconds.</span>
-            </h1>
-            <p className={s.sub}>
-              Boost watch time on Reels, TikTok, and Shorts. Powered by ultra-fast
-              AI transcription, 21+ studio caption styles, and flat pricing with zero credit limits.
-            </p>
-            <div className={s.heroActions}>
-              <Link href="/sign-up" className={`${s.btn} ${s.btnPrimary}`}>
-                Start free — no card
-              </Link>
-              <a href="#styles" className={`${s.btn} ${s.btnGhost}`}>
-                See {STYLE_IDS.length} viral styles
-              </a>
+      <section className="relative w-full pt-12 sm:pt-16 lg:pt-20 pb-16 sm:pb-20 lg:pb-24 overflow-hidden border-b border-white/[0.06]">
+        {/* Ambient Warm & Obsidian Ambient Glows */}
+        <div
+          className="absolute top-1/4 left-1/3 -translate-x-1/2 w-[500px] lg:w-[650px] h-[450px] lg:h-[550px] bg-[#ff4d00]/10 blur-[150px] lg:blur-[180px] pointer-events-none -z-10"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute top-20 right-10 lg:right-24 w-[400px] lg:w-[550px] h-[450px] lg:h-[600px] bg-[#ff4d00]/15 blur-[140px] lg:blur-[160px] pointer-events-none -z-10"
+          aria-hidden="true"
+        />
+
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-y-12 lg:gap-x-12 items-center">
+            {/* Left Editorial Column */}
+            <div className="lg:col-span-6 flex flex-col items-start z-10 lg:pr-2">
+              {/* Commanding Dominant Headline with Knockout Highlight */}
+              <h1 className="font-headline text-5xl sm:text-6xl md:text-7xl lg:text-[4.75rem] xl:text-[5.25rem] font-black tracking-tight text-white leading-[1.04] mb-6">
+                Make every<br />word{" "}
+                <span className="relative inline-block text-white">
+                  impossible
+                  <span className="absolute bottom-2 left-0 right-0 h-3.5 sm:h-4 bg-[#ff4d00] -z-10 -rotate-1 rounded-sm opacity-90" />
+                </span>
+                <br />to miss.
+              </h1>
+
+              {/* Supporting Copy */}
+              <p className="font-body text-lg sm:text-xl text-slate-300 max-w-xl leading-relaxed mb-8 sm:mb-10 font-normal">
+                Turn raw footage into scroll-stopping captioned clips in seconds.
+              </p>
+
+              {/* Primary & Secondary CTA Buttons */}
+              <div className="flex flex-wrap items-center gap-4 w-full mb-6">
+                <Link
+                  href="/sign-up"
+                  className="group relative inline-flex items-center gap-3 px-8 py-4 sm:py-[18px] rounded-full bg-[#ff4d00] text-white font-headline text-[15px] sm:text-[16px] font-bold tracking-wide transition-all duration-300 shadow-[0_6px_36px_rgba(255,77,0,0.45)] hover:shadow-[0_8px_46px_rgba(255,77,0,0.7)] hover:brightness-110 active:scale-95"
+                >
+                  <span>Start creating — it&apos;s free</span>
+                  <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                </Link>
+                <a
+                  href="#styles"
+                  className="inline-flex items-center gap-2 px-7 py-4 sm:py-[18px] rounded-full bg-[#19191d] hover:bg-[#222227] text-white font-headline text-[15px] font-semibold border border-white/[0.08] transition-all duration-200 hover:border-white/[0.2]"
+                >
+                  <Sparkles className="w-5 h-5 text-[#a3a0ad]" />
+                  <span>Explore styles</span>
+                </a>
+              </div>
+
+              {/* Clean Supporting Proof Below CTAs */}
+              <div className="flex flex-wrap items-center gap-2.5 text-[#a3a0ad] text-[13px] sm:text-[14px] font-mono tracking-tight mb-2">
+                <span className="text-white/85 font-medium">No card required</span>
+                <span className="text-white/30">·</span>
+                <span className="text-white/85 font-medium">Unlimited exports</span>
+                <span className="text-white/30">·</span>
+                <span className="text-white/85 font-medium">{STYLE_IDS.length}+ styles</span>
+              </div>
             </div>
-            <div className={s.microtrust}>
-              <span className={s.stars}>⚡</span>
-              <span>Fast AI Transcription • 🎯 Max Retention Styles • 🚀 Unlimited Exports</span>
+
+            {/* Right Column: Scaled 3D Multi-Layered Reel Showcase */}
+            <div className="lg:col-span-6 relative flex items-center justify-center">
+              <HeroCaptionDemo />
             </div>
-          </div>
-          <div className={s.stageCol}>
-            <HeroCaptionDemo />
           </div>
         </div>
       </section>

@@ -1,107 +1,164 @@
 'use client'
 
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { STYLE_PREVIEW_META } from '@/components/caption-style-preview'
-import type { CompositionId } from '@/remotion/compositions/CaptionRoot'
-import s from './hero-caption-demo.module.css'
+import { useEffect, useRef, useState } from 'react'
 
-type Word = { t: string; kw?: boolean }
-type Scene = { id: CompositionId; label: string; variant: string; words: Word[] }
-
-// Each scene maps to a real composition id so the keyword pop color is pulled
-// from STYLE_PREVIEW_META — same source the style picker renders from.
-const SCENES: Scene[] = [
-  { id: 'Hormozi', label: 'Hormozi', variant: s.sHormozi, words: [{ t: 'THIS' }, { t: 'IS' }, { t: 'HOW' }, { t: 'YOU' }, { t: 'STOP', kw: true }, { t: 'THE' }, { t: 'SCROLL' }] },
-  { id: 'Hype', label: 'Hype', variant: s.sHype, words: [{ t: 'LET' }, { t: 'THAT' }, { t: 'SINK', kw: true }, { t: 'IN', kw: true }] },
-  { id: 'BoxHighlight', label: 'Box Highlight', variant: s.sBox, words: [{ t: 'WATCH' }, { t: 'THIS' }, { t: 'PART', kw: true }, { t: 'CLOSELY' }] },
-  { id: 'Minimal', label: 'Minimal', variant: s.sMin, words: [{ t: 'keep' }, { t: 'it' }, { t: 'clean', kw: true }, { t: 'and' }, { t: 'simple' }] },
-  { id: 'Karaoke', label: 'Karaoke', variant: s.sKaraoke, words: [{ t: 'Every' }, { t: 'single', kw: true }, { t: 'word', kw: true }, { t: 'lands' }] },
-]
-
-const CHIPS = [
-  { label: 'Hormozi', color: 'var(--pop-yellow)', pos: s.a },
-  { label: 'Box Highlight', color: 'var(--pop-violet)', pos: s.b },
-  { label: 'Hype', color: 'var(--pop-green)', pos: s.c },
-  { label: 'Minimal', color: '#ffffff', pos: s.d2 },
+const WORDS = [
+  { text: 'STOP', isKeyword: false },
+  { text: 'WASTING', isKeyword: false },
+  { text: 'HOURS', isKeyword: true },
+  { text: 'ON', isKeyword: false },
+  { text: 'EDITING', isKeyword: false },
 ]
 
 export function HeroCaptionDemo() {
-  const [i, setI] = useState(0)
-  const [t, setT] = useState(7)
+  const [step, setStep] = useState(0)
   const videoRef = useRef<HTMLVideoElement>(null)
 
+  // Kinetic Word-by-Word Loop (550ms interval matching mockup)
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
     if (mq.matches) return
-    const scene = setInterval(() => setI((v) => (v + 1) % SCENES.length), 3300)
-    const clock = setInterval(() => setT((v) => (v + 1) % 12), 900)
-    return () => { clearInterval(scene); clearInterval(clock) }
+
+    const interval = setInterval(() => {
+      setStep((prev) => (prev + 1) % WORDS.length)
+    }, 550)
+
+    return () => clearInterval(interval)
   }, [])
 
-  // Only play the clip while it's on-screen (saves bandwidth/CPU when scrolled
-  // away) and never under reduced-motion. Muted autoplay is browser-allowed.
+  // Muted auto-play video observer + immediate play on mount
   useEffect(() => {
     const v = videoRef.current
     if (!v) return
+
+    // Immediately trigger play (muted videos are allowed by all browsers)
+    v.play().catch(() => {})
+
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
     const io = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) v.play().catch(() => {}); else v.pause() },
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          v.play().catch(() => {})
+        } else {
+          v.pause()
+        }
+      },
       { threshold: 0.25 },
     )
+
     io.observe(v)
     return () => io.disconnect()
   }, [])
 
-  const scene = SCENES[i]
-  const meta = STYLE_PREVIEW_META[scene.id]
-  const kw = meta.keywordColor ?? meta.baseColor
-  const tc = `00:00:${t < 10 ? `0${t}` : t}`
+  const progressPercent = 30 + (step / WORDS.length) * 45
 
   return (
-    <div className={s.device}>
-      <div className={s.chipCloud} aria-hidden="true">
-        {CHIPS.map((c) => (
-          <span key={c.label} className={`${s.fchip} ${c.pos}`}>
-            <span className={s.fd} style={{ background: c.color }} />
-            {c.label}
-          </span>
-        ))}
-      </div>
-      <div className={s.clip}>
-        <div className={s.frame} />
-        {/* Silent podcast clip — drop /public/hero-demo.mp4 (9:16, muted). Falls
-            back to the .frame gradient until it loads / if the file is absent. */}
-        <video
-          ref={videoRef}
-          className={s.video}
-          src="/hero-demo.mp4"
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          aria-hidden="true"
+    <div className="relative w-full flex items-center justify-center min-h-[580px] sm:min-h-[640px] lg:min-h-[680px]">
+      {/* Background Card Left - Tilted & Dimmed for 3D Cinematic Depth */}
+      <div
+        className="absolute -left-2 sm:-left-6 lg:-left-8 top-10 sm:top-12 w-[220px] sm:w-[260px] lg:w-[280px] aspect-[9/16] rounded-[28px] overflow-hidden bg-[#070708] border border-white/[0.06] -rotate-6 opacity-35 filter blur-[0.6px] pointer-events-none hidden sm:block select-none"
+        aria-hidden="true"
+      >
+        <img
+          alt=""
+          className="w-full h-full object-cover grayscale contrast-125"
+          src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5GFB-gMYZ_vfCr1TZKesq71UtL4OTW8lmyBn3emQ00F2tGBARJV-dhWuGxWgTvbQ94Fbm2bzQUmXqyV9i0ChTwB1xUiLbx2ydHdBPYBwNB6e4daTtigwTRVTlxxSpwWiCRX4JeSg0zSJOwFjZjkZQZi2FLFr4XIq_jx0mWhaS1CpxnBs7XhC6UHlb7B4vPuD2cw84GGCkY_PzKRmWAdzgMxnJxbPkvMWlJHVPWERJyTih-qfdadCe"
         />
-        <div className={s.scrim} aria-hidden="true" />
-        <div className={s.chrome}>
-          <span className={s.rec}><span className={s.recDot} />REC</span>
-          <span className={s.tc}>{tc}</span>
-        </div>
-        <span className={s.styleTag}>{scene.label}</span>
-        <div className={s.capWrap}>
-          {/* key remounts the caption so word-in animation replays each cycle */}
-          <div key={i} className={`${s.cap} ${scene.variant}`} style={{ '--kw': kw } as CSSProperties}>
-            {scene.words.map((w, idx) => (
-              <span
-                key={idx}
-                className={w.kw ? `${s.w} ${s.kw}` : s.w}
-                style={{ animationDelay: `${idx * 0.11}s` }}
-              >
-                {w.t}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+      </div>
+
+      {/* Background Card Right - Tilted & Dimmed for 3D Cinematic Depth */}
+      <div
+        className="absolute -right-2 sm:-right-6 lg:-right-8 top-12 sm:top-16 w-[220px] sm:w-[260px] lg:w-[280px] aspect-[9/16] rounded-[28px] overflow-hidden bg-[#070708] border border-white/[0.06] rotate-6 opacity-35 filter blur-[0.6px] pointer-events-none hidden sm:block select-none"
+        aria-hidden="true"
+      >
+        <img
+          alt=""
+          className="w-full h-full object-cover grayscale contrast-125"
+          src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyK0W7j5ZBWd4bTFArOin5HV_rMDs3DEAQGCPPuEJbSJridXw-h8O-xNvCunxwNoaEYRxgm1iUUQb2lQQKlwDIyA94Xzvm9O9aLP8kUd3i74Tykb_-PJl4usq9RRMxmlPEvE_zuX1JQjt7RoBvs7DyLEAuydmF6kmahltRi3FkhiDqE2nYz7TiKDb8w5MVDmcRrhlKPR7_Bj0fipdD9apNE7QaUrsRINzxoEZJPHb7CAOJOfVHpFL6"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+      </div>
+
+      {/* PRIMARY HERO REEL: High-Impact Vertical Phone Showcase */}
+      <div className="relative z-20 w-[300px] sm:w-[380px] lg:w-[420px] aspect-[9/16] rounded-[36px] overflow-hidden bg-black border border-white/[0.14] shadow-[0_28px_85px_rgba(0,0,0,0.95)] flex flex-col group ring-1 ring-white/[0.08]">
+        <div className="relative w-full h-full overflow-hidden">
+          {/* Main Looping Video from /hero-demo.mp4 */}
+          <video
+            ref={videoRef}
+            src="/hero-demo.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            className="w-full h-full object-cover scale-[1.02] transition-transform duration-700 group-hover:scale-105"
+            aria-hidden="true"
+          />
+
+          {/* Gradient Scrims & Edge Borders */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-black/40 pointer-events-none" />
+          <div className="absolute inset-0 rounded-[36px] border border-white/[0.08] pointer-events-none" />
+
+          {/* Dynamic Kinetic Caption Stage Layered Over Video */}
+          <div
+            className="absolute inset-x-3 sm:inset-x-4 bottom-14 sm:bottom-16 z-30 flex flex-col items-center text-center select-none"
+            id="caption-stage"
+          >
+            <div className="inline-block bg-black/85 backdrop-blur-md px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-2xl border border-white/10 shadow-2xl max-w-[92%]">
+              <p className="font-headline text-[20px] sm:text-[26px] md:text-[28px] font-black uppercase tracking-tight text-white leading-tight">
+                {WORDS.map((w, idx) => {
+                  const isActive = idx === step
+
+                  if (w.isKeyword) {
+                    return (
+                      <span
+                        key={w.text}
+                        className={`caption-word px-2 sm:px-2.5 py-0.5 mx-1 rounded font-black bg-[#ffc700] text-black shadow-[0_0_24px_rgba(255,199,0,0.5)] ${
+                          isActive ? 'active-pop' : ''
+                        }`}
+                      >
+                        {w.text}
+                      </span>
+                    )
+                  }
+
+                  return (
+                    <span
+                      key={w.text}
+                      className={`caption-word mx-1 ${isActive ? 'active-pop' : ''}`}
+                      style={{
+                        color: isActive ? '#ffc700' : undefined,
+                      }}
+                    >
+                      {w.text}
+                    </span>
+                  )
+                })}
+              </p>
+            </div>
+          </div>
+
+          {/* HUD Player Progress & Info */}
+          <div className="absolute bottom-4 sm:bottom-5 inset-x-5 sm:inset-x-6 z-30 flex flex-col gap-2 pointer-events-none">
+            <div className="flex items-center justify-between text-white/60 font-mono text-[10px] sm:text-[11px]">
+              <span className="flex items-center gap-1.5 text-white/80">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#ff4d00] animate-pulse" />
+                00:04 / 00:30
               </span>
-            ))}
+              <span className="uppercase tracking-widest text-[9px] sm:text-[10px] text-white/50">
+                INSTACAP 4K
+              </span>
+            </div>
+            <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[#ff4d00] rounded-full transition-all duration-300"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
           </div>
         </div>
-        <div className={s.progress}><i /></div>
       </div>
     </div>
   )

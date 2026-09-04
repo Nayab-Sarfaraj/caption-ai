@@ -28,7 +28,7 @@ const bricolage = Bricolage_Grotesque({
 const bangers = Bangers({ variable: '--font-bangers', weight: '400', subsets: ['latin'] })
 const anton = Anton({ variable: '--font-anton', weight: '400', subsets: ['latin'] })
 const fredoka = Fredoka({ variable: '--font-fredoka', weight: '700', subsets: ['latin'] })
-const montserrat = Montserrat({ variable: '--font-montserrat', weight: '900', subsets: ['latin'] })
+const montserrat = Montserrat({ variable: '--font-montserrat', weight: ['400', '600', '700', '800', '900'], subsets: ['latin'] })
 const roboto = Roboto({ variable: '--font-roboto', weight: '700', subsets: ['latin'] })
 const caveat = Caveat({ variable: '--font-caveat', weight: '700', subsets: ['latin'] })
 
