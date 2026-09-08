@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
+import { ArrowRight, Sparkles } from "lucide-react";
 import {
   CaptionStylePreview,
   STYLE_PREVIEW_META,
@@ -270,13 +271,11 @@ export default async function RootPage() {
                 See {STYLE_IDS.length} viral styles
               </a>
             </div>
-            <div className={s.microtrust}>
-              <span className={s.stars}>⚡</span>
-              <span>Fast AI Transcription • 🎯 Max Retention Styles • 🚀 Unlimited Exports</span>
+
+            {/* Right Column: Scaled 3D Multi-Layered Reel Showcase */}
+            <div className="lg:col-span-6 relative flex items-center justify-center">
+              <HeroCaptionDemo />
             </div>
-          </div>
-          <div className={s.stageCol}>
-            <HeroCaptionDemo />
           </div>
         </div>
       </section>

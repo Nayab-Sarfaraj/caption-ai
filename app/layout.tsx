@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Bricolage_Grotesque, Bangers, Anton, Fredoka, Montse
 import { ClerkProvider } from '@clerk/nextjs'
 import { clerkAppearance } from '@/src/lib/clerk-appearance'
 import { Providers } from '@/components/providers'
+import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 const geistSans = Geist({
@@ -28,7 +29,7 @@ const bricolage = Bricolage_Grotesque({
 const bangers = Bangers({ variable: '--font-bangers', weight: '400', subsets: ['latin'] })
 const anton = Anton({ variable: '--font-anton', weight: '400', subsets: ['latin'] })
 const fredoka = Fredoka({ variable: '--font-fredoka', weight: '700', subsets: ['latin'] })
-const montserrat = Montserrat({ variable: '--font-montserrat', weight: '900', subsets: ['latin'] })
+const montserrat = Montserrat({ variable: '--font-montserrat', weight: ['400', '600', '700', '800', '900'], subsets: ['latin'] })
 const roboto = Roboto({ variable: '--font-roboto', weight: '700', subsets: ['latin'] })
 const caveat = Caveat({ variable: '--font-caveat', weight: '700', subsets: ['latin'] })
 
@@ -96,8 +97,9 @@ export default function RootLayout({
     <ClerkProvider appearance={clerkAppearance}>
       <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} ${PREVIEW_FONT_VARS} h-full antialiased dark scroll-smooth`}>
         <body className="min-h-full flex flex-col">
-            <Providers>{children}</Providers>
-          </body>
+          <Providers>{children}</Providers>
+          <Analytics />
+        </body>
       </html>
     </ClerkProvider>
   )
