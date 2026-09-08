@@ -39,8 +39,8 @@ export async function findJobsByUserId(
   await connectDB()
   const skip = (page - 1) * pageSize
   const [jobs, total] = await Promise.all([
-    Job.find({ userId }).sort({ createdAt: -1 }).skip(skip).limit(pageSize),
-    Job.countDocuments({ userId }),
+    Job.find({ userId, status: { $ne: 'pending' } }).sort({ createdAt: -1 }).skip(skip).limit(pageSize),
+    Job.countDocuments({ userId, status: { $ne: 'pending' } }),
   ])
   return { jobs, total, page, pageSize }
 }
@@ -49,7 +49,30 @@ export async function countTodayUploads(userId: string): Promise<number> {
   await connectDB()
   const startOfToday = new Date()
   startOfToday.setHours(0, 0, 0, 0)
-  return Job.countDocuments({ userId, createdAt: { $gte: startOfToday } })
+  // Only count uploads that were actually confirmed and processed,
+  // not abandoned or failed upload attempts (which stay in 'pending' or 'failed').
+  return Job.countDocuments({
+    userId,
+    status: { $in: ['processing', 'transcribing', 'transcript_ready', 'rendering', 'done'] },
+    createdAt: { $gte: startOfToday },
+  })
+}
+
+export async function deletePendingJob(id: string, userId: string): Promise<boolean> {
+  await connectDB()
+  const res = await Job.deleteOne({ _id: id, userId, status: 'pending' })
+  return res.deletedCount > 0
+}
+
+export async function cleanupStalePendingJobs(userId: string): Promise<void> {
+  await connectDB()
+  // Clean up pending jobs older than 30 minutes that were never confirmed
+  const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000)
+  await Job.deleteMany({
+    userId,
+    status: 'pending',
+    createdAt: { $lt: thirtyMinutesAgo },
+  })
 }
 
 // Free-tier gate (3 renders/month) — counts jobs that actually reached a
@@ -194,7 +217,7 @@ export async function getUsageStats(userId: string): Promise<UsageStats> {
 export async function getTotalStorageBytes(userId: string): Promise<number> {
   await connectDB()
   const [row] = await Job.aggregate<{ totalBytes: number }>([
-    { $match: { userId } },
+    { $match: { userId, status: { $ne: 'pending' } } },
     { $group: { _id: null, totalBytes: { $sum: '$fileSize' } } },
   ])
   return row?.totalBytes ?? 0

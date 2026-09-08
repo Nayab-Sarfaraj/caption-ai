@@ -2,7 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { uploadRequestSchema, captionUploadSchema, jobConfirmSchema, batchUploadRequestSchema } from '@/src/helpers/validators'
 import { createUploadJob, createBatchUploadJobs } from '@/src/services/upload.service'
-import { findJobById, updateJobStatus, updateJobTranscript, updateJobDimensions } from '@/src/repositories/job.repository'
+import { findJobById, updateJobStatus, updateJobTranscript, updateJobDimensions, deletePendingJob } from '@/src/repositories/job.repository'
 import { parseCaptionFile } from '@/src/helpers/srt-parser'
 import { connectDB } from '@/src/lib/mongo'
 import { getRenderQueue } from '@/src/lib/queue'
@@ -142,4 +142,16 @@ export async function handleConfirmUpload(req: NextRequest): Promise<NextRespons
   }
 
   return NextResponse.json({ jobId, status: 'processing' })
+}
+
+export async function handleDeleteUpload(req: NextRequest): Promise<NextResponse> {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { searchParams } = new URL(req.url)
+  const jobId = searchParams.get('jobId')
+  if (!jobId) return NextResponse.json({ error: 'jobId is required' }, { status: 400 })
+
+  await deletePendingJob(jobId, userId)
+  return NextResponse.json({ success: true })
 }
