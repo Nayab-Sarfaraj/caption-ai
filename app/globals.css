@@ -219,6 +219,40 @@ body {
   transform: scale(1.12) translateY(-2px);
 }
 
+/* Infinite Marquee Rail */
+@keyframes marquee-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 85s linear infinite;
+  will-change: transform;
+}
+
+.marquee-rail-container:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+.fade-mask-edges {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 6%,
+    black 94%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 6%,
+    black 94%,
+    transparent 100%
+  );
+}
+
 /* Global reduced-motion safety net for the whole app. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
