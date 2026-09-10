@@ -1,5 +1,5 @@
 import React from 'react'
-import { AbsoluteFill, useVideoConfig, useCurrentFrame, interpolate } from 'remotion'
+import { AbsoluteFill, useVideoConfig, useCurrentFrame, interpolate, Audio, staticFile } from 'remotion'
 import { WordByWord } from './WordByWord'
 import { Karaoke } from './Karaoke'
 import { Fade } from './Fade'
@@ -53,12 +53,12 @@ export interface CaptionRootProps {
   newsCategory?: string
 }
 
-// Prominent, highly visible top-right watermark pill badge matching user mockup
+// Prominent 2-line top-right watermark badge
 const Watermark: React.FC = () => {
   const { width, height } = useVideoConfig()
   const isPortrait = height > width
-  const fontSize = Math.round(isPortrait ? width / 34 : height / 32)
-  const dotSize = Math.max(6, Math.round(fontSize * 0.44))
+  const primaryFontSize = Math.round(isPortrait ? width / 30 : height / 28)
+  const secondaryFontSize = Math.round(primaryFontSize * 0.62)
 
   return (
     <AbsoluteFill style={{ pointerEvents: 'none', zIndex: 998 }}>
@@ -67,36 +67,44 @@ const Watermark: React.FC = () => {
           position: 'absolute',
           top: '3.5%',
           right: '3.5%',
-          fontSize,
           fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
-          fontWeight: 700,
           color: '#FFFFFF',
-          backgroundColor: 'rgba(8, 8, 8, 0.88)',
-          padding: `${Math.round(fontSize * 0.36)}px ${Math.round(fontSize * 0.82)}px`,
-          borderRadius: 9999,
+          backgroundColor: 'rgba(8, 8, 8, 0.85)',
+          padding: `${Math.round(primaryFontSize * 0.32)}px ${Math.round(primaryFontSize * 0.75)}px`,
+          borderRadius: Math.round(primaryFontSize * 0.45),
           backdropFilter: 'blur(8px)',
           boxShadow: '0 4px 16px rgba(0, 0, 0, 0.55)',
-          textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)',
-          letterSpacing: '-0.01em',
+          textShadow: '0 1px 3px rgba(0, 0, 0, 0.8)',
           display: 'flex',
-          alignItems: 'center',
-          gap: `${Math.round(fontSize * 0.45)}px`,
-          lineHeight: 1,
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          textAlign: 'right',
+          gap: Math.round(primaryFontSize * 0.12),
+          lineHeight: 1.1,
         }}
       >
-        {/* Glowing orange/red-orange indicator dot */}
         <span
           style={{
-            width: dotSize,
-            height: dotSize,
-            borderRadius: '50%',
-            backgroundColor: '#FF4B26',
-            boxShadow: '0 0 8px rgba(255, 75, 38, 0.9), 0 0 16px rgba(255, 75, 38, 0.5)',
-            display: 'inline-block',
-            flexShrink: 0,
+            fontSize: secondaryFontSize,
+            fontWeight: 500,
+            color: 'rgba(255, 255, 255, 0.7)',
+            letterSpacing: '0.02em',
+            textAlign: 'right',
           }}
-        />
-        <span>Made with getinstacap.com</span>
+        >
+          Made with
+        </span>
+        <span
+          style={{
+            fontSize: primaryFontSize,
+            fontWeight: 800,
+            color: '#FFFFFF',
+            letterSpacing: '-0.02em',
+            textAlign: 'right',
+          }}
+        >
+          getinstacap.com
+        </span>
       </div>
     </AbsoluteFill>
   )
@@ -124,6 +132,7 @@ const OutroScreen: React.FC = () => {
   const titleSize = Math.round(baseScale * 0.078)
   const labelSize = Math.round(titleSize * 0.35)
   const dotSize = Math.max(10, Math.round(titleSize * 0.22))
+  const taglineSize = Math.round(titleSize * 0.38)
 
   return (
     <AbsoluteFill
@@ -182,6 +191,21 @@ const OutroScreen: React.FC = () => {
           <span style={{ color: '#FF4B26' }}>Insta</span>
           <span style={{ color: '#FFFFFF' }}>cap.com</span>
         </div>
+      </div>
+
+      {/* Marketing tagline */}
+      <div
+        style={{
+          marginTop: Math.round(titleSize * 0.55),
+          fontSize: taglineSize,
+          fontWeight: 600,
+          letterSpacing: '0.04em',
+          color: 'rgba(255, 255, 255, 0.55)',
+          textAlign: 'center',
+        }}
+      >
+        Viral captions.{' '}
+        <span style={{ color: '#FF4B26', fontWeight: 700 }}>In seconds.</span>
       </div>
     </AbsoluteFill>
   )
