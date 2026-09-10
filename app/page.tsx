@@ -14,6 +14,12 @@ import { PRICING_TIERS } from "@/src/helpers/pricing-tiers";
 import s from "./page.module.css";
 
 const STYLE_LABELS: Record<CompositionId, string> = {
+  WordHighlight: "Word Highlight",
+  KaraokeFill: "Karaoke Fill",
+  FocusCard: "Focus Card",
+  ComicStrip: "Comic Strip",
+  SoftCandy: "Soft Candy",
+  RetroScript: "Retro Script",
   WordByWord: "Word by Word",
   Karaoke: "Karaoke",
   Fade: "Fade",
@@ -43,7 +49,9 @@ const STYLE_LABELS: Record<CompositionId, string> = {
   NewsBar: "News Bar",
 };
 
-const STYLE_IDS = Object.keys(STYLE_PREVIEW_META) as CompositionId[];
+const STYLE_IDS = (Object.keys(STYLE_PREVIEW_META) as CompositionId[]).filter(
+  (id) => id !== "KaraokeFill",
+);
 
 // dot color per style — same source the previews render from
 const chipColor = (id: CompositionId) =>
@@ -105,7 +113,11 @@ const COMPARE: {
   us: boolean;
   them: [boolean, boolean, boolean];
 }[] = [
-  { feature: "No credit system or export caps", us: true, them: [false, false, false] },
+  {
+    feature: "No credit system or export caps",
+    us: true,
+    them: [false, false, false],
+  },
   {
     feature: "Viral high-retention caption styles",
     us: true,
@@ -136,7 +148,7 @@ const COMPARE: {
 const FAQS = [
   {
     q: "How does Instacap increase video retention?",
-    a: "85%+ of social video is watched muted. Instacap provides 27+ high-impact, word-by-word animated caption styles (Hormozi, Hype, Neon Glow, etc.) that grab viewer attention immediately and boost watch time.",
+    a: "85%+ of social video is watched muted. Instacap provides 33 high-impact, word-by-word animated caption styles (Hormozi, Hype, Neon Glow, etc.) that grab viewer attention immediately and boost watch time.",
   },
   {
     q: "How fast is the transcription and rendering?",
@@ -202,7 +214,7 @@ const JSON_LD = {
   applicationCategory: "MultimediaApplication",
   operatingSystem: "Web",
   description:
-    "High-retention animated captions for viral videos in seconds. Fast AI transcription, 27+ creator caption styles, studio 4K exports, and flat pricing with no credits.",
+    "High-retention animated captions for viral videos in seconds. Fast AI transcription, 33 creator caption styles, studio 4K exports, and flat pricing with no credits.",
   offers: [
     { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD" },
     { "@type": "Offer", name: "Weekly", price: "6.99", priceCurrency: "USD" },
@@ -250,7 +262,6 @@ export default async function RootPage() {
         </div>
       </header>
 
-      {/* Hero */}
       <section className="relative w-full pt-12 sm:pt-16 lg:pt-20 pb-16 sm:pb-20 lg:pb-24 overflow-hidden border-b border-white/[0.06]">
         {/* Ambient Warm & Obsidian Ambient Glows */}
         <div
@@ -338,7 +349,8 @@ export default async function RootPage() {
                 <b>{STYLE_IDS.length}+</b>
               </div>
               <div className={s.statL}>
-                Viral caption styles — Hormozi, Hype, Neon Glow & more for max retention
+                Viral caption styles — Hormozi, Hype, Neon Glow & more for max
+                retention
               </div>
             </div>
             <div className={s.stat}>
@@ -356,9 +368,7 @@ export default async function RootPage() {
               </div>
             </div>
             <div className={s.stat}>
-              <div className={s.statN}>
-                0
-              </div>
+              <div className={s.statN}>0</div>
               <div className={s.statL}>
                 Credit limits. Unlimited renders on one flat price
               </div>
@@ -374,8 +384,9 @@ export default async function RootPage() {
             <span className={s.eyebrow}>Viral Caption Styles</span>
             <h2>Designed to stop the scroll and boost watch time.</h2>
             <p>
-              Over 85% of social video is watched muted. Choose from 27+ high-converting
-              animated styles tuned specifically for Reels, Shorts, and TikTok.
+              Over 85% of social video is watched muted. Choose from 33
+              high-converting animated styles tuned specifically for Reels,
+              Shorts, and TikTok.
             </p>
           </div>
           <div className={s.gallery}>
@@ -396,23 +407,18 @@ export default async function RootPage() {
       <section id="why" className={`${s.blk} ${s.alt}`}>
         <div className={s.wrap}>
           <div className={s.secHead}>
-            <span className={s.eyebrow}>
-              Why creators choose Instacap
-            </span>
-            <h2>
-              Built for speed, engagement, and effortless video creation.
-            </h2>
+            <span className={s.eyebrow}>Why creators choose Instacap</span>
+            <h2>Built for speed, engagement, and effortless video creation.</h2>
           </div>
           <div className={s.bento}>
             <div className={`${s.cell} ${s.big}`}>
               <div>
-                <h3>
-                  Engineered for short-form virality & retention.
-                </h3>
+                <h3>Engineered for short-form virality & retention.</h3>
                 <p>
-                  Static captions get scrolled past. Instacap&rsquo;s word-by-word kinetic
-                  animations grab viewer attention in the first 3 seconds, keeping your
-                  audience hooked to the end of every video.
+                  Static captions get scrolled past. Instacap&rsquo;s
+                  word-by-word kinetic animations grab viewer attention in the
+                  first 3 seconds, keeping your audience hooked to the end of
+                  every video.
                 </p>
               </div>
               <div className={s.compare}>
@@ -465,8 +471,8 @@ export default async function RootPage() {
               </div>
               <h3>Lightning Fast Speed</h3>
               <p>
-                From raw video to publish-ready export in under a minute. Powered by
-                Deepgram Nova-2 AI transcription.
+                From raw video to publish-ready export in under a minute.
+                Powered by Deepgram Nova-2 AI transcription.
               </p>
             </div>
             <div className={s.cell}>
@@ -482,7 +488,8 @@ export default async function RootPage() {
               </div>
               <h3>Flat Uncapped Pricing</h3>
               <p>
-                One flat price. Batch as many Reels and Shorts as you want without calculating credits.
+                One flat price. Batch as many Reels and Shorts as you want
+                without calculating credits.
               </p>
             </div>
             <div className={s.cell}>
@@ -498,7 +505,8 @@ export default async function RootPage() {
               </div>
               <h3>Bring your own transcript</h3>
               <p>
-                Auto-transcribe word-by-word, or drop an SRT/VTT file and jump straight to styling.
+                Auto-transcribe word-by-word, or drop an SRT/VTT file and jump
+                straight to styling.
               </p>
             </div>
           </div>

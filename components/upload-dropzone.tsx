@@ -88,10 +88,24 @@ export function UploadDropzone({
         }),
       });
       if (!presignRes.ok) {
-        const err = await presignRes.json();
-        throw new Error(err.error ?? "Failed to get upload URL");
+        let errMsg = "Failed to get upload URL";
+        try {
+          const err = await presignRes.json();
+          errMsg = err.error ?? errMsg;
+        } catch {
+          if (presignRes.status === 401) errMsg = "You must be signed in to upload. Please refresh or sign in.";
+          else if (presignRes.status === 404) errMsg = "Upload endpoint not found.";
+          else errMsg = `Upload request failed (${presignRes.status})`;
+        }
+        throw new Error(errMsg);
       }
-      const { uploadUrl, jobId } = await presignRes.json();
+      let presignData: { uploadUrl: string; jobId: string };
+      try {
+        presignData = await presignRes.json();
+      } catch {
+        throw new Error("Invalid response from upload server");
+      }
+      const { uploadUrl, jobId } = presignData;
 
       setStep("uploading");
       setUploadProgress(0);
@@ -108,8 +122,10 @@ export function UploadDropzone({
             filename: captionFile.name,
           }),
         });
-        if (!res.ok)
-          throw new Error((await res.json()).error ?? "Caption upload failed");
+        if (!res.ok) {
+          const errText = await res.text().catch(() => "");
+          throw new Error(errText || "Caption upload failed");
+        }
       }
 
       setStep("confirming");
@@ -122,7 +138,16 @@ export function UploadDropzone({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jobId, compositionId: style, ...dims }),
       });
-      if (!confirmRes.ok) throw new Error("Failed to confirm upload");
+      if (!confirmRes.ok) {
+        let errMsg = "Failed to confirm upload";
+        try {
+          const err = await confirmRes.json();
+          errMsg = err.error ?? errMsg;
+        } catch {
+          errMsg = `Failed to confirm upload (${confirmRes.status})`;
+        }
+        throw new Error(errMsg);
+      }
 
       setStep("done");
       return { jobId: jobId as string, isBatch: false as const };
@@ -155,12 +180,24 @@ export function UploadDropzone({
         }),
       });
       if (!presignRes.ok) {
-        const err = await presignRes.json();
-        throw new Error(err.error ?? "Failed to get upload URLs");
+        let errMsg = "Failed to get upload URLs";
+        try {
+          const err = await presignRes.json();
+          errMsg = err.error ?? errMsg;
+        } catch {
+          if (presignRes.status === 401) errMsg = "You must be signed in to upload. Please refresh or sign in.";
+          else if (presignRes.status === 404) errMsg = "Upload endpoint not found.";
+          else errMsg = `Upload request failed (${presignRes.status})`;
+        }
+        throw new Error(errMsg);
       }
-      const { uploads } = (await presignRes.json()) as {
-        uploads: { jobId: string; uploadUrl: string; key: string }[];
-      };
+      let batchData: { uploads: { jobId: string; uploadUrl: string; key: string }[] };
+      try {
+        batchData = await presignRes.json();
+      } catch {
+        throw new Error("Invalid response from upload server");
+      }
+      const { uploads } = batchData;
 
       setStep("uploading");
       const perFileProgress = new Array(videoFiles.length).fill(0);

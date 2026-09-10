@@ -1,9 +1,11 @@
+import type { CompositionId } from '@/remotion/compositions/CaptionRoot'
+
 export interface RenderJobPayload {
   jobId: string
   userId: string
   videoKey: string
   transcriptKey?: string
-  compositionId: 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring' | 'Hype' | 'Hormozi' | 'Minimal' | 'BoxHighlight' | 'Comic' | 'Pill' | 'Script' | 'SingleWord' | 'Typewriter' | 'NeonGlow' | 'CaptionBar' | 'Gradient' | 'Highlighter' | 'Underline' | 'Glide' | 'Outline' | 'Meme' | 'Pulse' | 'Sticker' | 'Glitch' | 'Wave' | 'Handwritten' | 'NewsBar'
+  compositionId: CompositionId
   fps: number
   outputFormat: 'mp4'
   phase: 'transcribe' | 'render'

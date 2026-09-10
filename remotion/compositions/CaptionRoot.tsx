@@ -1,5 +1,5 @@
 import React from 'react'
-import { AbsoluteFill, useVideoConfig } from 'remotion'
+import { AbsoluteFill, useVideoConfig, useCurrentFrame, interpolate, Audio, staticFile } from 'remotion'
 import { WordByWord } from './WordByWord'
 import { Karaoke } from './Karaoke'
 import { Fade } from './Fade'
@@ -27,9 +27,15 @@ import { Glitch } from './Glitch'
 import { Wave } from './Wave'
 import { Handwritten } from './Handwritten'
 import { NewsBar } from './NewsBar'
+import { WordHighlight } from './WordHighlight'
+import { KaraokeFill } from './KaraokeFill'
+import { FocusCard } from './FocusCard'
+import { ComicStrip } from './ComicStrip'
+import { SoftCandy } from './SoftCandy'
+import { RetroScript } from './RetroScript'
 import type { Transcript } from '../types'
 
-export type CompositionId = 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring' | 'Hype' | 'Hormozi' | 'Minimal' | 'BoxHighlight' | 'Comic' | 'Pill' | 'Script' | 'SingleWord' | 'Typewriter' | 'NeonGlow' | 'CaptionBar' | 'Gradient' | 'Highlighter' | 'Underline' | 'Glide' | 'Outline' | 'Meme' | 'Pulse' | 'Sticker' | 'Glitch' | 'Wave' | 'Handwritten' | 'NewsBar'
+export type CompositionId = 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring' | 'Hype' | 'Hormozi' | 'Minimal' | 'BoxHighlight' | 'Comic' | 'Pill' | 'Script' | 'SingleWord' | 'Typewriter' | 'NeonGlow' | 'CaptionBar' | 'Gradient' | 'Highlighter' | 'Underline' | 'Glide' | 'Outline' | 'Meme' | 'Pulse' | 'Sticker' | 'Glitch' | 'Wave' | 'Handwritten' | 'NewsBar' | 'WordHighlight' | 'KaraokeFill' | 'FocusCard' | 'ComicStrip' | 'SoftCandy' | 'RetroScript'
 
 export interface CaptionRootProps {
   style: CompositionId
@@ -47,26 +53,159 @@ export interface CaptionRootProps {
   newsCategory?: string
 }
 
-// One overlay here covers all 11 styles — cheaper and less drift-prone than
-// adding a watermark prop to every composition file individually.
+// Prominent 2-line top-right watermark badge
 const Watermark: React.FC = () => {
-  const { width } = useVideoConfig()
+  const { width, height } = useVideoConfig()
+  const isPortrait = height > width
+  const primaryFontSize = Math.round(isPortrait ? width / 30 : height / 28)
+  const secondaryFontSize = Math.round(primaryFontSize * 0.62)
+
   return (
-    <AbsoluteFill style={{ pointerEvents: 'none' }}>
+    <AbsoluteFill style={{ pointerEvents: 'none', zIndex: 998 }}>
       <div
         style={{
           position: 'absolute',
-          bottom: '3%',
-          right: '3%',
-          fontSize: Math.round(width / 42),
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          fontWeight: 700,
-          color: 'rgba(255,255,255,0.55)',
-          textShadow: '0 1px 3px rgba(0,0,0,0.65)',
-          letterSpacing: '0.01em',
+          top: '3.5%',
+          right: '3.5%',
+          fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+          color: '#FFFFFF',
+          backgroundColor: 'rgba(8, 8, 8, 0.85)',
+          padding: `${Math.round(primaryFontSize * 0.32)}px ${Math.round(primaryFontSize * 0.75)}px`,
+          borderRadius: Math.round(primaryFontSize * 0.45),
+          backdropFilter: 'blur(8px)',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.55)',
+          textShadow: '0 1px 3px rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          textAlign: 'right',
+          gap: Math.round(primaryFontSize * 0.12),
+          lineHeight: 1.1,
         }}
       >
-        Made with Instacap
+        <span
+          style={{
+            fontSize: secondaryFontSize,
+            fontWeight: 500,
+            color: 'rgba(255, 255, 255, 0.7)',
+            letterSpacing: '0.02em',
+            textAlign: 'right',
+          }}
+        >
+          Made with
+        </span>
+        <span
+          style={{
+            fontSize: primaryFontSize,
+            fontWeight: 800,
+            color: '#FFFFFF',
+            letterSpacing: '-0.02em',
+            textAlign: 'right',
+          }}
+        >
+          getinstacap.com
+        </span>
+      </div>
+    </AbsoluteFill>
+  )
+}
+
+// Minimalist, high-end studio end screen
+const OutroScreen: React.FC = () => {
+  const frame = useCurrentFrame()
+  const { durationInFrames, fps, width, height } = useVideoConfig()
+
+  const outroDurationFrames = Math.round(fps * 1.5)
+  const startFrame = durationInFrames - outroDurationFrames
+
+  if (frame < startFrame) return null
+
+  const opacity = interpolate(
+    frame,
+    [startFrame, startFrame + Math.round(fps * 0.35)],
+    [0, 1],
+    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
+  )
+
+  const isPortrait = height > width
+  const baseScale = isPortrait ? width : height
+  const titleSize = Math.round(baseScale * 0.078)
+  const labelSize = Math.round(titleSize * 0.35)
+  const dotSize = Math.max(10, Math.round(titleSize * 0.22))
+  const taglineSize = Math.round(titleSize * 0.38)
+
+  return (
+    <AbsoluteFill
+      style={{
+        backgroundColor: '#000000',
+        opacity,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 999,
+        pointerEvents: 'none',
+        fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+      }}
+    >
+      {/* Refined eyebrow label */}
+      <div
+        style={{
+          fontSize: labelSize,
+          fontWeight: 600,
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          color: 'rgba(255, 255, 255, 0.45)',
+          marginBottom: Math.round(titleSize * 0.3),
+        }}
+      >
+        Made with
+      </div>
+
+      {/* Clean, beautifully balanced website domain with glowing dot */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: Math.round(titleSize * 0.26),
+          fontSize: titleSize,
+          fontWeight: 800,
+          letterSpacing: '-0.025em',
+          lineHeight: 1,
+        }}
+      >
+        <span
+          style={{
+            width: dotSize,
+            height: dotSize,
+            borderRadius: '50%',
+            backgroundColor: '#FF4B26',
+            boxShadow: '0 0 10px rgba(255, 75, 38, 0.95), 0 0 20px rgba(255, 75, 38, 0.5)',
+            display: 'inline-block',
+            flexShrink: 0,
+          }}
+        />
+        <div>
+          <span style={{ color: '#FFFFFF' }}>get</span>
+          <span style={{ color: '#FF4B26' }}>Insta</span>
+          <span style={{ color: '#FFFFFF' }}>cap.com</span>
+        </div>
+      </div>
+
+      {/* Marketing tagline */}
+      <div
+        style={{
+          marginTop: Math.round(titleSize * 0.55),
+          fontSize: taglineSize,
+          fontWeight: 600,
+          letterSpacing: '0.04em',
+          color: 'rgba(255, 255, 255, 0.55)',
+          textAlign: 'center',
+        }}
+      >
+        Viral captions.{' '}
+        <span style={{ color: '#FF4B26', fontWeight: 700 }}>In seconds.</span>
       </div>
     </AbsoluteFill>
   )
@@ -102,12 +241,24 @@ export const CaptionRoot: React.FC<CaptionRootProps> = ({ style, transcript, vid
   else if (style === 'Wave')         composition = <Wave         transcript={transcript} videoSrc={videoSrc} {...shared} />
   else if (style === 'Handwritten')  composition = <Handwritten  transcript={transcript} videoSrc={videoSrc} {...shared} />
   else if (style === 'NewsBar')      composition = <NewsBar      transcript={transcript} videoSrc={videoSrc} {...shared} newsHeadline={newsHeadline} newsCategory={newsCategory} />
+  else if (style === 'WordHighlight') composition = <WordHighlight transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'KaraokeFill')   composition = <KaraokeFill transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'FocusCard')     composition = <FocusCard transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'ComicStrip')    composition = <ComicStrip transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'SoftCandy')     composition = <SoftCandy transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'RetroScript')   composition = <RetroScript transcript={transcript} videoSrc={videoSrc} {...shared} />
   else composition = <WordByWord transcript={transcript} videoSrc={videoSrc} {...shared} />
 
   return (
     <>
       {composition}
-      {watermark && <Watermark />}
+      {watermark && (
+        <>
+          <Watermark />
+          <OutroScreen />
+        </>
+      )}
     </>
   )
 }
+

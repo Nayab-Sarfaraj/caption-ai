@@ -1,70 +1,275 @@
-import type { CompositionId } from '@/remotion/compositions/CaptionRoot'
+import type { CompositionId } from "@/remotion/compositions/CaptionRoot";
 
-export const STYLES: { id: CompositionId; label: string; desc: string; category: string }[] = [
-  { id: 'SingleWord', label: 'Single Word', desc: 'One giant word, punch-scaled',       category: 'Trending' },
-  { id: 'NeonGlow',  label: 'Neon Glow',    desc: 'Active word lights up, no box',       category: 'Trending' },
-  { id: 'Gradient',  label: 'Gradient',     desc: 'Gradient-fill text, animated sweep',  category: 'Trending' },
-  { id: 'Highlighter', label: 'Highlighter', desc: 'Marker swipe behind active word',    category: 'Highlight' },
-  { id: 'Underline', label: 'Underline',    desc: 'Underline sweeps under active word',  category: 'Highlight' },
-  { id: 'Glide',     label: 'Glide',        desc: 'Words slide in from the side',        category: 'Highlight' },
-  { id: 'Outline',   label: 'Outline',      desc: 'Hollow text, active word fills in',   category: 'Clean' },
-  { id: 'Meme',      label: 'Meme',         desc: 'White Impact all-caps, top of frame', category: 'Editorial' },
-  { id: 'Pulse',     label: 'Pulse',        desc: 'Active word pulses to the rhythm',     category: 'Highlight' },
-  { id: 'Sticker',   label: 'Sticker',      desc: 'Active word pops on a fun label',      category: 'Trending' },
-  { id: 'Glitch',    label: 'Glitch',       desc: 'RGB split and jitter effect',          category: 'Hype' },
-  { id: 'Wave',      label: 'Wave',         desc: 'Letters bob in a playful wave',        category: 'Trending' },
-  { id: 'Handwritten', label: 'Handwritten', desc: 'Marker-style animated annotation',     category: 'Editorial' },
-  { id: 'NewsBar',   label: 'News Bar',     desc: 'Broadcast lower-third headline',       category: 'Editorial' },
-  { id: 'WordByWord', label: 'Word by Word', desc: 'Active word scales up',            category: 'Highlight' },
-  { id: 'Karaoke',   label: 'Karaoke',      desc: 'Words shift color',                 category: 'Highlight' },
-  { id: 'Spring',    label: 'Spring',        desc: 'Words spring from below',           category: 'Highlight' },
-  { id: 'BoxHighlight', label: 'Box Highlight', desc: 'Captions.ai-style keyword box pop', category: 'Highlight' },
-  { id: 'Hype',      label: 'Hype',         desc: 'MrBeast-style bounce + glow',        category: 'Hype' },
-  { id: 'Hormozi',   label: 'Hormozi',      desc: 'Yellow-stroke pop-in, Anton font',   category: 'Hype' },
-  { id: 'Comic',     label: 'Comic',         desc: 'Cartoon font, keyword color swap',  category: 'Hype' },
-  { id: 'Minimal',   label: 'Minimal',      desc: 'Restrained, single-color, no hype',  category: 'Clean' },
-  { id: 'Pill',      label: 'Pill',          desc: 'Clean dark pill badge, no hype',     category: 'Clean' },
-  { id: 'CaptionBar', label: 'Caption Bar', desc: 'Solid bar behind the line, podcast', category: 'Clean' },
-  { id: 'Fade',      label: 'Fade',          desc: 'Line fades per segment',             category: 'Clean' },
-  { id: 'Typewriter', label: 'Typewriter',  desc: 'Types in with a blinking cursor',     category: 'Editorial' },
-  { id: 'Script',    label: 'Script',        desc: 'Gold italic script accent word',     category: 'Editorial' },
-]
+export const STYLES: {
+  id: CompositionId;
+  label: string;
+  desc: string;
+  category: string;
+}[] = [
+  {
+    id: "WordHighlight",
+    label: "Word Highlight",
+    desc: "Crisp outlined active-word emphasis",
+    category: "Highlight",
+  },
+  {
+    id: "FocusCard",
+    label: "Focus Card",
+    desc: "Calm phrase card for clear explainers",
+    category: "Clean",
+  },
+  {
+    id: "ComicStrip",
+    label: "Comic Strip",
+    desc: "Stacked comic lettering with sticker shadow",
+    category: "Hype",
+  },
+  {
+    id: "SoftCandy",
+    label: "Soft Candy",
+    desc: "Pastel editorial caption strips",
+    category: "Editorial",
+  },
+  {
+    id: "RetroScript",
+    label: "Retro Script",
+    desc: "Layered retro sign-painting script",
+    category: "Editorial",
+  },
+  {
+    id: "SingleWord",
+    label: "Single Word",
+    desc: "One giant word, punch-scaled",
+    category: "Trending",
+  },
+  {
+    id: "NeonGlow",
+    label: "Neon Glow",
+    desc: "Active word lights up, no box",
+    category: "Trending",
+  },
+  {
+    id: "Gradient",
+    label: "Gradient",
+    desc: "Gradient-fill text, animated sweep",
+    category: "Trending",
+  },
+  {
+    id: "Highlighter",
+    label: "Highlighter",
+    desc: "Marker swipe behind active word",
+    category: "Highlight",
+  },
+  {
+    id: "Underline",
+    label: "Underline",
+    desc: "Underline sweeps under active word",
+    category: "Highlight",
+  },
+  {
+    id: "Glide",
+    label: "Glide",
+    desc: "Words slide in from the side",
+    category: "Highlight",
+  },
+  {
+    id: "Outline",
+    label: "Outline",
+    desc: "Hollow text, active word fills in",
+    category: "Clean",
+  },
+  {
+    id: "Meme",
+    label: "Meme",
+    desc: "White Impact all-caps, top of frame",
+    category: "Editorial",
+  },
+  {
+    id: "Pulse",
+    label: "Pulse",
+    desc: "Active word pulses to the rhythm",
+    category: "Highlight",
+  },
+  {
+    id: "Sticker",
+    label: "Sticker",
+    desc: "Active word pops on a fun label",
+    category: "Trending",
+  },
+  {
+    id: "Glitch",
+    label: "Glitch",
+    desc: "RGB split and jitter effect",
+    category: "Hype",
+  },
+  {
+    id: "Wave",
+    label: "Wave",
+    desc: "Letters bob in a playful wave",
+    category: "Trending",
+  },
+  {
+    id: "Handwritten",
+    label: "Handwritten",
+    desc: "Marker-style animated annotation",
+    category: "Editorial",
+  },
+  {
+    id: "NewsBar",
+    label: "News Bar",
+    desc: "Broadcast lower-third headline",
+    category: "Editorial",
+  },
+  {
+    id: "WordByWord",
+    label: "Word by Word",
+    desc: "Active word scales up",
+    category: "Highlight",
+  },
+  {
+    id: "Karaoke",
+    label: "Karaoke",
+    desc: "Words shift color",
+    category: "Highlight",
+  },
+  {
+    id: "Spring",
+    label: "Spring",
+    desc: "Words spring from below",
+    category: "Highlight",
+  },
+  {
+    id: "BoxHighlight",
+    label: "Box Highlight",
+    desc: "Captions.ai-style keyword box pop",
+    category: "Highlight",
+  },
+  {
+    id: "Hype",
+    label: "Hype",
+    desc: "MrBeast-style bounce + glow",
+    category: "Hype",
+  },
+  {
+    id: "Hormozi",
+    label: "Hormozi",
+    desc: "Yellow-stroke pop-in, Anton font",
+    category: "Hype",
+  },
+  {
+    id: "Comic",
+    label: "Comic",
+    desc: "Cartoon font, keyword color swap",
+    category: "Hype",
+  },
+  {
+    id: "Minimal",
+    label: "Minimal",
+    desc: "Restrained, single-color, no hype",
+    category: "Clean",
+  },
+  {
+    id: "Pill",
+    label: "Pill",
+    desc: "Clean dark pill badge, no hype",
+    category: "Clean",
+  },
+  {
+    id: "CaptionBar",
+    label: "Caption Bar",
+    desc: "Solid bar behind the line, podcast",
+    category: "Clean",
+  },
+  {
+    id: "Fade",
+    label: "Fade",
+    desc: "Line fades per segment",
+    category: "Clean",
+  },
+  {
+    id: "Typewriter",
+    label: "Typewriter",
+    desc: "Types in with a blinking cursor",
+    category: "Editorial",
+  },
+  {
+    id: "Script",
+    label: "Script",
+    desc: "Gold italic script accent word",
+    category: "Editorial",
+  },
+];
 
-export const CATEGORY_ORDER = ['Trending', 'Highlight', 'Hype', 'Clean', 'Editorial']
+export const CATEGORY_ORDER = [
+  "Trending",
+  "Highlight",
+  "Hype",
+  "Clean",
+  "Editorial",
+];
 
-export const COMPOSITION_IDS = STYLES.map((s) => s.id) as [CompositionId, ...CompositionId[]]
+export const COMPOSITION_IDS = [
+  ...STYLES.map((s) => s.id),
+  "KaraokeFill",
+] as unknown as [CompositionId, ...CompositionId[]];
 
 export const FONTS = [
-  { label: 'System',       value: 'system-ui, -apple-system, sans-serif' },
-  { label: 'Bangers',      value: 'Bangers, "Comic Sans MS", cursive' },
-  { label: 'Anton',        value: 'Anton, Impact, sans-serif' },
-  { label: 'Montserrat',   value: 'Montserrat, sans-serif' },
-  { label: 'Fredoka',      value: 'Fredoka, sans-serif' },
-  { label: 'Roboto',       value: 'Roboto, sans-serif' },
-  { label: 'Caveat',       value: 'Caveat, cursive' },
-  { label: 'Inter',        value: 'Inter, system-ui, sans-serif' },
-  { label: 'Impact',       value: 'Impact, "Arial Black", sans-serif' },
-  { label: 'Arial Black',  value: '"Arial Black", "Arial Bold", sans-serif' },
-  { label: 'Arial',        value: 'Arial, Helvetica, sans-serif' },
-  { label: 'Helvetica',    value: '"Helvetica Neue", Helvetica, Arial, sans-serif' },
-  { label: 'Verdana',      value: 'Verdana, Geneva, sans-serif' },
-  { label: 'Tahoma',       value: 'Tahoma, Geneva, sans-serif' },
-  { label: 'Trebuchet',    value: '"Trebuchet MS", sans-serif' },
-  { label: 'Franklin',     value: '"Franklin Gothic Medium", "Arial Narrow", sans-serif' },
-  { label: 'Century',      value: '"Century Gothic", "Apple Gothic", sans-serif' },
-  { label: 'Candara',      value: 'Candara, Calibri, Optima, sans-serif' },
-  { label: 'Gill Sans',    value: '"Gill Sans", "Gill Sans MT", Calibri, sans-serif' },
-  { label: 'Optima',       value: 'Optima, Segoe, "Segoe UI", sans-serif' },
-  { label: 'Georgia',      value: 'Georgia, serif' },
-  { label: 'Palatino',     value: 'Palatino, "Palatino Linotype", serif' },
-  { label: 'Times',        value: '"Times New Roman", Times, serif' },
-  { label: 'Mono',         value: '"Courier New", Courier, monospace' },
-  { label: 'Comic',        value: '"Comic Sans MS", "Chalkboard SE", cursive' },
-]
+  { label: "System", value: "system-ui, -apple-system, sans-serif" },
+  { label: "Lobster", value: "Lobster, cursive" },
+  { label: "Bangers", value: 'Bangers, "Comic Sans MS", cursive' },
+  { label: "Anton", value: "Anton, Impact, sans-serif" },
+  { label: "Montserrat", value: "Montserrat, sans-serif" },
+  { label: "Fredoka", value: "Fredoka, sans-serif" },
+  { label: "Roboto", value: "Roboto, sans-serif" },
+  { label: "Caveat", value: "Caveat, cursive" },
+  { label: "Inter", value: "Inter, system-ui, sans-serif" },
+  { label: "Impact", value: 'Impact, "Arial Black", sans-serif' },
+  { label: "Arial Black", value: '"Arial Black", "Arial Bold", sans-serif' },
+  { label: "Arial", value: "Arial, Helvetica, sans-serif" },
+  {
+    label: "Helvetica",
+    value: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+  },
+  { label: "Verdana", value: "Verdana, Geneva, sans-serif" },
+  { label: "Tahoma", value: "Tahoma, Geneva, sans-serif" },
+  { label: "Trebuchet", value: '"Trebuchet MS", sans-serif' },
+  {
+    label: "Franklin",
+    value: '"Franklin Gothic Medium", "Arial Narrow", sans-serif',
+  },
+  { label: "Century", value: '"Century Gothic", "Apple Gothic", sans-serif' },
+  { label: "Candara", value: "Candara, Calibri, Optima, sans-serif" },
+  {
+    label: "Gill Sans",
+    value: '"Gill Sans", "Gill Sans MT", Calibri, sans-serif',
+  },
+  { label: "Optima", value: 'Optima, Segoe, "Segoe UI", sans-serif' },
+  { label: "Georgia", value: "Georgia, serif" },
+  { label: "Palatino", value: 'Palatino, "Palatino Linotype", serif' },
+  { label: "Times", value: '"Times New Roman", Times, serif' },
+  { label: "Mono", value: '"Courier New", Courier, monospace' },
+  { label: "Comic", value: '"Comic Sans MS", "Chalkboard SE", cursive' },
+];
 
-export const FONTS_INITIAL = 5
+export const FONTS_INITIAL = 5;
 
-export const FONT_VALUES = FONTS.map((f) => f.value) as [string, ...string[]]
+export const FONT_VALUES = FONTS.map((f) => f.value) as [string, ...string[]];
 
-export const HIGHLIGHT_PRESETS = ['#FACC15', '#FFFFFF', '#22C55E', '#3B82F6', '#EF4444', '#EC4899', '#F97316', '#A855F7']
-export const TEXT_PRESETS      = ['#FFFFFF', '#000000', '#FACC15', '#A1A1AA', '#6EE7B7', '#93C5FD']
+export const HIGHLIGHT_PRESETS = [
+  "#FACC15",
+  "#FFFFFF",
+  "#22C55E",
+  "#3B82F6",
+  "#EF4444",
+  "#EC4899",
+  "#F97316",
+  "#A855F7",
+];
+export const TEXT_PRESETS = [
+  "#FFFFFF",
+  "#000000",
+  "#FACC15",
+  "#A1A1AA",
+  "#6EE7B7",
+  "#93C5FD",
+];
