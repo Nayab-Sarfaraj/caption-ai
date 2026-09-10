@@ -30,6 +30,7 @@ export const jobConfirmSchema = z.object({
   compositionId: compositionIdSchema.optional(),
   width: z.number().positive().int().max(7680).optional(),
   height: z.number().positive().int().max(7680).optional(),
+  duration: z.number().positive().optional(),
 })
 
 // Each field nullable (explicit clear) + optional (omit = leave untouched by $set).

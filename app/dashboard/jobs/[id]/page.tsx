@@ -61,11 +61,20 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
     outputUrl = await generatePresignedGet(job.outputKey, 3600)
   }
 
-  // Compute duration from transcript for the Player
+  // Compute duration from video duration or transcript for the Player
   const transcript = job.transcript as Transcript | null
-  const durationInFrames = transcript?.words?.length
-    ? Math.ceil(transcript.words[transcript.words.length - 1].end * FPS) + FPS
-    : FPS * 60 // 60s fallback
+  const lastWordEnd = transcript?.words?.length
+    ? transcript.words[transcript.words.length - 1].end
+    : 0
+  const fallbackSec = lastWordEnd > 0 ? lastWordEnd + 1.0 : 60
+  const baseDurationSec =
+    job.duration && Number.isFinite(job.duration) && job.duration > 0
+      ? job.duration
+      : fallbackSec
+  const baseVideoFrames = Math.ceil(baseDurationSec * FPS)
+  // Outro black screen is appended AFTER video finishes on free tier preview
+  const outroFrames = !isPaid ? Math.round(FPS * 1.5) : 0
+  const durationInFrames = baseVideoFrames + outroFrames
 
   const videoWidth = job.width ?? 1920
   const videoHeight = job.height ?? 1080

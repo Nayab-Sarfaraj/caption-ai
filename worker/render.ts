@@ -228,13 +228,35 @@ async function processRenderPhase(
     // for Remotion Studio preview only — every real render must override it to
     // the actual transcript length, or output gets hard-capped at 6 seconds
     // regardless of the source video's real duration. Use a one-second tail buffer
-    // formula already used client-side for the live preview Player
-    // (app/dashboard/jobs/[id]/page.tsx) — keeps both in sync.
+    // Probe video duration if not already stored on jobDoc
+    let videoDuration = jobDoc.duration;
+    if (!videoDuration || !Number.isFinite(videoDuration) || videoDuration <= 0) {
+      try {
+        const input = new Input({
+          source: new UrlSource(videoSrc),
+          formats: [MP4, QTFF],
+        });
+        videoDuration =
+          (await input.getDurationFromMetadata().catch(() => null)) ??
+          (await input.computeDuration().catch(() => null));
+        input.dispose();
+      } catch (err) {
+        console.warn("[worker] could not probe video duration:", err);
+      }
+    }
+
     const lastWordEnd = transcript.words?.length
       ? transcript.words[transcript.words.length - 1].end
       : 0;
-    const durationInFrames =
-      Math.ceil(lastWordEnd * renderFps) + renderFps;
+    const fallbackSec = lastWordEnd > 0 ? lastWordEnd + 1.0 : 60;
+    const baseDurationSec =
+      videoDuration && Number.isFinite(videoDuration) && videoDuration > 0
+        ? videoDuration
+        : fallbackSec;
+    const baseVideoFrames = Math.ceil(baseDurationSec * renderFps);
+    // Outro black screen is appended AFTER the video finishes for free-tier watermark renders
+    const outroFrames = watermark ? Math.round(renderFps * 1.5) : 0;
+    const durationInFrames = baseVideoFrames + outroFrames;
 
     const outputPath = path.join(tmpDir, "output.mp4");
 

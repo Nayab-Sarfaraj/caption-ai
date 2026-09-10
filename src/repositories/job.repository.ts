@@ -100,9 +100,13 @@ export async function updateJobDone(id: string, outputKey: string): Promise<IJob
   return Job.findByIdAndUpdate(id, { $set: { status: 'done', outputKey } }, { returnDocument: 'after' })
 }
 
-export async function updateJobDimensions(id: string, width: number, height: number): Promise<void> {
+export async function updateJobDimensions(id: string, width: number, height: number, duration?: number): Promise<void> {
   await connectDB()
-  await Job.findByIdAndUpdate(id, { $set: { width, height } })
+  const update: Record<string, unknown> = { width, height }
+  if (duration && Number.isFinite(duration) && duration > 0) {
+    update.duration = duration
+  }
+  await Job.findByIdAndUpdate(id, { $set: update })
 }
 
 export async function updateJobFailed(id: string, errorMessage: string): Promise<IJob | null> {
