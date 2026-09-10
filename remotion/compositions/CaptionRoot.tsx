@@ -1,5 +1,5 @@
 import React from 'react'
-import { AbsoluteFill, useVideoConfig } from 'remotion'
+import { AbsoluteFill, useVideoConfig, useCurrentFrame, interpolate } from 'remotion'
 import { WordByWord } from './WordByWord'
 import { Karaoke } from './Karaoke'
 import { Fade } from './Fade'
@@ -53,26 +53,135 @@ export interface CaptionRootProps {
   newsCategory?: string
 }
 
-// One overlay here covers all 11 styles — cheaper and less drift-prone than
-// adding a watermark prop to every composition file individually.
+// Prominent, highly visible top-right watermark pill badge matching user mockup
 const Watermark: React.FC = () => {
-  const { width } = useVideoConfig()
+  const { width, height } = useVideoConfig()
+  const isPortrait = height > width
+  const fontSize = Math.round(isPortrait ? width / 34 : height / 32)
+  const dotSize = Math.max(6, Math.round(fontSize * 0.44))
+
   return (
-    <AbsoluteFill style={{ pointerEvents: 'none' }}>
+    <AbsoluteFill style={{ pointerEvents: 'none', zIndex: 998 }}>
       <div
         style={{
           position: 'absolute',
-          bottom: '3%',
-          right: '3%',
-          fontSize: Math.round(width / 42),
-          fontFamily: 'system-ui, -apple-system, sans-serif',
+          top: '3.5%',
+          right: '3.5%',
+          fontSize,
+          fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
           fontWeight: 700,
-          color: 'rgba(255,255,255,0.55)',
-          textShadow: '0 1px 3px rgba(0,0,0,0.65)',
-          letterSpacing: '0.01em',
+          color: '#FFFFFF',
+          backgroundColor: 'rgba(8, 8, 8, 0.88)',
+          padding: `${Math.round(fontSize * 0.36)}px ${Math.round(fontSize * 0.82)}px`,
+          borderRadius: 9999,
+          backdropFilter: 'blur(8px)',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.55)',
+          textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)',
+          letterSpacing: '-0.01em',
+          display: 'flex',
+          alignItems: 'center',
+          gap: `${Math.round(fontSize * 0.45)}px`,
+          lineHeight: 1,
         }}
       >
-        Made with Instacap
+        {/* Glowing orange/red-orange indicator dot */}
+        <span
+          style={{
+            width: dotSize,
+            height: dotSize,
+            borderRadius: '50%',
+            backgroundColor: '#FF4B26',
+            boxShadow: '0 0 8px rgba(255, 75, 38, 0.9), 0 0 16px rgba(255, 75, 38, 0.5)',
+            display: 'inline-block',
+            flexShrink: 0,
+          }}
+        />
+        <span>Made with getinstacap.com</span>
+      </div>
+    </AbsoluteFill>
+  )
+}
+
+// Minimalist, high-end studio end screen
+const OutroScreen: React.FC = () => {
+  const frame = useCurrentFrame()
+  const { durationInFrames, fps, width, height } = useVideoConfig()
+
+  const outroDurationFrames = Math.round(fps * 1.5)
+  const startFrame = durationInFrames - outroDurationFrames
+
+  if (frame < startFrame) return null
+
+  const opacity = interpolate(
+    frame,
+    [startFrame, startFrame + Math.round(fps * 0.35)],
+    [0, 1],
+    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
+  )
+
+  const isPortrait = height > width
+  const baseScale = isPortrait ? width : height
+  const titleSize = Math.round(baseScale * 0.078)
+  const labelSize = Math.round(titleSize * 0.35)
+  const dotSize = Math.max(10, Math.round(titleSize * 0.22))
+
+  return (
+    <AbsoluteFill
+      style={{
+        backgroundColor: '#000000',
+        opacity,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 999,
+        pointerEvents: 'none',
+        fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+      }}
+    >
+      {/* Refined eyebrow label */}
+      <div
+        style={{
+          fontSize: labelSize,
+          fontWeight: 600,
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          color: 'rgba(255, 255, 255, 0.45)',
+          marginBottom: Math.round(titleSize * 0.3),
+        }}
+      >
+        Made with
+      </div>
+
+      {/* Clean, beautifully balanced website domain with glowing dot */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: Math.round(titleSize * 0.26),
+          fontSize: titleSize,
+          fontWeight: 800,
+          letterSpacing: '-0.025em',
+          lineHeight: 1,
+        }}
+      >
+        <span
+          style={{
+            width: dotSize,
+            height: dotSize,
+            borderRadius: '50%',
+            backgroundColor: '#FF4B26',
+            boxShadow: '0 0 10px rgba(255, 75, 38, 0.95), 0 0 20px rgba(255, 75, 38, 0.5)',
+            display: 'inline-block',
+            flexShrink: 0,
+          }}
+        />
+        <div>
+          <span style={{ color: '#FFFFFF' }}>get</span>
+          <span style={{ color: '#FF4B26' }}>Insta</span>
+          <span style={{ color: '#FFFFFF' }}>cap.com</span>
+        </div>
       </div>
     </AbsoluteFill>
   )
@@ -119,7 +228,13 @@ export const CaptionRoot: React.FC<CaptionRootProps> = ({ style, transcript, vid
   return (
     <>
       {composition}
-      {watermark && <Watermark />}
+      {watermark && (
+        <>
+          <Watermark />
+          <OutroScreen />
+        </>
+      )}
     </>
   )
 }
+
