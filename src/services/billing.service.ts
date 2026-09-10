@@ -61,9 +61,31 @@ export async function createCheckout(clerkId: string, tier: BillingTier): Promis
   return { url: checkout.url }
 }
 
+// 60-second in-memory cache to prevent repeat Polar API roundtrips (which take 1.5-3s)
+// on rapid page navigation or repeat visits to /dashboard/billing.
+interface CachedSubscriptionDetails {
+  data: {
+    currentPeriodEnd: Date
+    cancelAtPeriodEnd: boolean
+    startedAt: Date | null
+    amount: number // cents
+    currency: string
+  } | null
+  expiresAt: number
+}
+
+const subscriptionDetailsCache = new Map<string, CachedSubscriptionDetails>()
+const SUBSCRIPTION_CACHE_TTL_MS = 60 * 1000
+
+export function invalidateSubscriptionCache(clerkId: string) {
+  subscriptionDetailsCache.delete(clerkId)
+}
+
 export async function cancelSubscription(clerkId: string): Promise<void> {
   const user = await findByClerkId(clerkId)
   if (!user?.polarSubscriptionId) throw new Error('No active subscription')
+
+  invalidateSubscriptionCache(clerkId)
 
   // cancelAtPeriodEnd: true — let the user keep paid access through the cycle
   // they already paid for. Local status is NOT updated here — the
@@ -85,6 +107,8 @@ export async function handleWebhookEvent(event: PolarSubscriptionEvent): Promise
   const sub = event.data
   const clerkId = sub?.customer?.externalId
   if (!sub?.id || !sub?.status || !clerkId) return
+
+  invalidateSubscriptionCache(clerkId)
 
   const updatedUser = await syncSubscription({
     clerkId,
@@ -124,9 +148,8 @@ export async function handleWebhookEvent(event: PolarSubscriptionEvent): Promise
   }
 }
 
-// Live period/renewal info — not cached locally, Polar is the source of
-// truth for billing periods (same reasoning as PLAN-PHASE2.md's optional
-// billing-cycle-usage note: don't duplicate what Polar already tracks).
+// Live period/renewal info — cached for 60s to prevent blocking /dashboard/billing
+// on repeat visits. Polar remains the source of truth for billing periods.
 export async function getSubscriptionDetails(clerkId: string): Promise<{
   currentPeriodEnd: Date
   cancelAtPeriodEnd: boolean
@@ -134,16 +157,32 @@ export async function getSubscriptionDetails(clerkId: string): Promise<{
   amount: number // cents
   currency: string
 } | null> {
-  const user = await findByClerkId(clerkId)
-  if (!user?.polarSubscriptionId) return null
+  const now = Date.now()
+  const cached = subscriptionDetailsCache.get(clerkId)
+  if (cached && cached.expiresAt > now) {
+    return cached.data
+  }
 
-  const sub = await getPolar().subscriptions.get({ id: user.polarSubscriptionId })
-  return {
-    currentPeriodEnd: sub.currentPeriodEnd,
-    cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
-    startedAt: sub.startedAt,
-    amount: sub.amount,
-    currency: sub.currency,
+  const user = await findByClerkId(clerkId)
+  if (!user?.polarSubscriptionId) {
+    subscriptionDetailsCache.set(clerkId, { data: null, expiresAt: now + SUBSCRIPTION_CACHE_TTL_MS })
+    return null
+  }
+
+  try {
+    const sub = await getPolar().subscriptions.get({ id: user.polarSubscriptionId })
+    const result = {
+      currentPeriodEnd: sub.currentPeriodEnd,
+      cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
+      startedAt: sub.startedAt,
+      amount: sub.amount,
+      currency: sub.currency,
+    }
+    subscriptionDetailsCache.set(clerkId, { data: result, expiresAt: now + SUBSCRIPTION_CACHE_TTL_MS })
+    return result
+  } catch (err) {
+    if (cached?.data) return cached.data
+    throw err
   }
 }
 

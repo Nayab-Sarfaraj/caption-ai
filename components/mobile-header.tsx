@@ -1,14 +1,23 @@
 'use client'
 
 import { useState } from 'react'
-import { UserButton, SignOutButton } from '@clerk/nextjs'
+import dynamic from 'next/dynamic'
+import { SignOutButton } from '@clerk/nextjs'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LogOut, LifeBuoy, Menu, X, Zap } from 'lucide-react'
 import type { SubscriptionStatus } from '@/src/models/User'
-import { PaywallModal } from '@/components/paywall-modal'
-import { SupportModal } from '@/components/support-modal'
+import { LazyUserButton } from '@/components/lazy-user-button'
 import { NAV, PLAN_BADGE } from '@/src/helpers/dashboard-nav'
+
+const PaywallModal = dynamic(
+  () => import('@/components/paywall-modal').then((m) => m.PaywallModal),
+  { ssr: false }
+)
+const SupportModal = dynamic(
+  () => import('@/components/support-modal').then((m) => m.SupportModal),
+  { ssr: false }
+)
 
 export function MobileHeader({ subscriptionStatus = 'none' }: { subscriptionStatus?: SubscriptionStatus }) {
   const pathname = usePathname()

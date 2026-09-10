@@ -1,6 +1,6 @@
+import { Suspense } from 'react'
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
-import { connectDB } from '@/src/lib/mongo'
 import { findByClerkId } from '@/src/repositories/user.repository'
 import { countRendersThisMonth } from '@/src/repositories/job.repository'
 import { FREE_TIER_MONTHLY_RENDERS, getSubscriptionDetails } from '@/src/services/billing.service'
@@ -8,6 +8,7 @@ import { PLAN_COMPARISON, daysUntilRenderReset } from '@/src/helpers/plan-compar
 import { PRICING_TIERS } from '@/src/helpers/pricing-tiers'
 import { BillingActions } from '@/components/billing-actions'
 import { PlanCards } from '@/components/plan-cards'
+import { Skeleton } from '@/components/skeleton'
 
 const STATUS_COPY: Record<string, { label: string; desc: string; color: string }> = {
   active: { label: 'PRO', color: 'var(--ok)', desc: 'Unlimited renders, no watermark.' },
@@ -20,11 +21,94 @@ const STATUS_COPY: Record<string, { label: string; desc: string; color: string }
   none: { label: 'FREE', color: 'var(--mute)', desc: `${FREE_TIER_MONTHLY_RENDERS} watermarked renders per month, no card required.` },
 }
 
+async function LiveSubscriptionDetails({
+  userId,
+  tier,
+  rendersUsed,
+}: {
+  userId: string
+  tier?: { label: string; period: string }
+  rendersUsed: number
+}) {
+  const details = await getSubscriptionDetails(userId)
+  const formatDate = (d: Date) =>
+    new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+  const periodEndLabel = details ? formatDate(details.currentPeriodEnd) : null
+  const memberSinceLabel = details?.startedAt ? formatDate(details.startedAt) : null
+  const amountLabel = details
+    ? `$${(details.amount / 100).toFixed(2)} ${details.currency.toUpperCase()}`
+    : null
+
+  if (!details) {
+    return (
+      <div className="flex items-center justify-between text-sm pt-1">
+        <span className="text-[var(--mute)]">Renders this month</span>
+        <span className="text-[var(--ink-dim)] text-xs tabular-nums">{rendersUsed} (unlimited)</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="text-sm space-y-1.5 pt-1">
+      {amountLabel && (
+        <div className="flex items-center justify-between">
+          <span className="text-[var(--mute)]">Price</span>
+          <span className="text-[var(--ink-dim)] text-xs tabular-nums">
+            {amountLabel}
+            {tier?.period}
+          </span>
+        </div>
+      )}
+      {periodEndLabel && (
+        <div className="flex items-center justify-between">
+          <span className="text-[var(--mute)]">
+            {details.cancelAtPeriodEnd ? 'Access until' : 'Renews'}
+          </span>
+          <span className="text-[var(--ink-dim)] text-xs">{periodEndLabel}</span>
+        </div>
+      )}
+      {memberSinceLabel && (
+        <div className="flex items-center justify-between">
+          <span className="text-[var(--mute)]">Member since</span>
+          <span className="text-[var(--ink-dim)] text-xs">{memberSinceLabel}</span>
+        </div>
+      )}
+      <div className="flex items-center justify-between">
+        <span className="text-[var(--mute)]">Renders this month</span>
+        <span className="text-[var(--ink-dim)] text-xs tabular-nums">{rendersUsed} (unlimited)</span>
+      </div>
+      {details.cancelAtPeriodEnd && (
+        <p className="text-xs text-[var(--brand)] pt-0.5">
+          Cancellation scheduled — you keep full access until {periodEndLabel}.
+        </p>
+      )}
+    </div>
+  )
+}
+
+function SubscriptionDetailsSkeleton({ rendersUsed }: { rendersUsed: number }) {
+  return (
+    <div className="space-y-2 pt-1">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-3 w-12" />
+        <Skeleton className="h-3 w-20" />
+      </div>
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-3 w-16" />
+        <Skeleton className="h-3 w-24" />
+      </div>
+      <div className="flex items-center justify-between text-sm pt-0.5">
+        <span className="text-[var(--mute)]">Renders this month</span>
+        <span className="text-[var(--ink-dim)] text-xs tabular-nums">{rendersUsed} (unlimited)</span>
+      </div>
+    </div>
+  )
+}
+
 export default async function BillingPage() {
   const { userId } = await auth()
   if (!userId) redirect('/sign-in')
 
-  await connectDB()
   const [user, rendersUsed] = await Promise.all([
     findByClerkId(userId),
     countRendersThisMonth(userId),
@@ -33,14 +117,7 @@ export default async function BillingPage() {
   const status = user?.subscriptionStatus ?? 'none'
   const s = STATUS_COPY[status] ?? STATUS_COPY.none
   const isActive = status === 'active'
-
   const tier = user?.billingTier ? PRICING_TIERS.find((t) => t.id === user.billingTier) : undefined
-  // Live from Polar, not cached — only fetched when there's a subscription to look up.
-  const details = isActive ? await getSubscriptionDetails(userId) : null
-  const formatDate = (d: Date) => new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-  const periodEndLabel = details ? formatDate(details.currentPeriodEnd) : null
-  const memberSinceLabel = details?.startedAt ? formatDate(details.startedAt) : null
-  const amountLabel = details ? `$${(details.amount / 100).toFixed(2)} ${details.currency.toUpperCase()}` : null
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-8 py-7 sm:py-10">
@@ -58,37 +135,11 @@ export default async function BillingPage() {
         </div>
         <p className="text-[13px] text-[var(--ink-dim)]">{s.desc}</p>
 
-        {isActive && details && (
-          <div className="text-sm space-y-1.5 pt-1">
-            {amountLabel && (
-              <div className="flex items-center justify-between">
-                <span className="text-[var(--mute)]">Price</span>
-                <span className="text-[var(--ink-dim)] text-xs tabular-nums">{amountLabel}{tier?.period}</span>
-              </div>
-            )}
-            {periodEndLabel && (
-              <div className="flex items-center justify-between">
-                <span className="text-[var(--mute)]">{details.cancelAtPeriodEnd ? 'Access until' : 'Renews'}</span>
-                <span className="text-[var(--ink-dim)] text-xs">{periodEndLabel}</span>
-              </div>
-            )}
-            {memberSinceLabel && (
-              <div className="flex items-center justify-between">
-                <span className="text-[var(--mute)]">Member since</span>
-                <span className="text-[var(--ink-dim)] text-xs">{memberSinceLabel}</span>
-              </div>
-            )}
-            <div className="flex items-center justify-between">
-              <span className="text-[var(--mute)]">Renders this month</span>
-              <span className="text-[var(--ink-dim)] text-xs tabular-nums">{rendersUsed} (unlimited)</span>
-            </div>
-            {details.cancelAtPeriodEnd && (
-              <p className="text-xs text-[var(--brand)] pt-0.5">Cancellation scheduled — you keep full access until {periodEndLabel}.</p>
-            )}
-          </div>
-        )}
-
-        {!isActive && (
+        {isActive ? (
+          <Suspense fallback={<SubscriptionDetailsSkeleton rendersUsed={rendersUsed} />}>
+            <LiveSubscriptionDetails userId={userId} tier={tier} rendersUsed={rendersUsed} />
+          </Suspense>
+        ) : (
           <div className="flex items-center justify-between text-sm pt-1">
             <span className="text-[var(--mute)]">Renders this month</span>
             <span className="text-[var(--ink-dim)] text-xs tabular-nums">{rendersUsed} / {FREE_TIER_MONTHLY_RENDERS}</span>

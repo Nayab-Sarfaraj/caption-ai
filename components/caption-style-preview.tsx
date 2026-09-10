@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { CompositionId } from '@/remotion/compositions/CaptionRoot'
 
 type Mechanic = 'plain' | 'stroke' | 'box' | 'pill' | 'script' | 'lowercase' | 'single' | 'typewriter' | 'neon' | 'bar' | 'gradient' | 'highlighter' | 'underline' | 'glide' | 'outline' | 'meme' | 'sticker' | 'glitch' | 'wave' | 'news' | 'softCandy' | 'karaokeFill' | 'retroScript'
@@ -53,7 +54,7 @@ export const STYLE_PREVIEW_META: Record<CompositionId, StyleMeta> = {
 
 const DROP_SHADOW = '0 2px 5px rgba(0,0,0,0.85), 0 0 1px rgba(0,0,0,0.9)'
 
-export function CaptionStylePreview({ id }: { id: CompositionId }) {
+export const CaptionStylePreview = memo(function CaptionStylePreview({ id }: { id: CompositionId }) {
   const meta = STYLE_PREVIEW_META[id]
   const isStroke = meta.mechanic === 'stroke'
   const textTransform = meta.uppercase ? 'uppercase' : meta.mechanic === 'lowercase' ? 'lowercase' : 'none'
@@ -206,4 +207,4 @@ export function CaptionStylePreview({ id }: { id: CompositionId }) {
       </div>
     </div>
   )
-}
+})

@@ -79,5 +79,7 @@ const JobSchema = new Schema<IJob>(
 
 // Compound index for rate-limit query: count today's uploads per user
 JobSchema.index({ userId: 1, createdAt: 1 })
+// Compound index for recent jobs and job history pagination sorted by latest
+JobSchema.index({ userId: 1, createdAt: -1 })
 
 export const Job = mongoose.models.Job ?? mongoose.model<IJob>('Job', JobSchema)

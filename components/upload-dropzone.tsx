@@ -5,10 +5,15 @@ import { useDropzone } from "react-dropzone";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { CaptionStylePreview } from "@/components/caption-style-preview";
-import { PaywallModal } from "@/components/paywall-modal";
 import { STYLES } from "@/src/helpers/style-options";
 import type { CompositionId } from "@/remotion/compositions/CaptionRoot";
+
+const PaywallModal = dynamic(
+  () => import("@/components/paywall-modal").then((m) => m.PaywallModal),
+  { ssr: false }
+);
 
 type UploadStep =
   | "idle"
