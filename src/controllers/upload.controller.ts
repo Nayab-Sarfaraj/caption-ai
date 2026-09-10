@@ -107,7 +107,7 @@ export async function handleConfirmUpload(req: NextRequest): Promise<NextRespons
   const jobId = job._id.toString()
 
   if (parsed.data.width && parsed.data.height) {
-    await updateJobDimensions(jobId, parsed.data.width, parsed.data.height)
+    await updateJobDimensions(jobId, parsed.data.width, parsed.data.height, parsed.data.duration)
   }
 
   const payload: RenderJobPayload = {

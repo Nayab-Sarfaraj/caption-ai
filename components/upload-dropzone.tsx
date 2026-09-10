@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { CaptionStylePreview } from "@/components/caption-style-preview";
 import { PaywallModal } from "@/components/paywall-modal";
 import { STYLES } from "@/src/helpers/style-options";
@@ -14,6 +15,7 @@ type UploadStep =
   | "getting-url"
   | "uploading"
   | "confirming"
+  | "redirecting"
   | "done"
   | "error";
 
@@ -69,7 +71,6 @@ export function UploadDropzone({
     multiple: false,
   });
 
-  const isUploading = ["getting-url", "uploading", "confirming"].includes(step);
   const hasFiles = batchMode ? videoFiles.length > 0 : !!videoFile;
 
   const uploadMutation = useMutation({
@@ -110,6 +111,7 @@ export function UploadDropzone({
       setStep("uploading");
       setUploadProgress(0);
       await uploadToR2(uploadUrl, videoFile, setUploadProgress);
+      setUploadProgress(100);
 
       if (captionFile) {
         const text = await captionFile.text();
@@ -132,11 +134,18 @@ export function UploadDropzone({
       const dims = await getVideoDimensions(videoFile).catch(() => ({
         width: 1920,
         height: 1080,
+        duration: 0,
       }));
       const confirmRes = await fetch("/api/jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobId, compositionId: style, ...dims }),
+        body: JSON.stringify({
+          jobId,
+          compositionId: style,
+          width: dims.width,
+          height: dims.height,
+          ...(dims.duration > 0 ? { duration: dims.duration } : {}),
+        }),
       });
       if (!confirmRes.ok) {
         let errMsg = "Failed to confirm upload";
@@ -149,13 +158,15 @@ export function UploadDropzone({
         throw new Error(errMsg);
       }
 
-      setStep("done");
+      setStep("redirecting");
       return { jobId: jobId as string, isBatch: false as const };
     },
-    onSuccess: (result) =>
+    onSuccess: (result) => {
+      setStep("redirecting");
       router.push(
         result.isBatch ? "/dashboard/jobs" : `/dashboard/jobs/${result.jobId}`,
-      ),
+      );
+    },
     onError: (err: Error) => {
       setError(err.message);
       setStep("error");
@@ -218,6 +229,7 @@ export function UploadDropzone({
           }),
         ),
       );
+      setUploadProgress(100);
 
       setStep("confirming");
       await Promise.all(
@@ -225,6 +237,7 @@ export function UploadDropzone({
           const dims = await getVideoDimensions(videoFiles[i]).catch(() => ({
             width: 1920,
             height: 1080,
+            duration: 0,
           }));
           const res = await fetch("/api/jobs", {
             method: "POST",
@@ -232,7 +245,9 @@ export function UploadDropzone({
             body: JSON.stringify({
               jobId: u.jobId,
               compositionId: style,
-              ...dims,
+              width: dims.width,
+              height: dims.height,
+              ...(dims.duration > 0 ? { duration: dims.duration } : {}),
             }),
           });
           if (!res.ok)
@@ -240,21 +255,36 @@ export function UploadDropzone({
         }),
       );
 
-      setStep("done");
+      setStep("redirecting");
     },
-    onSuccess: () => router.push("/dashboard/jobs"),
+    onSuccess: () => {
+      setStep("redirecting");
+      router.push("/dashboard/jobs");
+    },
     onError: (err: Error) => {
       setError(err.message);
       setStep("error");
     },
   });
 
-  const stepLabel = {
+  const isUploading =
+    [
+      "getting-url",
+      "uploading",
+      "confirming",
+      "redirecting",
+      "done",
+    ].includes(step) ||
+    uploadMutation.isPending ||
+    batchUploadMutation.isPending;
+
+  const stepLabel: Record<UploadStep, string> = {
     idle: "",
     "getting-url": "Preparing…",
     uploading: `Uploading ${uploadProgress}%`,
-    confirming: "Finalizing…",
-    done: "Done!",
+    confirming: "Starting transcription…",
+    redirecting: "Starting transcription… Redirecting…",
+    done: "Starting transcription… Redirecting…",
     error: "Upload failed",
   };
 
@@ -269,12 +299,13 @@ export function UploadDropzone({
   }, [batchMode, batchUploadMutation, uploadMutation]);
 
   const handleGenerateClick = useCallback(() => {
+    if (isUploading) return;
     if (blocked) {
       setShowPaywall(true);
     } else {
       runGenerate();
     }
-  }, [blocked, runGenerate]);
+  }, [blocked, isUploading, runGenerate]);
 
   return (
     <div className="space-y-6">
@@ -585,13 +616,23 @@ export function UploadDropzone({
         type="button"
         disabled={!hasFiles || isUploading}
         onClick={handleGenerateClick}
-        className="w-full rounded-lg bg-[var(--brand)] text-white text-sm font-bold py-3 hover:brightness-[1.08] transition-all disabled:opacity-35 disabled:cursor-not-allowed"
+        className={[
+          "w-full rounded-lg bg-[var(--brand)] text-white text-sm font-bold py-3 transition-all flex items-center justify-center gap-2",
+          isUploading
+            ? "opacity-80 cursor-wait"
+            : "hover:brightness-[1.08] disabled:opacity-35 disabled:cursor-not-allowed",
+        ].join(" ")}
       >
-        {isUploading
-          ? stepLabel[step]
-          : batchMode
-            ? `Generate Captions${videoFiles.length ? ` · ${videoFiles.length} videos` : ""}`
-            : "Generate Captions"}
+        {isUploading && (
+          <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+        )}
+        <span>
+          {isUploading
+            ? stepLabel[step]
+            : batchMode
+              ? `Generate Captions${videoFiles.length ? ` · ${videoFiles.length} videos` : ""}`
+              : "Generate Captions"}
+        </span>
       </button>
     </div>
   );
@@ -599,13 +640,20 @@ export function UploadDropzone({
 
 function getVideoDimensions(
   file: File,
-): Promise<{ width: number; height: number }> {
+): Promise<{ width: number; height: number; duration: number }> {
   return new Promise((resolve, reject) => {
     const video = document.createElement("video");
     const url = URL.createObjectURL(file);
     video.onloadedmetadata = () => {
       URL.revokeObjectURL(url);
-      resolve({ width: video.videoWidth, height: video.videoHeight });
+      resolve({
+        width: video.videoWidth,
+        height: video.videoHeight,
+        duration:
+          Number.isFinite(video.duration) && video.duration > 0
+            ? Math.round(video.duration * 100) / 100
+            : 0,
+      });
     };
     video.onerror = () => {
       URL.revokeObjectURL(url);

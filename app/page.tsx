@@ -279,17 +279,21 @@ export default async function RootPage() {
             <div className="lg:col-span-6 flex flex-col items-start z-10 lg:pr-2">
               {/* Commanding Dominant Headline with Knockout Highlight */}
               <h1 className="font-headline text-5xl sm:text-6xl md:text-7xl lg:text-[4.75rem] xl:text-[5.25rem] font-black tracking-tight text-white leading-[1.04] mb-6">
-                Make every<br />word{" "}
+                Make every
+                <br />
+                word{" "}
                 <span className="relative inline-block text-white">
                   impossible
                   <span className="absolute bottom-2 left-0 right-0 h-3.5 sm:h-4 bg-[#ff4d00] -z-10 -rotate-1 rounded-sm opacity-90" />
                 </span>
-                <br />to miss.
+                <br />
+                to miss.
               </h1>
 
               {/* Supporting Copy */}
               <p className="font-body text-lg sm:text-xl text-slate-300 max-w-xl leading-relaxed mb-8 sm:mb-10 font-normal">
-                Turn raw footage into scroll-stopping captioned clips in seconds.
+                Turn raw footage into scroll-stopping captioned clips in
+                seconds.
               </p>
 
               {/* Primary & Secondary CTA Buttons */}
@@ -312,11 +316,17 @@ export default async function RootPage() {
 
               {/* Clean Supporting Proof Below CTAs */}
               <div className="flex flex-wrap items-center gap-2.5 text-[#a3a0ad] text-[13px] sm:text-[14px] font-mono tracking-tight mb-2">
-                <span className="text-white/85 font-medium">No card required</span>
+                <span className="text-white/85 font-medium">
+                  No card required
+                </span>
                 <span className="text-white/30">·</span>
-                <span className="text-white/85 font-medium">Unlimited exports</span>
+                <span className="text-white/85 font-medium">
+                  Unlimited exports
+                </span>
                 <span className="text-white/30">·</span>
-                <span className="text-white/85 font-medium">{STYLE_IDS.length}+ styles</span>
+                <span className="text-white/85 font-medium">
+                  {STYLE_IDS.length}+ styles
+                </span>
               </div>
             </div>
 
@@ -552,9 +562,9 @@ export default async function RootPage() {
               </tbody>
             </table>
           </div>
-          <p className={s.slotNote}>
+          {/* <p className={s.slotNote}>
             {"// Competitor capabilities as of 2026 — verify before launch"}
-          </p>
+          </p> */}
         </div>
       </section>
 

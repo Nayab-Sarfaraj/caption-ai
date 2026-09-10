@@ -19,6 +19,7 @@ export interface IJob extends Document {
   fileSize: number | null       // bytes, set at upload confirm time — null for jobs uploaded before this field existed
   width: number
   height: number
+  duration: number | null       // seconds (float), from metadata probe — null if not yet determined
   // Resolved render config from the last trigger-render call (post brand-kit
   // merge) — persisted so a manual retry reuses what was actually attempted,
   // not whatever the user's brand kit happens to say right now.
@@ -59,6 +60,7 @@ const JobSchema = new Schema<IJob>(
     fileSize: { type: Number, default: null },
     width: { type: Number, default: 1920 },
     height: { type: Number, default: 1080 },
+    duration: { type: Number, default: null },
     compositionId: { type: String, default: null },
     activeColor: { type: String, default: null },
     textColor: { type: String, default: null },
