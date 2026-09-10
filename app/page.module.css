@@ -154,7 +154,7 @@
 @media (min-width: 1000px) { .prices { grid-template-columns: repeat(4, 1fr); } }
 .price { border: 1px solid var(--hair); border-radius: var(--r-lg); padding: 26px; background: var(--panel); display: flex; flex-direction: column; position: relative; }
 .feat { border-color: var(--brand); box-shadow: 0 20px 50px -24px color-mix(in srgb, var(--brand) 55%, transparent); }
-.tier { font-family: var(--font-geist-mono), monospace; font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: var(--mute); }
+.tier { font-family: var(--font-geist-mono), monospace; font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: var(--mute); margin: 0; font-weight: 600; }
 .amt { font-size: 38px; font-weight: 800; letter-spacing: -.03em; margin: 10px 0 2px; font-variant-numeric: tabular-nums; color: var(--ink); }
 .amt span { font-size: 15px; font-weight: 500; color: var(--mute); }
 .pnote { font-size: 12px; color: var(--mute); min-height: 16px; }

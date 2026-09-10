@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
@@ -223,6 +224,15 @@ const JSON_LD = {
   ],
 };
 
+export const metadata: Metadata = {
+  title: "Instacap — AI Video Caption Generator & Animated Subtitles",
+  description:
+    "Generate word-by-word animated captions for Instagram Reels, TikTok, and YouTube Shorts in seconds. 33 creator caption styles with unlimited renders and zero credit limits.",
+  alternates: {
+    canonical: "/",
+  },
+};
+
 export default async function RootPage() {
   const { userId } = await auth();
   if (userId) redirect("/dashboard");
@@ -241,7 +251,7 @@ export default async function RootPage() {
           <Link href="/" className={s.logo}>
             <b>Insta</b>cap
           </Link>
-          <nav className={s.navLinks}>
+          <nav className={s.navLinks} aria-label="Main Navigation">
             <a href="#styles">Styles</a>
             <a href="#how">How it works</a>
             <a href="#why">Why Instacap</a>
@@ -262,97 +272,102 @@ export default async function RootPage() {
         </div>
       </header>
 
-      <section className="relative w-full pt-12 sm:pt-16 lg:pt-20 pb-16 sm:pb-20 lg:pb-24 overflow-hidden border-b border-white/[0.06]">
-        {/* Ambient Warm & Obsidian Ambient Glows */}
-        <div
-          className="absolute top-1/4 left-1/3 -translate-x-1/2 w-[500px] lg:w-[650px] h-[450px] lg:h-[550px] bg-[#ff4d00]/10 blur-[150px] lg:blur-[180px] pointer-events-none -z-10"
-          aria-hidden="true"
-        />
-        <div
-          className="absolute top-20 right-10 lg:right-24 w-[400px] lg:w-[550px] h-[450px] lg:h-[600px] bg-[#ff4d00]/15 blur-[140px] lg:blur-[160px] pointer-events-none -z-10"
-          aria-hidden="true"
-        />
+      <main id="main-content">
+        <section className="relative w-full pt-12 sm:pt-16 lg:pt-20 pb-16 sm:pb-20 lg:pb-24 overflow-hidden border-b border-white/[0.06]">
+          {/* Ambient Warm & Obsidian Ambient Glows */}
+          <div
+            className="absolute top-1/4 left-1/3 -translate-x-1/2 w-[500px] lg:w-[650px] h-[450px] lg:h-[550px] bg-[#ff4d00]/10 blur-[150px] lg:blur-[180px] pointer-events-none -z-10"
+            aria-hidden="true"
+          />
+          <div
+            className="absolute top-20 right-10 lg:right-24 w-[400px] lg:w-[550px] h-[450px] lg:h-[600px] bg-[#ff4d00]/15 blur-[140px] lg:blur-[160px] pointer-events-none -z-10"
+            aria-hidden="true"
+          />
 
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-y-12 lg:gap-x-12 items-center">
-            {/* Left Editorial Column */}
-            <div className="lg:col-span-6 flex flex-col items-start z-10 lg:pr-2">
-              {/* Commanding Dominant Headline with Knockout Highlight */}
-              <h1 className="font-headline text-5xl sm:text-6xl md:text-7xl lg:text-[4.75rem] xl:text-[5.25rem] font-black tracking-tight text-white leading-[1.04] mb-6">
-                Make every
-                <br />
-                word{" "}
-                <span className="relative inline-block text-white">
-                  impossible
-                  <span className="absolute bottom-2 left-0 right-0 h-3.5 sm:h-4 bg-[#ff4d00] -z-10 -rotate-1 rounded-sm opacity-90" />
-                </span>
-                <br />
-                to miss.
-              </h1>
+          <div className="max-w-[1280px] mx-auto px-6 lg:px-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-y-12 lg:gap-x-12 items-center">
+              {/* Left Editorial Column */}
+              <div className="lg:col-span-6 flex flex-col items-start z-10 lg:pr-2">
+                {/* Commanding Dominant Headline with Knockout Highlight & Primary SEO Value Prop */}
+                <h1 className="font-headline text-5xl sm:text-6xl md:text-7xl lg:text-[4.75rem] xl:text-[5.25rem] font-black tracking-tight text-white leading-[1.04] mb-6">
+                  <span className="block text-sm sm:text-base font-mono font-semibold tracking-widest text-[#ff4d00] uppercase mb-3 sm:mb-4">
+                    AI Video Caption Generator
+                  </span>
+                  Make every
+                  <br />
+                  word{" "}
+                  <span className="relative inline-block text-white">
+                    impossible
+                    <span className="absolute bottom-2 left-0 right-0 h-3.5 sm:h-4 bg-[#ff4d00] -z-10 -rotate-1 rounded-sm opacity-90" />
+                  </span>
+                  <br />
+                  to miss.
+                </h1>
 
-              {/* Supporting Copy */}
-              <p className="font-body text-lg sm:text-xl text-slate-300 max-w-xl leading-relaxed mb-8 sm:mb-10 font-normal">
-                Turn raw footage into scroll-stopping captioned clips in
-                seconds.
-              </p>
+                {/* Supporting Copy */}
+                <p className="font-body text-lg sm:text-xl text-slate-300 max-w-xl leading-relaxed mb-8 sm:mb-10 font-normal">
+                  Turn raw footage into scroll-stopping captioned clips in
+                  seconds.
+                </p>
 
-              {/* Primary & Secondary CTA Buttons */}
-              <div className="flex flex-wrap items-center gap-4 w-full mb-6">
-                <Link
-                  href="/sign-up"
-                  className="group relative inline-flex items-center gap-3 px-8 py-4 sm:py-[18px] rounded-full bg-[#ff4d00] text-white font-headline text-[15px] sm:text-[16px] font-bold tracking-wide transition-all duration-300 shadow-[0_6px_36px_rgba(255,77,0,0.45)] hover:shadow-[0_8px_46px_rgba(255,77,0,0.7)] hover:brightness-110 active:scale-95"
-                >
-                  <span>Start creating — it&apos;s free</span>
-                  <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-                </Link>
-                <a
-                  href="#styles"
-                  className="inline-flex items-center gap-2 px-7 py-4 sm:py-[18px] rounded-full bg-[#19191d] hover:bg-[#222227] text-white font-headline text-[15px] font-semibold border border-white/[0.08] transition-all duration-200 hover:border-white/[0.2]"
-                >
-                  <Sparkles className="w-5 h-5 text-[#a3a0ad]" />
-                  <span>Explore styles</span>
-                </a>
+                {/* Primary & Secondary CTA Buttons */}
+                <div className="flex flex-wrap items-center gap-4 w-full mb-6">
+                  <Link
+                    href="/sign-up"
+                    className="group relative inline-flex items-center gap-3 px-8 py-4 sm:py-[18px] rounded-full bg-[#ff4d00] text-white font-headline text-[15px] sm:text-[16px] font-bold tracking-wide transition-all duration-300 shadow-[0_6px_36px_rgba(255,77,0,0.45)] hover:shadow-[0_8px_46px_rgba(255,77,0,0.7)] hover:brightness-110 active:scale-95"
+                  >
+                    <span>Start creating — it&apos;s free</span>
+                    <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                  <a
+                    href="#styles"
+                    className="inline-flex items-center gap-2 px-7 py-4 sm:py-[18px] rounded-full bg-[#19191d] hover:bg-[#222227] text-white font-headline text-[15px] font-semibold border border-white/[0.08] transition-all duration-200 hover:border-white/[0.2]"
+                  >
+                    <Sparkles className="w-5 h-5 text-[#a3a0ad]" />
+                    <span>Explore styles</span>
+                  </a>
+                </div>
+
+                {/* Clean Supporting Proof Below CTAs */}
+                <div className="flex flex-wrap items-center gap-2.5 text-[#a3a0ad] text-[13px] sm:text-[14px] font-mono tracking-tight mb-2">
+                  <span className="text-white/85 font-medium">
+                    No card required
+                  </span>
+                  <span className="text-white/30">·</span>
+                  <span className="text-white/85 font-medium">
+                    Unlimited exports
+                  </span>
+                  <span className="text-white/30">·</span>
+                  <span className="text-white/85 font-medium">
+                    {STYLE_IDS.length}+ styles
+                  </span>
+                </div>
               </div>
 
-              {/* Clean Supporting Proof Below CTAs */}
-              <div className="flex flex-wrap items-center gap-2.5 text-[#a3a0ad] text-[13px] sm:text-[14px] font-mono tracking-tight mb-2">
-                <span className="text-white/85 font-medium">
-                  No card required
-                </span>
-                <span className="text-white/30">·</span>
-                <span className="text-white/85 font-medium">
-                  Unlimited exports
-                </span>
-                <span className="text-white/30">·</span>
-                <span className="text-white/85 font-medium">
-                  {STYLE_IDS.length}+ styles
-                </span>
+              {/* Right Column: Scaled 3D Multi-Layered Reel Showcase */}
+              <div className="lg:col-span-6 relative flex items-center justify-center">
+                <HeroCaptionDemo />
               </div>
-            </div>
-
-            {/* Right Column: Scaled 3D Multi-Layered Reel Showcase */}
-            <div className="lg:col-span-6 relative flex items-center justify-center">
-              <HeroCaptionDemo />
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Style marquee */}
-      <div className={s.marquee} aria-hidden="true">
-        <div className={s.mqRow}>
-          {[...STYLE_IDS, ...STYLE_IDS].map((id, idx) => (
-            <span key={`${id}-${idx}`} className={s.mchip}>
-              <span className={s.dot} style={{ background: chipColor(id) }} />
-              {STYLE_LABELS[id]}
-            </span>
-          ))}
+        {/* Style marquee */}
+        <div className={s.marquee} aria-hidden="true">
+          <div className={s.mqRow}>
+            {[...STYLE_IDS, ...STYLE_IDS].map((id, idx) => (
+              <span key={`${id}-${idx}`} className={s.mchip}>
+                <span className={s.dot} style={{ background: chipColor(id) }} />
+                {STYLE_LABELS[id]}
+              </span>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Stat band */}
-      <section className={s.stats}>
-        <div className={s.wrap}>
+        {/* Stat band */}
+        <section className={s.stats}>
+          <div className={s.wrap}>
+            <h2 className="sr-only">Key Platform Metrics</h2>
           <div className={s.statsGrid}>
             <div className={s.stat}>
               <div className={s.statN}>
@@ -404,7 +419,9 @@ export default async function RootPage() {
               <div key={id} className={s.gcard}>
                 <CaptionStylePreview id={id} />
                 <div className={s.glabel}>
-                  <span>{STYLE_LABELS[id]}</span>
+                  <h3 className="text-[13px] font-semibold text-[var(--ink)] m-0 leading-normal">
+                    {STYLE_LABELS[id]}
+                  </h3>
                   <span className={s.real}>live</span>
                 </div>
               </div>
@@ -532,6 +549,9 @@ export default async function RootPage() {
           </div>
           <div className={s.cmpWrap}>
             <table className={s.cmp}>
+              <caption className="sr-only">
+                Feature comparison between Instacap and alternatives like VEED.io, Captions.ai, and Submagic
+              </caption>
               <thead>
                 <tr>
                   <th aria-hidden="true" />
@@ -628,7 +648,7 @@ export default async function RootPage() {
           </div>
           <div className={s.prices}>
             <div className={s.price}>
-              <span className={s.tier}>Free</span>
+              <h3 className={s.tier}>Free</h3>
               <div className={s.amt}>$0</div>
               <div className={s.pnote}>No card required</div>
               <ul>
@@ -656,7 +676,7 @@ export default async function RootPage() {
                   className={featured ? `${s.price} ${s.feat}` : s.price}
                 >
                   {t.badge && <span className={s.badge}>{t.badge}</span>}
-                  <span className={s.tier}>{t.label}</span>
+                  <h3 className={s.tier}>{t.label}</h3>
                   <div className={s.amt}>
                     {t.price}
                     <span>{t.period}</span>
@@ -728,6 +748,7 @@ export default async function RootPage() {
           </Link>
         </div>
       </section>
+      </main>
 
       {/* Footer */}
       <footer className={s.footer}>

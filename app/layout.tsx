@@ -38,13 +38,20 @@ const PREVIEW_FONT_VARS = [bangers, anton, fredoka, montserrat, roboto, caveat, 
   .map((f) => f.variable)
   .join(' ')
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+const appUrl =
+  process.env.NEXT_PUBLIC_APP_URL ||
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : 'https://getinstacap.com')
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
-  title: 'Instacap — AI Video Caption Generator & Subtitles',
+  title: {
+    default: 'Instacap — AI Video Caption Generator & Animated Subtitles',
+    template: '%s | Instacap',
+  },
   description:
-    'Generate word-by-word animated captions for Instagram Reels, TikTok, and YouTube Shorts in seconds. Powered by fast AI transcription with zero credit limits.',
+    'Generate word-by-word animated captions for Instagram Reels, TikTok, and YouTube Shorts in seconds. 33 creator caption styles, sub-second AI transcription, 4K exports, and flat pricing with no credits.',
   keywords: [
     'video caption generator',
     'ai subtitle generator',
@@ -54,7 +61,19 @@ export const metadata: Metadata = {
     'hormozi subtitles generator',
     'auto captions online free',
     'youtube shorts subtitles',
+    'submagic alternative',
+    'veed alternative',
+    'captions for reels',
+    'social video captions',
   ],
+  authors: [{ name: 'Instacap', url: appUrl }],
+  creator: 'Instacap',
+  publisher: 'Instacap',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   icons: {
     icon: '/icon.png',
     apple: '/icon.png',
@@ -74,18 +93,28 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: 'Instacap — AI Video Caption Generator & Subtitles',
+    title: 'Instacap — AI Video Caption Generator & Animated Subtitles',
     description:
-      'Generate word-by-word animated captions for Instagram Reels, TikTok, and YouTube Shorts in seconds. Powered by fast AI transcription with zero credit limits.',
+      'Generate word-by-word animated captions for Instagram Reels, TikTok, and YouTube Shorts in seconds. 33 creator caption styles with zero credit limits.',
     url: appUrl,
     siteName: 'Instacap',
+    locale: 'en_US',
     type: 'website',
+    images: [
+      {
+        url: `${appUrl}/opengraph-image`,
+        width: 1200,
+        height: 630,
+        alt: 'Instacap — AI Video Caption Generator & Subtitles',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Instacap — AI Video Caption Generator & Subtitles',
+    title: 'Instacap — AI Video Caption Generator & Animated Subtitles',
     description:
-      'Generate word-by-word animated captions for Instagram Reels, TikTok, and YouTube Shorts in seconds.',
+      'Generate word-by-word animated captions for Instagram Reels, TikTok, and YouTube Shorts in seconds. Flat pricing and unlimited renders.',
+    images: [`${appUrl}/opengraph-image`],
   },
 }
 
