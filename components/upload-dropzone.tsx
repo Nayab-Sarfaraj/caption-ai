@@ -77,80 +77,89 @@ export function UploadDropzone({
       if (!videoFile) throw new Error("No video selected");
       setError(null);
 
-      setStep("getting-url");
-      const presignRes = await fetch("/api/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filename: videoFile.name,
-          contentType: videoFile.type,
-          fileSize: videoFile.size,
-        }),
-      });
-      if (!presignRes.ok) {
-        let errMsg = "Failed to get upload URL";
-        try {
-          const err = await presignRes.json();
-          errMsg = err.error ?? errMsg;
-        } catch {
-          if (presignRes.status === 401) errMsg = "You must be signed in to upload. Please refresh or sign in.";
-          else if (presignRes.status === 404) errMsg = "Upload endpoint not found.";
-          else errMsg = `Upload request failed (${presignRes.status})`;
-        }
-        throw new Error(errMsg);
-      }
-      let presignData: { uploadUrl: string; jobId: string };
+      let activeJobId: string | null = null;
       try {
-        presignData = await presignRes.json();
-      } catch {
-        throw new Error("Invalid response from upload server");
-      }
-      const { uploadUrl, jobId } = presignData;
-
-      setStep("uploading");
-      setUploadProgress(0);
-      await uploadToR2(uploadUrl, videoFile, setUploadProgress);
-
-      if (captionFile) {
-        const text = await captionFile.text();
-        const res = await fetch("/api/upload/captions", {
+        setStep("getting-url");
+        const presignRes = await fetch("/api/upload", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            jobId,
-            content: text,
-            filename: captionFile.name,
+            filename: videoFile.name,
+            contentType: videoFile.type,
+            fileSize: videoFile.size,
           }),
         });
-        if (!res.ok) {
-          const errText = await res.text().catch(() => "");
-          throw new Error(errText || "Caption upload failed");
+        if (!presignRes.ok) {
+          let errMsg = "Failed to get upload URL";
+          try {
+            const err = await presignRes.json();
+            errMsg = err.error ?? errMsg;
+          } catch {
+            if (presignRes.status === 401) errMsg = "You must be signed in to upload. Please refresh or sign in.";
+            else if (presignRes.status === 404) errMsg = "Upload endpoint not found.";
+            else errMsg = `Upload request failed (${presignRes.status})`;
+          }
+          throw new Error(errMsg);
         }
-      }
-
-      setStep("confirming");
-      const dims = await getVideoDimensions(videoFile).catch(() => ({
-        width: 1920,
-        height: 1080,
-      }));
-      const confirmRes = await fetch("/api/jobs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobId, compositionId: style, ...dims }),
-      });
-      if (!confirmRes.ok) {
-        let errMsg = "Failed to confirm upload";
+        let presignData: { uploadUrl: string; jobId: string };
         try {
-          const err = await confirmRes.json();
-          errMsg = err.error ?? errMsg;
+          presignData = await presignRes.json();
         } catch {
-          errMsg = `Failed to confirm upload (${confirmRes.status})`;
+          throw new Error("Invalid response from upload server");
         }
-        throw new Error(errMsg);
-      }
+        const { uploadUrl, jobId } = presignData;
+        activeJobId = jobId;
 
-      setStep("done");
-      return { jobId: jobId as string, isBatch: false as const };
+        setStep("uploading");
+        setUploadProgress(0);
+        await uploadToR2(uploadUrl, videoFile, setUploadProgress);
+
+        if (captionFile) {
+          const text = await captionFile.text();
+          const res = await fetch("/api/upload/captions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              jobId,
+              content: text,
+              filename: captionFile.name,
+            }),
+          });
+          if (!res.ok) {
+            const errText = await res.text().catch(() => "");
+            throw new Error(errText || "Caption upload failed");
+          }
+        }
+
+        setStep("confirming");
+        const dims = await getVideoDimensions(videoFile).catch(() => ({
+          width: 1920,
+          height: 1080,
+        }));
+        const confirmRes = await fetch("/api/jobs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jobId, compositionId: style, ...dims }),
+        });
+        if (!confirmRes.ok) {
+          let errMsg = "Failed to confirm upload";
+          try {
+            const err = await confirmRes.json();
+            errMsg = err.error ?? errMsg;
+          } catch {
+            errMsg = `Failed to confirm upload (${confirmRes.status})`;
+          }
+          throw new Error(errMsg);
+        }
+
+        setStep("done");
+        return { jobId: jobId as string, isBatch: false as const };
+      } catch (err) {
+        if (activeJobId) {
+          fetch(`/api/upload?jobId=${activeJobId}`, { method: "DELETE" }).catch(() => {});
+        }
+        throw err;
+      }
     },
     onSuccess: (result) =>
       router.push(
@@ -167,80 +176,89 @@ export function UploadDropzone({
       if (videoFiles.length === 0) throw new Error("No videos selected");
       setError(null);
 
-      setStep("getting-url");
-      const presignRes = await fetch("/api/upload/batch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          files: videoFiles.map((f) => ({
-            filename: f.name,
-            contentType: f.type,
-            fileSize: f.size,
-          })),
-        }),
-      });
-      if (!presignRes.ok) {
-        let errMsg = "Failed to get upload URLs";
-        try {
-          const err = await presignRes.json();
-          errMsg = err.error ?? errMsg;
-        } catch {
-          if (presignRes.status === 401) errMsg = "You must be signed in to upload. Please refresh or sign in.";
-          else if (presignRes.status === 404) errMsg = "Upload endpoint not found.";
-          else errMsg = `Upload request failed (${presignRes.status})`;
-        }
-        throw new Error(errMsg);
-      }
-      let batchData: { uploads: { jobId: string; uploadUrl: string; key: string }[] };
+      let activeJobIds: string[] = [];
       try {
-        batchData = await presignRes.json();
-      } catch {
-        throw new Error("Invalid response from upload server");
-      }
-      const { uploads } = batchData;
-
-      setStep("uploading");
-      const perFileProgress = new Array(videoFiles.length).fill(0);
-      const updateAggregate = () => {
-        const avg =
-          perFileProgress.reduce((a, b) => a + b, 0) / perFileProgress.length;
-        setUploadProgress(Math.round(avg));
-      };
-
-      // Bytes go direct to R2 in parallel — same single-upload logic per file,
-      // just fanned out. Single worker still renders one job at a time
-      // (Phase 1 concurrency:1) — parallel upload, sequential render.
-      await Promise.all(
-        uploads.map((u, i) =>
-          uploadToR2(u.uploadUrl, videoFiles[i], (pct) => {
-            perFileProgress[i] = pct;
-            updateAggregate();
+        setStep("getting-url");
+        const presignRes = await fetch("/api/upload/batch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            files: videoFiles.map((f) => ({
+              filename: f.name,
+              contentType: f.type,
+              fileSize: f.size,
+            })),
           }),
-        ),
-      );
+        });
+        if (!presignRes.ok) {
+          let errMsg = "Failed to get upload URLs";
+          try {
+            const err = await presignRes.json();
+            errMsg = err.error ?? errMsg;
+          } catch {
+            if (presignRes.status === 401) errMsg = "You must be signed in to upload. Please refresh or sign in.";
+            else if (presignRes.status === 404) errMsg = "Upload endpoint not found.";
+            else errMsg = `Upload request failed (${presignRes.status})`;
+          }
+          throw new Error(errMsg);
+        }
+        let batchData: { uploads: { jobId: string; uploadUrl: string; key: string }[] };
+        try {
+          batchData = await presignRes.json();
+        } catch {
+          throw new Error("Invalid response from upload server");
+        }
+        const { uploads } = batchData;
+        activeJobIds = uploads.map((u) => u.jobId);
 
-      setStep("confirming");
-      await Promise.all(
-        uploads.map(async (u, i) => {
-          const dims = await getVideoDimensions(videoFiles[i]).catch(() => ({
-            width: 1920,
-            height: 1080,
-          }));
-          const res = await fetch("/api/jobs", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              jobId: u.jobId,
-              compositionId: style,
-              ...dims,
+        setStep("uploading");
+        const perFileProgress = new Array(videoFiles.length).fill(0);
+        const updateAggregate = () => {
+          const avg =
+            perFileProgress.reduce((a, b) => a + b, 0) / perFileProgress.length;
+          setUploadProgress(Math.round(avg));
+        };
+
+        // Bytes go direct to R2 in parallel — same single-upload logic per file,
+        // just fanned out. Single worker still renders one job at a time
+        // (Phase 1 concurrency:1) — parallel upload, sequential render.
+        await Promise.all(
+          uploads.map((u, i) =>
+            uploadToR2(u.uploadUrl, videoFiles[i], (pct) => {
+              perFileProgress[i] = pct;
+              updateAggregate();
             }),
-          });
-          if (!res.ok)
-            throw new Error(`Failed to confirm ${videoFiles[i].name}`);
-        }),
-      );
+          ),
+        );
 
-      setStep("done");
+        setStep("confirming");
+        await Promise.all(
+          uploads.map(async (u, i) => {
+            const dims = await getVideoDimensions(videoFiles[i]).catch(() => ({
+              width: 1920,
+              height: 1080,
+            }));
+            const res = await fetch("/api/jobs", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                jobId: u.jobId,
+                compositionId: style,
+                ...dims,
+              }),
+            });
+            if (!res.ok)
+              throw new Error(`Failed to confirm ${videoFiles[i].name}`);
+          }),
+        );
+
+        setStep("done");
+      } catch (err) {
+        activeJobIds.forEach((jobId) => {
+          fetch(`/api/upload?jobId=${jobId}`, { method: "DELETE" }).catch(() => {});
+        });
+        throw err;
+      }
     },
     onSuccess: () => router.push("/dashboard/jobs"),
     onError: (err: Error) => {
@@ -589,9 +607,11 @@ export function UploadDropzone({
       >
         {isUploading
           ? stepLabel[step]
-          : batchMode
-            ? `Generate Captions${videoFiles.length ? ` · ${videoFiles.length} videos` : ""}`
-            : "Generate Captions"}
+          : step === "error"
+            ? "Retry Generation"
+            : batchMode
+              ? `Generate Captions${videoFiles.length ? ` · ${videoFiles.length} videos` : ""}`
+              : "Generate Captions"}
       </button>
     </div>
   );

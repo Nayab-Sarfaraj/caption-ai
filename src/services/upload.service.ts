@@ -1,6 +1,7 @@
 import mongoose from 'mongoose'
 import { connectDB } from '@/src/lib/mongo'
-import { createJob, countTodayUploads } from '@/src/repositories/job.repository'
+import { createJob, countTodayUploads, cleanupStalePendingJobs } from '@/src/repositories/job.repository'
+import { findByClerkId } from '@/src/repositories/user.repository'
 import { generatePresignedPut } from '@/src/helpers/presigned-url'
 
 const MAX_DAILY_UPLOADS = 5
@@ -15,8 +16,16 @@ export async function createUploadJob(
 ): Promise<{ uploadUrl: string; key: string; jobId: string }> {
   await connectDB()
 
-  const count = await countTodayUploads(userId)
-  if (count >= MAX_DAILY_UPLOADS) throw new Error('RATE_LIMIT')
+  // Clean up any stale unconfirmed pending jobs (>30m)
+  await cleanupStalePendingJobs(userId).catch(() => {})
+
+  const user = await findByClerkId(userId)
+  const isPaid = user?.subscriptionStatus === 'active'
+
+  if (!isPaid) {
+    const count = await countTodayUploads(userId)
+    if (count >= MAX_DAILY_UPLOADS) throw new Error('RATE_LIMIT')
+  }
 
   const jobId = new mongoose.Types.ObjectId()
   const key = `uploads/${userId}/${jobId.toString()}/${sanitizeFilename(input.filename)}`
@@ -46,11 +55,19 @@ export async function createBatchUploadJobs(
 ): Promise<BatchUploadResult> {
   await connectDB()
 
-  // Check the cap against todayCount + files.length BEFORE creating any Job
-  // docs — otherwise a batch can partially succeed and leave orphaned Job
-  // docs behind when the cap is hit mid-loop.
-  const count = await countTodayUploads(userId)
-  if (count + files.length > MAX_DAILY_UPLOADS) throw new Error('RATE_LIMIT')
+  // Clean up any stale unconfirmed pending jobs (>30m)
+  await cleanupStalePendingJobs(userId).catch(() => {})
+
+  const user = await findByClerkId(userId)
+  const isPaid = user?.subscriptionStatus === 'active'
+
+  if (!isPaid) {
+    // Check the cap against todayCount + files.length BEFORE creating any Job
+    // docs — otherwise a batch can partially succeed and leave orphaned Job
+    // docs behind when the cap is hit mid-loop.
+    const count = await countTodayUploads(userId)
+    if (count + files.length > MAX_DAILY_UPLOADS) throw new Error('RATE_LIMIT')
+  }
 
   const batchId = new mongoose.Types.ObjectId().toString()
 
