@@ -2,7 +2,12 @@ import type { MetadataRoute } from 'next'
 import { STYLE_SEO_MAP } from '@/src/helpers/style-seo-data'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? 'https://instacap.co'
+  const base = (
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : 'https://getinstacap.com')
+  ).replace(/\/$/, '')
   const now = new Date()
 
   // Base static routes
