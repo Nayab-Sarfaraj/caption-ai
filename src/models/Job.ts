@@ -31,6 +31,9 @@ export interface IJob extends Document {
   captionPosX: number | null        // caption horizontal position 0–100 %; null = composition default
   captionPosY: number | null        // caption vertical position 0–100 %; null = composition default
   watermarked: boolean | null   // whether the last-triggered render was free-tier watermarked; null = never rendered
+  newsHeadline: string | null
+  newsCategory: string | null
+  newsHeadlineSuggestionCount: number
   createdAt: Date
   updatedAt: Date
 }
@@ -65,6 +68,9 @@ const JobSchema = new Schema<IJob>(
     captionPosX: { type: Number, default: null },
     captionPosY: { type: Number, default: null },
     watermarked: { type: Boolean, default: null },
+    newsHeadline: { type: String, default: null, maxlength: 70 },
+    newsCategory: { type: String, default: null, maxlength: 24 },
+    newsHeadlineSuggestionCount: { type: Number, default: 0 },
   },
   { timestamps: true }
 )

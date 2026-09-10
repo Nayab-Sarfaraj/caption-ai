@@ -21,6 +21,12 @@ import { Underline } from './compositions/Underline'
 import { Glide } from './compositions/Glide'
 import { Outline } from './compositions/Outline'
 import { Meme } from './compositions/Meme'
+import { Pulse } from './compositions/Pulse'
+import { Sticker } from './compositions/Sticker'
+import { Glitch } from './compositions/Glitch'
+import { Wave } from './compositions/Wave'
+import { Handwritten } from './compositions/Handwritten'
+import { NewsBar } from './compositions/NewsBar'
 import { CaptionRoot } from './compositions/CaptionRoot'
 import { SAMPLE_TRANSCRIPT, SAMPLE_DURATION_FRAMES } from './sample-transcript'
 
@@ -227,6 +233,12 @@ const RemotionRoot: React.FC = () => {
         durationInFrames={SAMPLE_DURATION_FRAMES}
         defaultProps={defaultProps}
       />
+      <Composition id="Pulse" component={Pulse} fps={FPS} width={WIDTH} height={HEIGHT} durationInFrames={SAMPLE_DURATION_FRAMES} defaultProps={{ ...defaultProps, activeColor: '#F43F5E' }} />
+      <Composition id="Sticker" component={Sticker} fps={FPS} width={WIDTH} height={HEIGHT} durationInFrames={SAMPLE_DURATION_FRAMES} defaultProps={{ ...defaultProps, activeColor: '#22C55E' }} />
+      <Composition id="Glitch" component={Glitch} fps={FPS} width={WIDTH} height={HEIGHT} durationInFrames={SAMPLE_DURATION_FRAMES} defaultProps={defaultProps} />
+      <Composition id="Wave" component={Wave} fps={FPS} width={WIDTH} height={HEIGHT} durationInFrames={SAMPLE_DURATION_FRAMES} defaultProps={{ ...defaultProps, activeColor: '#A855F7' }} />
+      <Composition id="Handwritten" component={Handwritten} fps={FPS} width={WIDTH} height={HEIGHT} durationInFrames={SAMPLE_DURATION_FRAMES} defaultProps={defaultProps} />
+      <Composition id="NewsBar" component={NewsBar} fps={FPS} width={WIDTH} height={HEIGHT} durationInFrames={SAMPLE_DURATION_FRAMES} defaultProps={{ ...defaultProps, activeColor: '#DC2626', newsHeadline: 'Your headline goes here', newsCategory: 'LATEST UPDATE' }} />
       <Composition
         id="CaptionRoot"
         component={CaptionRoot}

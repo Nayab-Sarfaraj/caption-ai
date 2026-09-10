@@ -26,6 +26,8 @@ const triggerRenderSchema = z.object({
   fontSizeMultiplier: z.number().min(0.5).max(2).optional(),
   posX: z.number().min(0).max(100).optional(),
   posY: z.number().min(0).max(100).optional(),
+  newsHeadline: z.string().trim().min(1).max(70).optional(),
+  newsCategory: z.string().trim().min(1).max(24).optional(),
 })
 
 export async function handleGetJob(
@@ -54,6 +56,8 @@ export async function handleGetJob(
     errorMessage: job.errorMessage,
     createdAt: job.createdAt,
     downloadUrl,
+    newsHeadline: job.newsHeadline,
+    newsCategory: job.newsCategory,
   })
 }
 
@@ -92,12 +96,23 @@ export async function handleTriggerRender(
   }
 
   const brandKit = await getBrandKit(userId)
+  const compositionId = parsed.data.compositionId ?? brandKit?.defaultCompositionId ?? 'WordByWord'
+
+  if (
+    compositionId === 'NewsBar' &&
+    (!parsed.data.newsHeadline || !parsed.data.newsCategory)
+  ) {
+    return NextResponse.json(
+      { error: 'News Bar needs both a category and a headline before rendering.' },
+      { status: 400 },
+    )
+  }
 
   const payload: RenderJobPayload = {
     jobId,
     userId,
     videoKey: job.videoKey,
-    compositionId: parsed.data.compositionId ?? brandKit?.defaultCompositionId ?? 'WordByWord',
+    compositionId,
     fps: 30,
     outputFormat: 'mp4',
     phase: 'render',
@@ -109,6 +124,8 @@ export async function handleTriggerRender(
     posX: parsed.data.posX ?? undefined,
     posY: parsed.data.posY ?? undefined,
     watermark,
+    newsHeadline: parsed.data.newsHeadline,
+    newsCategory: parsed.data.newsCategory,
   }
 
   // Persist the resolved config so a later manual retry (Stage 4) can reuse
@@ -123,6 +140,8 @@ export async function handleTriggerRender(
     captionPosX: payload.posX,
     captionPosY: payload.posY,
     watermarked: watermark,
+    newsHeadline: payload.newsHeadline,
+    newsCategory: payload.newsCategory,
   })
 
   try {

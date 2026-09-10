@@ -3,7 +3,7 @@ export interface RenderJobPayload {
   userId: string
   videoKey: string
   transcriptKey?: string
-  compositionId: 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring' | 'Hype' | 'Hormozi' | 'Minimal' | 'BoxHighlight' | 'Comic' | 'Pill' | 'Script' | 'SingleWord' | 'Typewriter' | 'NeonGlow' | 'CaptionBar' | 'Gradient' | 'Highlighter' | 'Underline' | 'Glide' | 'Outline' | 'Meme'
+  compositionId: 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring' | 'Hype' | 'Hormozi' | 'Minimal' | 'BoxHighlight' | 'Comic' | 'Pill' | 'Script' | 'SingleWord' | 'Typewriter' | 'NeonGlow' | 'CaptionBar' | 'Gradient' | 'Highlighter' | 'Underline' | 'Glide' | 'Outline' | 'Meme' | 'Pulse' | 'Sticker' | 'Glitch' | 'Wave' | 'Handwritten' | 'NewsBar'
   fps: number
   outputFormat: 'mp4'
   phase: 'transcribe' | 'render'
@@ -15,6 +15,8 @@ export interface RenderJobPayload {
   posX?: number         // caption horizontal position, 0–100 % of frame (default 50 = center)
   posY?: number         // caption vertical position, 0–100 % of frame (default 82 = lower third)
   watermark?: boolean   // free-tier render — drawn by CaptionRoot.tsx's overlay, see worker/render.ts
+  newsHeadline?: string
+  newsCategory?: string
 }
 
 export interface JobProgressEvent {

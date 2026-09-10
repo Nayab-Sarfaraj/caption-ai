@@ -6,10 +6,11 @@ import { findJobById, updateJobStatus } from '@/src/repositories/job.repository'
 import { connectDB } from '@/src/lib/mongo'
 import { getRenderQueue } from '@/src/lib/queue'
 import type { RenderJobPayload } from '@/src/types/job.types'
+import { compositionIdSchema } from '@/src/helpers/validators'
 import { z } from 'zod'
 
 const bodySchema = z.object({
-  compositionId: z.enum(['WordByWord', 'Karaoke', 'Fade', 'Spring', 'Hype', 'Hormozi', 'Minimal', 'BoxHighlight', 'Comic', 'Pill', 'Script']).default('WordByWord'),
+  compositionId: compositionIdSchema.default('WordByWord'),
 })
 
 const ENQUEUE_TIMEOUT_MS = 10_000

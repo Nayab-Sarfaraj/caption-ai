@@ -7,7 +7,7 @@ export function generateSoftwareAppSchema(appUrl: string) {
     operatingSystem: 'Web',
     url: appUrl,
     description:
-      'High-retention animated captions for viral videos in seconds. Fast AI transcription, 21+ creator caption styles, studio 4K exports, and flat pricing with no credits.',
+      'High-retention animated captions for viral videos in seconds. Fast AI transcription, 27 creator caption styles, studio 4K exports, and flat pricing with no credits.',
     offers: [
       { '@type': 'Offer', name: 'Free', price: '0', priceCurrency: 'USD' },
       { '@type': 'Offer', name: 'Weekly', price: '6.99', priceCurrency: 'USD' },

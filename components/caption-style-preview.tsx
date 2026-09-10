@@ -1,6 +1,6 @@
 import type { CompositionId } from '@/remotion/compositions/CaptionRoot'
 
-type Mechanic = 'plain' | 'stroke' | 'box' | 'pill' | 'script' | 'lowercase' | 'single' | 'typewriter' | 'neon' | 'bar' | 'gradient' | 'highlighter' | 'underline' | 'glide' | 'outline' | 'meme'
+type Mechanic = 'plain' | 'stroke' | 'box' | 'pill' | 'script' | 'lowercase' | 'single' | 'typewriter' | 'neon' | 'bar' | 'gradient' | 'highlighter' | 'underline' | 'glide' | 'outline' | 'meme' | 'sticker' | 'glitch' | 'wave' | 'news'
 
 interface StyleMeta {
   mechanic: Mechanic
@@ -37,6 +37,12 @@ export const STYLE_PREVIEW_META: Record<CompositionId, StyleMeta> = {
   Glide:        { mechanic: 'glide',     fontFamily: 'var(--font-montserrat), sans-serif', baseColor: '#fff', keywordColor: '#FACC15', glow: '#FACC15' },
   Outline:      { mechanic: 'outline',   fontFamily: 'var(--font-anton), sans-serif',      baseColor: '#fff', keywordColor: '#FACC15', uppercase: true, glow: '#FACC15' },
   Meme:         { mechanic: 'meme',      fontFamily: 'Impact, "Arial Black", sans-serif',  baseColor: '#fff', uppercase: true, glow: '#8a8378' },
+  Pulse:        { mechanic: 'plain',     fontFamily: 'var(--font-montserrat), sans-serif', baseColor: '#fff', keywordColor: '#F43F5E', glow: '#F43F5E' },
+  Sticker:      { mechanic: 'sticker',   fontFamily: 'var(--font-fredoka), sans-serif',    baseColor: '#fff', keywordColor: '#22C55E', glow: '#22C55E' },
+  Glitch:       { mechanic: 'glitch',    fontFamily: 'var(--font-anton), sans-serif',      baseColor: '#fff', keywordColor: '#fff', uppercase: true, glow: '#00E5FF' },
+  Wave:         { mechanic: 'wave',      fontFamily: 'var(--font-fredoka), sans-serif',    baseColor: '#fff', keywordColor: '#A855F7', glow: '#A855F7' },
+  Handwritten:  { mechanic: 'script',    fontFamily: 'var(--font-geist-sans), sans-serif', baseColor: '#fff', keywordColor: '#FACC15', glow: '#FACC15' },
+  NewsBar:      { mechanic: 'news',      fontFamily: 'var(--font-montserrat), sans-serif', baseColor: '#fff', keywordColor: '#DC2626', glow: '#DC2626' },
 }
 
 const DROP_SHADOW = '0 2px 5px rgba(0,0,0,0.85), 0 0 1px rgba(0,0,0,0.9)'
@@ -148,6 +154,14 @@ export function CaptionStylePreview({ id }: { id: CompositionId }) {
           >
             Just like <span style={{ color: meta.keywordColor }}>this</span>
           </span>
+        ) : meta.mechanic === 'sticker' ? (
+          <span className="font-extrabold text-[16px] text-slate-900 border-2 border-white rounded-md px-2 py-0.5 rotate-[-3deg]" style={{ fontFamily: meta.fontFamily, backgroundColor: meta.keywordColor }}>this</span>
+        ) : meta.mechanic === 'glitch' ? (
+          <span className="font-extrabold text-[21px] uppercase" style={{ fontFamily: meta.fontFamily, color: '#fff', textShadow: '3px 0 #00E5FF, -3px 0 #FF2851, 0 2px 4px #000' }}>this</span>
+        ) : meta.mechanic === 'wave' ? (
+          <span className="font-extrabold text-[18px]" style={{ fontFamily: meta.fontFamily, color: meta.keywordColor }}><span className="inline-block -translate-y-1">t</span><span className="inline-block translate-y-1">h</span><span className="inline-block -translate-y-1">i</span><span className="inline-block translate-y-1">s</span></span>
+        ) : meta.mechanic === 'news' ? (
+          <span className="w-full overflow-hidden rounded-sm text-left" style={{ fontFamily: meta.fontFamily }}><span className="inline-block bg-red-600 px-1.5 py-1 text-[8px] font-black tracking-wide text-white">NEWS</span><span className="inline-block bg-slate-900 px-1.5 py-1 text-[9px] font-bold text-white">Your headline</span></span>
         ) : meta.mechanic === 'single' ? (
           <span
             style={{ fontFamily: meta.fontFamily, textTransform: 'uppercase', color: meta.keywordColor, fontWeight: 800, fontSize: '34px', WebkitTextStroke: '1.4px #000', paintOrder: 'stroke fill' as const, textShadow: `0 0 16px ${meta.glow}80` }}

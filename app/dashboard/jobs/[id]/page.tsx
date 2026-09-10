@@ -64,7 +64,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   // Compute duration from transcript for the Player
   const transcript = job.transcript as Transcript | null
   const durationInFrames = transcript?.words?.length
-    ? Math.ceil(transcript.words[transcript.words.length - 1].end * FPS) + FPS * 3
+    ? Math.ceil(transcript.words[transcript.words.length - 1].end * FPS) + FPS
     : FPS * 60 // 60s fallback
 
   const videoWidth = job.width ?? 1920
@@ -95,6 +95,8 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           createdAt={job.createdAt ? new Date(job.createdAt).toLocaleString() : undefined}
           isPaid={isPaid}
           rendersRemaining={rendersRemaining}
+          initialNewsHeadline={job.newsHeadline ?? undefined}
+          initialNewsCategory={job.newsCategory ?? undefined}
         />
       ) : (
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5 items-start">

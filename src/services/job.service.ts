@@ -77,6 +77,8 @@ export async function retryJob(jobId: string, userId: string): Promise<{ status:
       captionPosX: job.captionPosX ?? undefined,
       captionPosY: job.captionPosY ?? undefined,
       watermarked: watermark,
+      newsHeadline: job.newsHeadline ?? undefined,
+      newsCategory: job.newsCategory ?? undefined,
     })
   }
 
@@ -97,6 +99,8 @@ export async function retryJob(jobId: string, userId: string): Promise<{ status:
         posX: job.captionPosX ?? undefined,
         posY: job.captionPosY ?? undefined,
         watermark,
+        newsHeadline: job.newsHeadline ?? undefined,
+        newsCategory: job.newsCategory ?? undefined,
       }
     : {
         jobId,

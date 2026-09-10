@@ -21,9 +21,15 @@ import { Underline } from './Underline'
 import { Glide } from './Glide'
 import { Outline } from './Outline'
 import { Meme } from './Meme'
+import { Pulse } from './Pulse'
+import { Sticker } from './Sticker'
+import { Glitch } from './Glitch'
+import { Wave } from './Wave'
+import { Handwritten } from './Handwritten'
+import { NewsBar } from './NewsBar'
 import type { Transcript } from '../types'
 
-export type CompositionId = 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring' | 'Hype' | 'Hormozi' | 'Minimal' | 'BoxHighlight' | 'Comic' | 'Pill' | 'Script' | 'SingleWord' | 'Typewriter' | 'NeonGlow' | 'CaptionBar' | 'Gradient' | 'Highlighter' | 'Underline' | 'Glide' | 'Outline' | 'Meme'
+export type CompositionId = 'WordByWord' | 'Karaoke' | 'Fade' | 'Spring' | 'Hype' | 'Hormozi' | 'Minimal' | 'BoxHighlight' | 'Comic' | 'Pill' | 'Script' | 'SingleWord' | 'Typewriter' | 'NeonGlow' | 'CaptionBar' | 'Gradient' | 'Highlighter' | 'Underline' | 'Glide' | 'Outline' | 'Meme' | 'Pulse' | 'Sticker' | 'Glitch' | 'Wave' | 'Handwritten' | 'NewsBar'
 
 export interface CaptionRootProps {
   style: CompositionId
@@ -37,6 +43,8 @@ export interface CaptionRootProps {
   posX?: number
   posY?: number
   watermark?: boolean
+  newsHeadline?: string
+  newsCategory?: string
 }
 
 // One overlay here covers all 11 styles — cheaper and less drift-prone than
@@ -64,7 +72,7 @@ const Watermark: React.FC = () => {
   )
 }
 
-export const CaptionRoot: React.FC<CaptionRootProps> = ({ style, transcript, videoSrc, activeColor, textColor, accentColor, fontFamily, fontSizeMultiplier, posX, posY, watermark }) => {
+export const CaptionRoot: React.FC<CaptionRootProps> = ({ style, transcript, videoSrc, activeColor, textColor, accentColor, fontFamily, fontSizeMultiplier, posX, posY, watermark, newsHeadline, newsCategory }) => {
   const shared = { activeColor, textColor, fontFamily, fontSizeMultiplier, posX, posY }
 
   let composition: React.ReactNode
@@ -88,6 +96,12 @@ export const CaptionRoot: React.FC<CaptionRootProps> = ({ style, transcript, vid
   else if (style === 'Glide')        composition = <Glide        transcript={transcript} videoSrc={videoSrc} {...shared} />
   else if (style === 'Outline')      composition = <Outline      transcript={transcript} videoSrc={videoSrc} {...shared} />
   else if (style === 'Meme')         composition = <Meme         transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'Pulse')        composition = <Pulse        transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'Sticker')      composition = <Sticker      transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'Glitch')       composition = <Glitch       transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'Wave')         composition = <Wave         transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'Handwritten')  composition = <Handwritten  transcript={transcript} videoSrc={videoSrc} {...shared} />
+  else if (style === 'NewsBar')      composition = <NewsBar      transcript={transcript} videoSrc={videoSrc} {...shared} newsHeadline={newsHeadline} newsCategory={newsCategory} />
   else composition = <WordByWord transcript={transcript} videoSrc={videoSrc} {...shared} />
 
   return (
