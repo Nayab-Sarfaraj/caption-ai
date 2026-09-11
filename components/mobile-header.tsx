@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
-import { SignOutButton } from '@clerk/nextjs'
+import { LazySignOutButton } from '@/components/lazy-sign-out-button'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LogOut, LifeBuoy, Menu, X, Zap } from 'lucide-react'
@@ -135,7 +135,7 @@ export function MobileHeader({ subscriptionStatus = 'none' }: { subscriptionStat
             <span className="text-[10px] uppercase tracking-wide text-[var(--mute)] px-2">
               {PLAN_BADGE[subscriptionStatus]}
             </span>
-            <SignOutButton redirectUrl="/sign-in">
+            <LazySignOutButton redirectUrl="/sign-in">
               <button
                 type="button"
                 className="flex items-center gap-1.5 px-2 py-2 text-xs tracking-wide text-[var(--mute)] hover:text-[var(--brand)] transition-colors"
@@ -143,7 +143,7 @@ export function MobileHeader({ subscriptionStatus = 'none' }: { subscriptionStat
                 <LogOut className="w-[14px] h-[14px] shrink-0" />
                 Log out
               </button>
-            </SignOutButton>
+            </LazySignOutButton>
           </div>
           <div className="flex items-center gap-2 px-2 pt-1">
             <Link href="/terms" onClick={() => setMenuOpen(false)} className="text-[10px] text-[var(--mute)] hover:text-[var(--brand)] transition-colors">Terms</Link>
