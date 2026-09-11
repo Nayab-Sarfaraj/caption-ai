@@ -63,7 +63,7 @@ export function MobileHeader({ subscriptionStatus = 'none' }: { subscriptionStat
               Upgrade
             </button>
           )}
-          <UserButton />
+          <LazyUserButton />
         </div>
       </div>
 

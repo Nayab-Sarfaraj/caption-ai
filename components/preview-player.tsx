@@ -314,6 +314,7 @@ export function PreviewPlayer({
   const [newsHeadline, setNewsHeadline] = useState(initialNewsHeadline ?? "");
   const [newsCategory, setNewsCategory] = useState(initialNewsCategory ?? "");
   const [suggestingHeadline, setSuggestingHeadline] = useState(false);
+  const [hasMountedPlayer, setHasMountedPlayer] = useState(false);
   const [isDesktop, setIsDesktop] = useState(() => {
     if (typeof window !== "undefined") {
       return window.innerWidth >= 1024;
@@ -668,7 +669,43 @@ export function PreviewPlayer({
             ref={containerRef}
             className="relative flex-1 min-w-0 min-h-[320px] overflow-hidden rounded-2xl border border-[var(--hair)] bg-black flex items-center justify-center p-2"
           >
-            {playerSize.width > 0 ? (
+            {!hasMountedPlayer ? (
+              <div
+                onClick={() => setHasMountedPlayer(true)}
+                className="group relative cursor-pointer w-full flex flex-col items-center justify-center overflow-hidden rounded-xl border border-white/5 bg-[#09090b] transition-all hover:border-[var(--brand)]"
+                style={{
+                  width: playerSize.width > 0 ? playerSize.width : '100%',
+                  height: playerSize.height > 0 ? playerSize.height : undefined,
+                  aspectRatio: `${width} / ${height}`,
+                  maxHeight: '75vh',
+                }}
+              >
+                {/* Subtle cinematic gradient background */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/80 pointer-events-none" />
+
+                {/* Caption Style Preview in frame */}
+                <div className="relative z-10 scale-110 sm:scale-125 transition-transform duration-200 group-hover:scale-[1.3]">
+                  <CaptionStylePreview id={style} />
+                </div>
+
+                {/* Centered Play CTA */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-20 pointer-events-none">
+                  <div className="w-14 h-14 rounded-full bg-[var(--brand)] text-white shadow-lg shadow-[var(--brand)]/30 flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
+                    <svg className="w-6 h-6 translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
+                  <span className="text-xs font-semibold text-white/90 tracking-wide bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full border border-white/10">
+                    Click to preview video
+                  </span>
+                </div>
+
+                {/* Bottom filename badge */}
+                <div className="absolute bottom-3 left-3 z-10 text-[11px] text-white/60 bg-black/50 px-2 py-0.5 rounded border border-white/5 truncate max-w-[80%]">
+                  {filename}
+                </div>
+              </div>
+            ) : playerSize.width > 0 ? (
               <Player
                 component={CaptionRoot as unknown as React.FC<Record<string, unknown>>}
                 inputProps={inputProps as unknown as Record<string, unknown>}
@@ -680,9 +717,13 @@ export function PreviewPlayer({
                 controls
                 clickToPlay
                 showVolumeControls
+                autoPlay
               />
             ) : (
-              <div className="w-full aspect-[9/16] max-h-[55vh] flex items-center justify-center text-xs text-[var(--mute)]">
+              <div
+                className="w-full flex items-center justify-center text-xs text-[var(--mute)]"
+                style={{ aspectRatio: `${width} / ${height}`, maxHeight: '75vh' }}
+              >
                 Loading preview...
               </div>
             )}
@@ -775,7 +816,38 @@ export function PreviewPlayer({
             className="relative w-full overflow-hidden bg-black flex items-center justify-center"
             style={{ minHeight: 240 }}
           >
-            {playerSize.width > 0 ? (
+            {!hasMountedPlayer ? (
+              <div
+                onClick={() => setHasMountedPlayer(true)}
+                className="group relative cursor-pointer w-full flex flex-col items-center justify-center overflow-hidden rounded-xl border border-white/5 bg-[#09090b] transition-all hover:border-[var(--brand)]"
+                style={{
+                  width: playerSize.width > 0 ? playerSize.width : '100%',
+                  height: playerSize.height > 0 ? playerSize.height : undefined,
+                  aspectRatio: `${width} / ${height}`,
+                  maxHeight: '55vh',
+                }}
+              >
+                {/* Subtle cinematic gradient */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/80 pointer-events-none" />
+
+                {/* Caption Style Preview in frame */}
+                <div className="relative z-10 scale-100 transition-transform duration-200 group-hover:scale-110">
+                  <CaptionStylePreview id={style} />
+                </div>
+
+                {/* Centered Play CTA */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 z-20 pointer-events-none">
+                  <div className="w-12 h-12 rounded-full bg-[var(--brand)] text-white shadow-lg shadow-[var(--brand)]/30 flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
+                    <svg className="w-5 h-5 translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
+                  <span className="text-[11px] font-semibold text-white/90 tracking-wide bg-black/60 backdrop-blur-sm px-2.5 py-0.5 rounded-full border border-white/10">
+                    Tap to preview
+                  </span>
+                </div>
+              </div>
+            ) : playerSize.width > 0 ? (
               <Player
                 component={CaptionRoot as unknown as React.FC<Record<string, unknown>>}
                 inputProps={inputProps as unknown as Record<string, unknown>}
@@ -787,9 +859,13 @@ export function PreviewPlayer({
                 controls
                 clickToPlay
                 showVolumeControls
+                autoPlay
               />
             ) : (
-              <div className="w-full flex items-center justify-center text-xs text-[var(--mute)]" style={{ height: 260 }}>
+              <div
+                className="w-full flex items-center justify-center text-xs text-[var(--mute)]"
+                style={{ aspectRatio: `${width} / ${height}`, maxHeight: '55vh' }}
+              >
                 Loading preview…
               </div>
             )}

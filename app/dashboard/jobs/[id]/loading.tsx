@@ -7,7 +7,7 @@ export default function JobDetailsLoading() {
 
       <div className="flex flex-col lg:flex-row gap-5 items-start w-full">
         {/* Left: Video preview player skeleton */}
-        <div className="relative flex-1 min-w-0 w-full min-h-[360px] sm:min-h-[480px] rounded-2xl border border-[var(--hair)] bg-black/50 flex flex-col items-center justify-center p-6 space-y-3">
+        <div className="relative flex-1 min-w-0 w-full aspect-[9/16] max-h-[75vh] min-h-[320px] rounded-2xl border border-[var(--hair)] bg-black/50 flex flex-col items-center justify-center p-6 space-y-3">
           <Skeleton className="w-14 h-14 rounded-full" />
           <Skeleton className="h-3.5 w-36" />
         </div>

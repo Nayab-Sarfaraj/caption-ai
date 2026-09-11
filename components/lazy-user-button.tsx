@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { useUser } from '@clerk/nextjs'
 
@@ -12,44 +12,57 @@ const UserButton = dynamic(
 export function LazyUserButton() {
   const { user } = useUser()
   const [mounted, setMounted] = useState(false)
+  const shouldOpenOnClickRef = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Defer mounting until browser idle time, or immediately on user hover/touch/click
-  useEffect(() => {
-    if (typeof window === 'undefined') return
+  const handleInteraction = useCallback(() => {
+    if (!mounted) {
+      setMounted(true)
+    }
+  }, [mounted])
 
-    if ('requestIdleCallback' in window) {
-      const handle = (window as unknown as { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback(
-        () => setMounted(true),
-        { timeout: 3500 }
-      )
-      return () => {
-        if ('cancelIdleCallback' in window) {
-          (window as unknown as { cancelIdleCallback: (id: number) => void }).cancelIdleCallback(handle)
-        }
-      }
-    } else {
-      const timer = setTimeout(() => setMounted(true), 2000)
+  const handleClick = useCallback(() => {
+    if (!mounted) {
+      shouldOpenOnClickRef.current = true
+      setMounted(true)
+    }
+  }, [mounted])
+
+  // When mounted via direct click/tap, programmatically click Clerk's trigger button once it renders
+  useEffect(() => {
+    if (mounted && shouldOpenOnClickRef.current && containerRef.current) {
+      shouldOpenOnClickRef.current = false
+      const timer = setTimeout(() => {
+        const btn = containerRef.current?.querySelector('button')
+        btn?.click()
+      }, 50)
       return () => clearTimeout(timer)
     }
-  }, [])
-
-  if (mounted) {
-    return <UserButton />
-  }
+  }, [mounted])
 
   const avatarUrl = user?.imageUrl
   const initials = user?.firstName ? user.firstName[0].toUpperCase() : 'U'
 
+  if (mounted) {
+    return (
+      <div ref={containerRef} className="shrink-0 flex items-center">
+        <UserButton />
+      </div>
+    )
+  }
+
   return (
     <div
       ref={containerRef}
-      onMouseEnter={() => setMounted(true)}
-      onTouchStart={() => setMounted(true)}
-      onClick={() => setMounted(true)}
-      className="w-7 h-7 rounded-full overflow-hidden border border-[var(--hair)] bg-[var(--panel-2)] flex items-center justify-center shrink-0 cursor-pointer select-none"
+      onMouseEnter={handleInteraction}
+      onTouchStart={handleInteraction}
+      onFocus={handleInteraction}
+      onClick={handleClick}
+      className="w-7 h-7 rounded-full overflow-hidden border border-[var(--hair)] bg-[var(--panel-2)] flex items-center justify-center shrink-0 cursor-pointer select-none transition-opacity hover:opacity-90"
       title={user?.fullName || 'User account'}
       aria-label="User account"
+      tabIndex={0}
+      role="button"
     >
       {avatarUrl ? (
         <img
