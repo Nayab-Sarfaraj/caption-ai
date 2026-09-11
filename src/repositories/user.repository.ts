@@ -1,10 +1,11 @@
+import { cache } from 'react'
 import { connectDB } from '@/src/lib/mongo'
 import { User, IUser, SubscriptionStatus } from '@/src/models/User'
 
-export async function findByClerkId(clerkId: string): Promise<IUser | null> {
+export const findByClerkId = cache(async (clerkId: string): Promise<IUser | null> => {
   await connectDB()
-  return User.findOne({ clerkId })
-}
+  return User.findOne({ clerkId }).lean()
+})
 
 export async function upsertFromClerk(data: {
   clerkId: string

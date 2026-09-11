@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef, useTransition, memo } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Player } from "@remotion/player";
 import { CaptionRoot } from "@/remotion/compositions/CaptionRoot";
 import type { CompositionId } from "@/remotion/compositions/CaptionRoot";
 import { CaptionStylePreview } from "@/components/caption-style-preview";
 import { ColorSwatch } from "@/components/color-swatch";
-import { PaywallModal } from "@/components/paywall-modal";
 import {
   STYLES,
   CATEGORY_ORDER,
@@ -17,6 +17,16 @@ import {
   TEXT_PRESETS,
 } from "@/src/helpers/style-options";
 import type { Transcript } from "@/src/types/transcript.types";
+
+const PaywallModal = dynamic(
+  () => import("@/components/paywall-modal").then((m) => m.PaywallModal),
+  { ssr: false }
+);
+
+const STYLES_BY_CATEGORY = CATEGORY_ORDER.map((cat) => ({
+  category: cat,
+  styles: STYLES.filter((s) => s.category === cat),
+}));
 
 interface PreviewPlayerProps {
   jobId: string;
@@ -181,6 +191,99 @@ const INITIAL_SETTINGS: SettingsMap = {
   NewsBar: { ...DEFAULT, activeColor: "#DC2626", fontFamily: "Montserrat, sans-serif", posY: 62 },
 };
 
+interface MobileStyleCardProps {
+  id: CompositionId;
+  label: string;
+  active: boolean;
+  onSelect: (id: CompositionId) => void;
+}
+
+const MobileStyleCard = memo(function MobileStyleCard({
+  id,
+  label,
+  active,
+  onSelect,
+}: MobileStyleCardProps) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(id)}
+      className="shrink-0 flex flex-col items-center gap-1.5 focus:outline-none"
+      style={{ width: 104 }}
+    >
+      <div
+        className={[
+          "relative w-full overflow-hidden rounded-xl transition-all aspect-[4/3]",
+          active
+            ? "ring-2 ring-[var(--brand)] shadow-[0_0_12px_color-mix(in_srgb,var(--brand)_50%,transparent)]"
+            : "ring-1 ring-[var(--hair)]",
+        ].join(" ")}
+      >
+        <div className="absolute inset-0 flex items-center justify-center [&>div]:w-full [&>div]:h-full [&>div]:min-h-0 [&>div]:flex [&>div]:items-center [&>div]:justify-center [&>div>div]:py-2 [&>div>div]:px-1 [&>div>div]:min-h-0">
+          <CaptionStylePreview id={id} />
+        </div>
+        {active && (
+          <span className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-[var(--brand)] flex items-center justify-center z-10">
+            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+          </span>
+        )}
+      </div>
+      <p
+        className={[
+          "text-[10px] font-medium leading-tight text-center truncate w-full",
+          active ? "text-[var(--brand)]" : "text-[var(--mute)]",
+        ].join(" ")}
+      >
+        {label}
+      </p>
+    </button>
+  );
+});
+
+interface DesktopStyleCardProps {
+  id: CompositionId;
+  label: string;
+  desc?: string;
+  active: boolean;
+  onSelect: (id: CompositionId) => void;
+}
+
+const DesktopStyleCard = memo(function DesktopStyleCard({
+  id,
+  label,
+  desc,
+  active,
+  onSelect,
+}: DesktopStyleCardProps) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(id)}
+      className={[
+        "relative text-left transition-all overflow-hidden rounded-xl",
+        active
+          ? "ring-2 ring-inset ring-[var(--brand)]"
+          : "ring-1 ring-inset ring-[var(--hair)] hover:ring-[var(--faint)]",
+      ].join(" ")}
+    >
+      <CaptionStylePreview id={id} />
+      {active && (
+        <span className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-[var(--brand)] flex items-center justify-center">
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          </svg>
+        </span>
+      )}
+      <div className="px-2.5 py-2 bg-[var(--panel)]">
+        <p className="text-xs text-[var(--ink)] font-medium">{label}</p>
+        {desc && <p className="text-[10px] text-[var(--mute)] leading-tight mt-0.5">{desc}</p>}
+      </div>
+    </button>
+  );
+});
+
 export function PreviewPlayer({
   jobId,
   videoSrc,
@@ -199,6 +302,7 @@ export function PreviewPlayer({
   initialNewsCategory,
 }: PreviewPlayerProps) {
   const router = useRouter();
+  const [, startTransition] = useTransition();
   const [style, setStyle] = useState<CompositionId>("WordByWord");
   const [settings, setSettings] = useState<SettingsMap>(INITIAL_SETTINGS);
   const [view, setView] = useState<"styles" | "appearance" | "fonts">("styles");
@@ -210,11 +314,30 @@ export function PreviewPlayer({
   const [newsHeadline, setNewsHeadline] = useState(initialNewsHeadline ?? "");
   const [newsCategory, setNewsCategory] = useState(initialNewsCategory ?? "");
   const [suggestingHeadline, setSuggestingHeadline] = useState(false);
+  const [hasMountedPlayer, setHasMountedPlayer] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth >= 1024;
+    }
+    return true;
+  });
+
+  useEffect(() => {
+    const mql = window.matchMedia("(min-width: 1024px)");
+    const onChange = (e: MediaQueryListEvent) => {
+      setIsDesktop(e.matches);
+    };
+    setIsDesktop(mql.matches);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
 
   const handleStyleChange = useCallback((newStyle: CompositionId) => {
     if (newStyle === style) return;
     setIsSwitchingStyle(true);
-    setStyle(newStyle);
+    startTransition(() => {
+      setStyle(newStyle);
+    });
     setTimeout(() => {
       setIsSwitchingStyle(false);
     }, 180);
@@ -228,10 +351,12 @@ export function PreviewPlayer({
 
   const update = useCallback(
     <K extends keyof StyleSettings>(key: K, value: StyleSettings[K]) => {
-      setSettings((prev) => ({
-        ...prev,
-        [style]: { ...prev[style], [key]: value },
-      }));
+      startTransition(() => {
+        setSettings((prev) => ({
+          ...prev,
+          [style]: { ...prev[style], [key]: value },
+        }));
+      });
     },
     [style],
   );
@@ -330,7 +455,7 @@ export function PreviewPlayer({
     }
   }, [blocked, isPaid, runExport]);
 
-  const playerContainerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [playerSize, setPlayerSize] = useState({ width: 0, height: 0 });
 
   // Remotion's <Player> isn't a native replaced element — it doesn't do the
@@ -338,16 +463,17 @@ export function PreviewPlayer({
   // way a plain <video> does (that resolved to 0×0 and the player vanished).
   // Compute real pixel dimensions instead: fill the container width, but cap
   // height at 75% of viewport so a portrait (9:16) video doesn't blow up past
-  // the screen — recompute on container/window resize.
-  const desktopContainerRef = useRef<HTMLDivElement>(null);
-
+  // the screen — recompute on container/window resize or layout switch.
   useEffect(() => {
     const ratio = width / height;
 
     const compute = () => {
-      const el = playerContainerRef.current || desktopContainerRef.current;
+      const el = containerRef.current;
       if (!el) return;
-      const containerWidth = el.clientWidth || el.getBoundingClientRect().width || (window.innerWidth < 1024 ? window.innerWidth - 32 : 600);
+      const containerWidth =
+        el.clientWidth ||
+        el.getBoundingClientRect().width ||
+        (window.innerWidth < 1024 ? window.innerWidth - 32 : 600);
       if (!containerWidth) return;
 
       const isMobile = window.innerWidth < 1024;
@@ -366,7 +492,7 @@ export function PreviewPlayer({
     const timer = setTimeout(compute, 100);
     const timer2 = setTimeout(compute, 500);
 
-    const el = playerContainerRef.current || desktopContainerRef.current;
+    const el = containerRef.current;
     let ro: ResizeObserver | null = null;
     if (el) {
       ro = new ResizeObserver(compute);
@@ -379,7 +505,7 @@ export function PreviewPlayer({
       if (ro) ro.disconnect();
       window.removeEventListener("resize", compute);
     };
-  }, [width, height]);
+  }, [width, height, isDesktop]);
 
   const stylePanelContent = (
     <>
@@ -535,248 +661,291 @@ export function PreviewPlayer({
         />
       )}
 
-      {/* ─── MOBILE LAYOUT (< lg) ─── */}
-      <div className="flex flex-col lg:hidden w-full pb-[80px]">
-        {/* Zone 1: Player */}
-        <div
-          ref={playerContainerRef}
-          className="relative w-full overflow-hidden bg-black flex items-center justify-center"
-          style={{ minHeight: 240 }}
-        >
-          {playerSize.width > 0 ? (
-            <Player
-              component={CaptionRoot as unknown as React.FC<Record<string, unknown>>}
-              inputProps={inputProps as unknown as Record<string, unknown>}
-              durationInFrames={durationInFrames}
-              compositionWidth={width}
-              compositionHeight={height}
-              fps={30}
-              style={{ width: playerSize.width, height: playerSize.height }}
-              controls
-              clickToPlay
-              showVolumeControls
-            />
-          ) : (
-            <div className="w-full flex items-center justify-center text-xs text-[var(--mute)]" style={{ height: 260 }}>
-              Loading preview…
-            </div>
-          )}
+      {isDesktop ? (
+        /* ─── DESKTOP LAYOUT (lg+) ─── */
+        <div className="flex flex-row gap-5 items-start w-full">
+          {/* Left: player */}
+          <div
+            ref={containerRef}
+            className="relative flex-1 min-w-0 min-h-[320px] overflow-hidden rounded-2xl border border-[var(--hair)] bg-black flex items-center justify-center p-2"
+          >
+            {!hasMountedPlayer ? (
+              <div
+                onClick={() => setHasMountedPlayer(true)}
+                className="group relative cursor-pointer w-full flex flex-col items-center justify-center overflow-hidden rounded-xl border border-white/5 bg-[#09090b] transition-all hover:border-[var(--brand)]"
+                style={{
+                  width: playerSize.width > 0 ? playerSize.width : '100%',
+                  height: playerSize.height > 0 ? playerSize.height : undefined,
+                  aspectRatio: `${width} / ${height}`,
+                  maxHeight: '75vh',
+                }}
+              >
+                {/* Subtle cinematic gradient background */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/80 pointer-events-none" />
 
-          {/* Smooth overlay spinner during style transitions */}
-          {isSwitchingStyle && (
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 z-20 transition-opacity">
-              <div className="w-6 h-6 border-2 border-[var(--brand)] border-t-transparent rounded-full animate-spin" />
-              <span className="text-[11px] font-medium text-white/90">Updating style…</span>
-            </div>
-          )}
-        </div>
+                {/* Caption Style Preview in frame */}
+                <div className="relative z-10 scale-110 sm:scale-125 transition-transform duration-200 group-hover:scale-[1.3]">
+                  <CaptionStylePreview id={style} />
+                </div>
 
-        {/* Zone 2: Horizontal style rail */}
-        <div className="w-full bg-[var(--panel)] border-t border-[var(--hair)]">
-          {/* Job info strip */}
-          <div className="flex items-center justify-between px-4 pt-3 pb-2 gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: statusColor }} />
-              <p className="text-xs text-[var(--ink)] truncate font-medium">{filename}</p>
-            </div>
-            {/* Customize button → opens bottom sheet */}
-            <button
-              type="button"
-              onClick={() => { setView("appearance"); setMobileSheetOpen(true); }}
-              className="shrink-0 flex items-center gap-1.5 text-xs font-medium text-[var(--ink)] rounded-lg border border-[var(--hair)] px-2.5 py-1.5 hover:border-[var(--brand)] hover:text-[var(--brand)] transition-colors"
-            >
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
-              Customize
-            </button>
-          </div>
-
-          {/* Horizontal scroll rail of style cards */}
-          <div className="flex gap-2.5 overflow-x-auto px-4 pt-2 pb-3 scroll-smooth" style={{ scrollbarWidth: 'none' }}>
-            {STYLES.map((s) => {
-              const active = style === s.id;
-              return (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => handleStyleChange(s.id)}
-                  className="shrink-0 flex flex-col items-center gap-1.5 focus:outline-none"
-                  style={{ width: 104 }}
-                >
-                  <div
-                    className={[
-                      "relative w-full overflow-hidden rounded-xl transition-all aspect-[4/3]",
-                      active ? "ring-2 ring-[var(--brand)] shadow-[0_0_12px_color-mix(in_srgb,var(--brand)_50%,transparent)]" : "ring-1 ring-[var(--hair)]",
-                    ].join(" ")}
-                  >
-                    <div className="absolute inset-0 flex items-center justify-center [&>div]:w-full [&>div]:h-full [&>div]:min-h-0 [&>div]:flex [&>div]:items-center [&>div]:justify-center [&>div>div]:py-2 [&>div>div]:px-1 [&>div>div]:min-h-0">
-                      <CaptionStylePreview id={s.id} />
-                    </div>
-                    {active && (
-                      <span className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-[var(--brand)] flex items-center justify-center z-10">
-                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                      </span>
-                    )}
+                {/* Centered Play CTA */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-20 pointer-events-none">
+                  <div className="w-14 h-14 rounded-full bg-[var(--brand)] text-white shadow-lg shadow-[var(--brand)]/30 flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
+                    <svg className="w-6 h-6 translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
                   </div>
-                  <p className={["text-[10px] font-medium leading-tight text-center truncate w-full", active ? "text-[var(--brand)]" : "text-[var(--mute)]"].join(" ")}>
-                    {s.label}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Zone 3: Sticky export bar — solid background + blur so content never bleeds through */}
-        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--hair)] px-4 py-3 space-y-1.5" style={{ background: 'var(--bg)', backdropFilter: 'none' }}>
-          {exportBar}
-        </div>
-
-        {/* Slide-up customization bottom sheet */}
-        {mobileSheetOpen && (
-          <>
-            {/* Backdrop */}
-            <div
-              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-              onClick={() => setMobileSheetOpen(false)}
-            />
-            {/* Sheet */}
-            <div className="fixed bottom-0 left-0 right-0 z-50 bg-[var(--panel)] border-t border-[var(--hair)] rounded-t-2xl max-h-[75vh] flex flex-col" style={{ animation: 'slideUp 0.25s cubic-bezier(0.32, 0.72, 0, 1)' }}>
-              {/* Sheet handle + header */}
-              <div className="flex items-center justify-between px-5 pt-4 pb-3 shrink-0">
-                <div className="w-8 h-1 rounded-full bg-[var(--hair)] mx-auto absolute left-1/2 -translate-x-1/2 top-2.5" />
-                <p className="text-sm font-semibold text-[var(--ink)]">
-                  {view === "fonts" ? "Font Family" : `Edit · ${STYLES.find((s) => s.id === style)?.label ?? style}`}
-                </p>
-                <button type="button" onClick={() => setMobileSheetOpen(false)} className="text-[var(--mute)] hover:text-[var(--ink)] transition-colors">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
-                </button>
-              </div>
-              {/* Sheet content */}
-              <div className="flex-1 overflow-y-auto px-5 pb-6 space-y-4">
-                {stylePanelContent}
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* ─── DESKTOP LAYOUT (lg+) ─── */}
-      <div className="hidden lg:flex flex-row gap-5 items-start w-full">
-        {/* Left: player */}
-        <div
-          ref={desktopContainerRef}
-          className="relative flex-1 min-w-0 min-h-[320px] overflow-hidden rounded-2xl border border-[var(--hair)] bg-black flex items-center justify-center p-2"
-        >
-          {playerSize.width > 0 ? (
-            <Player
-              component={CaptionRoot as unknown as React.FC<Record<string, unknown>>}
-              inputProps={inputProps as unknown as Record<string, unknown>}
-              durationInFrames={durationInFrames}
-              compositionWidth={width}
-              compositionHeight={height}
-              fps={30}
-              style={{ width: playerSize.width, height: playerSize.height }}
-              controls
-              clickToPlay
-              showVolumeControls
-            />
-          ) : (
-            <div className="w-full aspect-[9/16] max-h-[55vh] flex items-center justify-center text-xs text-[var(--mute)]">
-              Loading preview...
-            </div>
-          )}
-
-          {/* Smooth overlay spinner during style transitions */}
-          {isSwitchingStyle && (
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 z-20 transition-opacity">
-              <div className="w-6 h-6 border-2 border-[var(--brand)] border-t-transparent rounded-full animate-spin" />
-              <span className="text-[11px] font-medium text-white/90">Updating style…</span>
-            </div>
-          )}
-        </div>
-
-        {/* Right: info + controls sidebar */}
-        <div className="w-80 shrink-0 rounded-2xl border border-[var(--hair)] bg-[var(--panel)] flex flex-col sticky top-6 max-h-[calc(100vh-6rem)]">
-          <div className="flex-1 overflow-y-auto p-5 space-y-4">
-            {/* Job info */}
-            <div className="space-y-1.5">
-              <h1 className="text-sm font-bold text-[var(--ink)] truncate">{filename}</h1>
-              <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: statusColor }} />
-                <span className="text-sm" style={{ color: statusColor }}>{statusLabel}</span>
-              </div>
-            </div>
-
-            {transcriptSource && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-[var(--mute)]">Transcript</span>
-                <span className="text-[var(--ink-dim)] text-xs">{transcriptSource === "user" ? "Uploaded SRT/VTT" : "AI · Deepgram"}</span>
-              </div>
-            )}
-            {createdAt && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-[var(--mute)]">Created</span>
-                <span className="text-[var(--ink-dim)] text-xs">{createdAt}</span>
-              </div>
-            )}
-
-            <div className="border-t border-[var(--hair)]" />
-
-            {view === "styles" && (
-              <>
-                <div className="flex items-center justify-between">
-                  <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)]">Caption Style</p>
-                  <button
-                    type="button"
-                    onClick={() => setView("appearance")}
-                    className="flex items-center gap-1.5 text-xs font-medium text-[var(--ink)] rounded-lg border border-[var(--hair)] px-2.5 py-1 hover:border-[var(--brand)] hover:text-[var(--brand)] transition-colors"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
-                    Edit colors & font
-                  </button>
+                  <span className="text-xs font-semibold text-white/90 tracking-wide bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full border border-white/10">
+                    Click to preview video
+                  </span>
                 </div>
-                <div className="space-y-4 pr-0.5">
-                  {CATEGORY_ORDER.map((cat) => (
-                    <div key={cat} className="space-y-2">
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--ink)]">{cat}</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {STYLES.filter((s) => s.category === cat).map((s) => {
-                          const active = style === s.id;
-                          return (
-                            <button
+
+                {/* Bottom filename badge */}
+                <div className="absolute bottom-3 left-3 z-10 text-[11px] text-white/60 bg-black/50 px-2 py-0.5 rounded border border-white/5 truncate max-w-[80%]">
+                  {filename}
+                </div>
+              </div>
+            ) : playerSize.width > 0 ? (
+              <Player
+                component={CaptionRoot as unknown as React.FC<Record<string, unknown>>}
+                inputProps={inputProps as unknown as Record<string, unknown>}
+                durationInFrames={durationInFrames}
+                compositionWidth={width}
+                compositionHeight={height}
+                fps={30}
+                style={{ width: playerSize.width, height: playerSize.height }}
+                controls
+                clickToPlay
+                showVolumeControls
+                autoPlay
+              />
+            ) : (
+              <div
+                className="w-full flex items-center justify-center text-xs text-[var(--mute)]"
+                style={{ aspectRatio: `${width} / ${height}`, maxHeight: '75vh' }}
+              >
+                Loading preview...
+              </div>
+            )}
+
+            {/* Smooth overlay spinner during style transitions */}
+            {isSwitchingStyle && (
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 z-20 transition-opacity">
+                <div className="w-6 h-6 border-2 border-[var(--brand)] border-t-transparent rounded-full animate-spin" />
+                <span className="text-[11px] font-medium text-white/90">Updating style…</span>
+              </div>
+            )}
+          </div>
+
+          {/* Right: info + controls sidebar */}
+          <div className="w-80 shrink-0 rounded-2xl border border-[var(--hair)] bg-[var(--panel)] flex flex-col sticky top-6 max-h-[calc(100vh-6rem)]">
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              {/* Job info */}
+              <div className="space-y-1.5">
+                <h1 className="text-sm font-bold text-[var(--ink)] truncate">{filename}</h1>
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: statusColor }} />
+                  <span className="text-sm" style={{ color: statusColor }}>{statusLabel}</span>
+                </div>
+              </div>
+
+              {transcriptSource && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[var(--mute)]">Transcript</span>
+                  <span className="text-[var(--ink-dim)] text-xs">{transcriptSource === "user" ? "Uploaded SRT/VTT" : "AI · Deepgram"}</span>
+                </div>
+              )}
+              {createdAt && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[var(--mute)]">Created</span>
+                  <span className="text-[var(--ink-dim)] text-xs">{createdAt}</span>
+                </div>
+              )}
+
+              <div className="border-t border-[var(--hair)]" />
+
+              {view === "styles" && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] tracking-[0.15em] uppercase text-[var(--mute)]">Caption Style</p>
+                    <button
+                      type="button"
+                      onClick={() => setView("appearance")}
+                      className="flex items-center gap-1.5 text-xs font-medium text-[var(--ink)] rounded-lg border border-[var(--hair)] px-2.5 py-1 hover:border-[var(--brand)] hover:text-[var(--brand)] transition-colors"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
+                      Edit colors & font
+                    </button>
+                  </div>
+                  <div className="space-y-4 pr-0.5">
+                    {STYLES_BY_CATEGORY.map(({ category, styles }) => (
+                      <div key={category} className="space-y-2">
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--ink)]">{category}</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {styles.map((s) => (
+                            <DesktopStyleCard
                               key={s.id}
-                              type="button"
-                              onClick={() => handleStyleChange(s.id)}
-                              className={["relative text-left transition-all overflow-hidden rounded-xl", active ? "ring-2 ring-inset ring-[var(--brand)]" : "ring-1 ring-inset ring-[var(--hair)] hover:ring-[var(--faint)]"].join(" ")}
-                            >
-                              <CaptionStylePreview id={s.id} />
-                              {active && (
-                                <span className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-[var(--brand)] flex items-center justify-center">
-                                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                                </span>
-                              )}
-                              <div className="px-2.5 py-2 bg-[var(--panel)]">
-                                <p className="text-xs text-[var(--ink)] font-medium">{s.label}</p>
-                                <p className="text-[10px] text-[var(--mute)] leading-tight mt-0.5">{s.desc}</p>
-                              </div>
-                            </button>
-                          );
-                        })}
+                              id={s.id}
+                              label={s.label}
+                              desc={s.desc}
+                              active={style === s.id}
+                              onSelect={handleStyleChange}
+                            />
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {(view === "appearance" || view === "fonts") && stylePanelContent}
+            </div>
+
+            <div className="shrink-0 border-t border-[var(--hair)] p-5 pt-4 space-y-3">
+              {exportBar}
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* ─── MOBILE LAYOUT (< lg) ─── */
+        <div className="flex flex-col w-full pb-[80px]">
+          {/* Zone 1: Player */}
+          <div
+            ref={containerRef}
+            className="relative w-full overflow-hidden bg-black flex items-center justify-center"
+            style={{ minHeight: 240 }}
+          >
+            {!hasMountedPlayer ? (
+              <div
+                onClick={() => setHasMountedPlayer(true)}
+                className="group relative cursor-pointer w-full flex flex-col items-center justify-center overflow-hidden rounded-xl border border-white/5 bg-[#09090b] transition-all hover:border-[var(--brand)]"
+                style={{
+                  width: playerSize.width > 0 ? playerSize.width : '100%',
+                  height: playerSize.height > 0 ? playerSize.height : undefined,
+                  aspectRatio: `${width} / ${height}`,
+                  maxHeight: '55vh',
+                }}
+              >
+                {/* Subtle cinematic gradient */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/80 pointer-events-none" />
+
+                {/* Caption Style Preview in frame */}
+                <div className="relative z-10 scale-100 transition-transform duration-200 group-hover:scale-110">
+                  <CaptionStylePreview id={style} />
                 </div>
-              </>
+
+                {/* Centered Play CTA */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 z-20 pointer-events-none">
+                  <div className="w-12 h-12 rounded-full bg-[var(--brand)] text-white shadow-lg shadow-[var(--brand)]/30 flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
+                    <svg className="w-5 h-5 translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
+                  <span className="text-[11px] font-semibold text-white/90 tracking-wide bg-black/60 backdrop-blur-sm px-2.5 py-0.5 rounded-full border border-white/10">
+                    Tap to preview
+                  </span>
+                </div>
+              </div>
+            ) : playerSize.width > 0 ? (
+              <Player
+                component={CaptionRoot as unknown as React.FC<Record<string, unknown>>}
+                inputProps={inputProps as unknown as Record<string, unknown>}
+                durationInFrames={durationInFrames}
+                compositionWidth={width}
+                compositionHeight={height}
+                fps={30}
+                style={{ width: playerSize.width, height: playerSize.height }}
+                controls
+                clickToPlay
+                showVolumeControls
+                autoPlay
+              />
+            ) : (
+              <div
+                className="w-full flex items-center justify-center text-xs text-[var(--mute)]"
+                style={{ aspectRatio: `${width} / ${height}`, maxHeight: '55vh' }}
+              >
+                Loading preview…
+              </div>
             )}
 
-            {(view === "appearance" || view === "fonts") && stylePanelContent}
+            {/* Smooth overlay spinner during style transitions */}
+            {isSwitchingStyle && (
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 z-20 transition-opacity">
+                <div className="w-6 h-6 border-2 border-[var(--brand)] border-t-transparent rounded-full animate-spin" />
+                <span className="text-[11px] font-medium text-white/90">Updating style…</span>
+              </div>
+            )}
           </div>
 
-          <div className="shrink-0 border-t border-[var(--hair)] p-5 pt-4 space-y-3">
+          {/* Zone 2: Horizontal style rail */}
+          <div className="w-full bg-[var(--panel)] border-t border-[var(--hair)]">
+            {/* Job info strip */}
+            <div className="flex items-center justify-between px-4 pt-3 pb-2 gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: statusColor }} />
+                <p className="text-xs text-[var(--ink)] truncate font-medium">{filename}</p>
+              </div>
+              {/* Customize button → opens bottom sheet */}
+              <button
+                type="button"
+                onClick={() => { setView("appearance"); setMobileSheetOpen(true); }}
+                className="shrink-0 flex items-center gap-1.5 text-xs font-medium text-[var(--ink)] rounded-lg border border-[var(--hair)] px-2.5 py-1.5 hover:border-[var(--brand)] hover:text-[var(--brand)] transition-colors"
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
+                Customize
+              </button>
+            </div>
+
+            {/* Horizontal scroll rail of style cards */}
+            <div className="flex gap-2.5 overflow-x-auto px-4 pt-2 pb-3 scroll-smooth" style={{ scrollbarWidth: 'none' }}>
+              {STYLES.map((s) => (
+                <MobileStyleCard
+                  key={s.id}
+                  id={s.id}
+                  label={s.label}
+                  active={style === s.id}
+                  onSelect={handleStyleChange}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Zone 3: Sticky export bar — solid background + blur so content never bleeds through */}
+          <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--hair)] px-4 py-3 space-y-1.5" style={{ background: 'var(--bg)', backdropFilter: 'none' }}>
             {exportBar}
           </div>
+
+          {/* Slide-up customization bottom sheet */}
+          {mobileSheetOpen && (
+            <>
+              {/* Backdrop */}
+              <div
+                className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+                onClick={() => setMobileSheetOpen(false)}
+              />
+              {/* Sheet */}
+              <div className="fixed bottom-0 left-0 right-0 z-50 bg-[var(--panel)] border-t border-[var(--hair)] rounded-t-2xl max-h-[75vh] flex flex-col" style={{ animation: 'slideUp 0.25s cubic-bezier(0.32, 0.72, 0, 1)' }}>
+                {/* Sheet handle + header */}
+                <div className="flex items-center justify-between px-5 pt-4 pb-3 shrink-0">
+                  <div className="w-8 h-1 rounded-full bg-[var(--hair)] mx-auto absolute left-1/2 -translate-x-1/2 top-2.5" />
+                  <p className="text-sm font-semibold text-[var(--ink)]">
+                    {view === "fonts" ? "Font Family" : `Edit · ${STYLES.find((s) => s.id === style)?.label ?? style}`}
+                  </p>
+                  <button type="button" onClick={() => setMobileSheetOpen(false)} className="text-[var(--mute)] hover:text-[var(--ink)] transition-colors">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                  </button>
+                </div>
+                {/* Sheet content */}
+                <div className="flex-1 overflow-y-auto px-5 pb-6 space-y-4">
+                  {stylePanelContent}
+                </div>
+              </div>
+            </>
+          )}
         </div>
-      </div>
+      )}
 
       <style>{`
         @keyframes slideUp {

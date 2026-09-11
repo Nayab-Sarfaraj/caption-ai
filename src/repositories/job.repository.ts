@@ -39,10 +39,15 @@ export async function findJobsByUserId(
   await connectDB()
   const skip = (page - 1) * pageSize
   const [jobs, total] = await Promise.all([
-    Job.find({ userId }).sort({ createdAt: -1 }).skip(skip).limit(pageSize),
+    Job.find({ userId })
+      .select('_id originalFilename status createdAt batchId errorMessage duration')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(pageSize)
+      .lean(),
     Job.countDocuments({ userId }),
   ])
-  return { jobs, total, page, pageSize }
+  return { jobs: jobs as unknown as IJob[], total, page, pageSize }
 }
 
 export async function countTodayUploads(userId: string): Promise<number> {

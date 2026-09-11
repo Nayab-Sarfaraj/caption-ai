@@ -3,12 +3,21 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { UserButton, SignOutButton } from '@clerk/nextjs'
+import dynamic from 'next/dynamic'
+import { SignOutButton } from '@clerk/nextjs'
 import { LogOut, LifeBuoy, Zap } from 'lucide-react'
 import type { SubscriptionStatus } from '@/src/models/User'
-import { PaywallModal } from '@/components/paywall-modal'
-import { SupportModal } from '@/components/support-modal'
+import { LazyUserButton } from '@/components/lazy-user-button'
 import { NAV, PLAN_BADGE } from '@/src/helpers/dashboard-nav'
+
+const PaywallModal = dynamic(
+  () => import('@/components/paywall-modal').then((m) => m.PaywallModal),
+  { ssr: false }
+)
+const SupportModal = dynamic(
+  () => import('@/components/support-modal').then((m) => m.SupportModal),
+  { ssr: false }
+)
 
 export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: SubscriptionStatus }) {
   const pathname = usePathname()
@@ -90,7 +99,7 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
 
       <div className="border-t border-[var(--hair)]">
         <div className={['p-3 flex items-center gap-2.5', collapsed ? 'justify-center' : ''].join(' ')}>
-          <UserButton />
+          <LazyUserButton />
           {!collapsed && (
             // Already Pro → go manage/cancel on the real billing page, not a
             // "go unlimited" pitch for something they already have.
