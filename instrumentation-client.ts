@@ -9,5 +9,6 @@ if (process.env.NEXT_PUBLIC_POSTHOG_KEY) {
     // ad-blocker loss than have analytics 500 through your own server logs.
     api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com',
     defaults: '2026-06-25',
+    disable_session_recording: true,
   })
 }

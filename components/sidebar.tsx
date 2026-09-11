@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import dynamic from 'next/dynamic'
-import { SignOutButton } from '@clerk/nextjs'
+import { LazySignOutButton } from '@/components/lazy-sign-out-button'
 import { LogOut, LifeBuoy, Zap } from 'lucide-react'
 import type { SubscriptionStatus } from '@/src/models/User'
 import { LazyUserButton } from '@/components/lazy-user-button'
@@ -134,7 +134,7 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
             <LifeBuoy className="w-[15px] h-[15px] shrink-0" />
             {!collapsed && 'Contact support'}
           </button>
-          <SignOutButton redirectUrl="/sign-in">
+          <LazySignOutButton redirectUrl="/sign-in">
             <button
               type="button"
               title={collapsed ? 'Log out' : undefined}
@@ -146,7 +146,7 @@ export function Sidebar({ subscriptionStatus = 'none' }: { subscriptionStatus?: 
               <LogOut className="w-[15px] h-[15px] shrink-0" />
               {!collapsed && 'Log out'}
             </button>
-          </SignOutButton>
+          </LazySignOutButton>
           {!collapsed && (
             <div className="flex items-center gap-2 px-2 pt-1">
               <Link href="/terms" className="text-[10px] text-[var(--mute)] hover:text-[var(--brand)] transition-colors">Terms</Link>
